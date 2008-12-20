@@ -14,6 +14,8 @@ The things that I want to do compared to other solutions:
     Direct2Web)
   * Statically optimized (i.e. compiled)
 
+Idea for a name: STOP (STatically OPtimized)
+
 --------------------------------
 Een gedeelte van iTasks implementeren in Haskell.
 
