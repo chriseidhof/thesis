@@ -3,12 +3,12 @@ module Sample where
 import Continuations
 import Data.Maybe (fromJust)
 
-adder :: Page ()
+adder :: Task ()
 adder = do x <- inputInt 
            y <- inputInt
            display (x + y)
 
-inputInt :: Page Int
+inputInt :: Task Int
 inputInt = form (read . fromJust . lookup "x") 
 
 initialEnv = [("/", adder)]
