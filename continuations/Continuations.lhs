@@ -1,38 +1,23 @@
-> {-# LANGUAGE GADTs #-}
+> {-# LANGUAGE FlexibleInstances #-}
+> {-# LANGUAGE UndecidableInstances #-}
 > module Continuations where
-> import Text.XHtml.Strict hiding (URL)
 > import qualified Text.XHtml.Strict as X
+> import Text.XHtml.Strict hiding (URL, input, form)
 > import Text.XHtml.Strict.Formlets (XHtmlForm, runFormState)
 > import Control.Applicative.Error (Failing (..))
 > import qualified Text.XHtml.Strict.Formlets as F
 > import Control.Monad.Identity (Identity, runIdentity)
-
-We start with a representation of a |Task|. A |Task| can be either a single
-|Action| (for example, displaying a value) or a series of steps. Every |Task| is
-indexed by its result. The result from the first step can be used in the next
-steps:
-
-> data Task a where
->   Single :: Action a -> Task a
->   Step   :: Task a -> (a -> Task b) -> Task b
-
-Furthermore, an Action can be either a simple value (|Const|), a value that the user
-has to provide (|Form|) or the display of a text-value.
-
-> data Action a where
->   Const   :: a -> Action a
->   Form    :: Form a -> Action a
->   Display :: Html -> Action ()
-
-TODO: hide these instances in the resulting document
+> import Continuations.Types
 
 > instance (Show a) => Show (Action a) where
->   show (Display text) = "Display: " ++ show text
+>   show (Display h) = "Display: " ++ show h
+>   show (Link text) = "Link: " ++ show text
 >   show (Const x)     = "Const: " ++ (show x)
 >   show (Form x)      = "Form"
 
 > instance HTML (Action a) where
->   toHtml (Display h)   = h
+>   toHtml (Display d)   = d
+>   toHtml (Link h)      = toHtml "link"
 >   toHtml (Const x)     = toHtml "const"
 >   toHtml (Form  f)     = runIdentity html
 >     where (_, html, _) = runFormState [] "" f
@@ -44,9 +29,6 @@ TODO: hide these instances in the resulting document
 A |Form| consists of Html and a function that parses the user input. Due to the
 nature of web applications, user input always arrives as a list of key/value
 pairs, where both the keys and the values are strings. 
-
-> type Form a = XHtmlForm Identity a
-> type FormData = F.Env
 
 Readers familiar with Monads will have spotted a strong similarity between the
 datatype definition of |Task| and Monad operations. Indeed, we can easily make
@@ -61,24 +43,22 @@ FormData:
 
 > eval :: Action a -> FormData -> a
 > eval (Const x)     e = x
+> eval (Link s)      e = ()
 > eval (Display s)   e = ()
 > eval (Form f) e      = case runIdentity compValue of
 >                          Success x    -> x
 >                          Failure msgs -> error (concat msgs)
 >   where (compValue, _, _) = runFormState e "" f
 
-To run a real website, we need to keep an environment mapping URLs to Tasks.
-
-> type URL = String
-> type Env = [(URL, FormData -> Task ())]
-> emptyEnv = [] :: Env
 
 Now, if we get a request for a page, we have to look it up in the environment.
 The page will display some Html and possibly extend the environment with a new
 continuation.
 
 > mkForm :: Action a -> URL -> X.Html
-> mkForm f url = X.form ! [X.action $ "/" ++ url, X.method "POST"] << (f +++ X.submit "submit" "submit")
+> mkForm f@(Form _)    url = X.form ! [X.action $ "/" ++ url, X.method "POST"] << (f +++ X.submit "next" "next")
+> mkForm (Link txt)    url = X.anchor ! [X.href $ "/" ++ url] << txt
+> mkForm f             url = f +++ X.br +++ X.anchor ! [X.href $ "/" ++ url] << ("next")
 
 > run :: Env -> URL -> FormData -> (Html, Env)
 > run env page post = case lookup page env of
@@ -105,5 +85,16 @@ Now, some handy utility functions.
 
 > form = Single . Form
 > 
+> link :: HTML a => a -> Task ()
+> link =  Single . Link . toHtml
+
 > display :: HTML a => a -> Task ()
 > display =  Single . Display . toHtml
+
+And some default inputs
+
+> class DefaultTask a where
+>   getInput :: Task a
+> 
+> instance SimpleInput a => DefaultTask a where
+>   getInput = form input

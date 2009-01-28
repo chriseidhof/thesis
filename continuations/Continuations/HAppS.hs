@@ -2,6 +2,7 @@ module Continuations.HAppS (runServer, createServerPart) where
 
 import HAppS.Server
 import Continuations
+import Continuations.Types
 import Control.Concurrent.MVar
 import Control.Monad.Trans
 import Text.Printf
