@@ -9,6 +9,7 @@
 > import qualified Text.XHtml.Strict.Formlets as F
 > import Control.Monad.Identity (Identity, runIdentity)
 > import Continuations.Types
+> import Data.List (intersperse)
 
 > instance (Show a) => Show (Action a) where
 >   show (Display h) = "Display: " ++ show h
@@ -61,7 +62,7 @@ continuation.
 > mkForm (Link txt)    url = X.anchor ! [X.href $ "/" ++ url] << txt
 > mkForm f             url = f +++ X.br +++ X.anchor ! [X.href $ "/" ++ url] << ("next")
 
-> choices = X.concatHtml . map (\(n, StartTask url _) ->
+> choices = X.concatHtml . intersperse X.br . map (\(n, StartTask url _) ->
 >             X.anchor ! [X.href $ "/" ++ url] << n)
 
 > run :: Env -> URL -> FormData -> (Html, Env)
@@ -106,7 +107,7 @@ Now, some handy utility functions.
 And some default inputs
 
 > class DefaultTask a where
->   getInput :: Task a
+>   input :: Task a
 > 
 > instance SimpleInput a => DefaultTask a where
->   getInput = form input
+>   input = form simpleInput

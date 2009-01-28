@@ -21,6 +21,8 @@ steps:
 >   Choice :: [(String, StartTask)] -> Task ()
 >   Step   :: Task a -> (a -> Task b) -> Task b
 
+> data StartTask = StartTask {url :: String, task :: Task ()}
+
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
 has to provide (|Form|) or the display of a text-value.
 
@@ -33,20 +35,19 @@ has to provide (|Form|) or the display of a text-value.
 > type URL = String
 > type Env = [(URL, FormData -> Task ())]
 > emptyEnv = [] :: Env
-> data StartTask = StartTask {name :: String, task :: Task ()}
 > 
 > class SimpleInput a where
->   input :: Form a
+>   simpleInput :: Form a
 > 
 > instance SimpleInput Integer where
->   input = F.inputInteger Nothing
+>   simpleInput = F.inputInteger Nothing
 > 
 > instance SimpleInput String where
->   input = F.input Nothing
+>   simpleInput = F.input Nothing
 >
 > instance Applicative Identity where
 >   pure  = return
 >   (<*>) = ap
 > 
 > instance (SimpleInput a, SimpleInput b) => SimpleInput (a, b) where
->  input = (,) <$> input <*> input
+>  simpleInput = (,) <$> simpleInput <*> simpleInput
