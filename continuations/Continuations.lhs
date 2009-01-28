@@ -1,6 +1,7 @@
 > {-# LANGUAGE FlexibleInstances #-}
 > {-# LANGUAGE UndecidableInstances #-}
 > module Continuations where
+
 > import qualified Text.XHtml.Strict as X
 > import Text.XHtml.Strict hiding (URL, input, form)
 > import Text.XHtml.Strict.Formlets (XHtmlForm, runFormState)
@@ -60,11 +61,15 @@ continuation.
 > mkForm (Link txt)    url = X.anchor ! [X.href $ "/" ++ url] << txt
 > mkForm f             url = f +++ X.br +++ X.anchor ! [X.href $ "/" ++ url] << ("next")
 
+> choices = X.concatHtml . map (\(n, StartTask url _) ->
+>             X.anchor ! [X.href $ "/" ++ url] << n)
+
 > run :: Env -> URL -> FormData -> (Html, Env)
 > run env page post = case lookup page env of
 >   Nothing -> error "Task not found"
 >   Just  x -> case restructure (x post) of
 >                   (Single a)  -> (toHtml a, env)
+>                   (Choice cs) -> (choices cs, env)
 >                   (Step (Single f) cont) -> (mkForm f nextUrl, (nextUrl, \p -> cont (eval f p)):env)
 >                    where nextUrl = show (length env)
 
@@ -77,8 +82,10 @@ We can use the Associativity monad law to change the spine: |(m >>= f) >>= g = m
 
 > restructure :: Task a -> Task a
 > restructure x@(Single _)    = x
+> restructure x@(Choice _)    = x
 > restructure (Step arg cont) = case restructure arg of
 >                                    (Single _)      -> Step arg cont
+>                                    (Choice _)      -> Step arg cont
 >                                    Step arg' cont' -> Step arg' (\x -> cont' x >>= cont)
 
 Now, some handy utility functions.
@@ -90,6 +97,11 @@ Now, some handy utility functions.
 
 > display :: HTML a => a -> Task ()
 > display =  Single . Display . toHtml
+
+> choice :: [(String, StartTask)] -> Task ()
+> choice = Choice
+
+> startTask = StartTask
 
 And some default inputs
 

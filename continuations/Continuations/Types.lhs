@@ -5,6 +5,8 @@
 > import qualified Text.XHtml.Strict as X
 > import qualified Text.XHtml.Strict.Formlets as F
 > import Control.Monad.Identity (Identity, runIdentity)
+> import Control.Monad (ap)
+> import Control.Applicative
 > 
 > type Form a = F.XHtmlForm Identity a
 > type FormData = F.Env
@@ -16,6 +18,7 @@ steps:
 
 > data Task a where
 >   Single :: Action a -> Task a
+>   Choice :: [(String, StartTask)] -> Task ()
 >   Step   :: Task a -> (a -> Task b) -> Task b
 
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
@@ -30,6 +33,7 @@ has to provide (|Form|) or the display of a text-value.
 > type URL = String
 > type Env = [(URL, FormData -> Task ())]
 > emptyEnv = [] :: Env
+> data StartTask = StartTask {name :: String, task :: Task ()}
 > 
 > class SimpleInput a where
 >   input :: Form a
@@ -39,3 +43,10 @@ has to provide (|Form|) or the display of a text-value.
 > 
 > instance SimpleInput String where
 >   input = F.input Nothing
+>
+> instance Applicative Identity where
+>   pure  = return
+>   (<*>) = ap
+> 
+> instance (SimpleInput a, SimpleInput b) => SimpleInput (a, b) where
+>  input = (,) <$> input <*> input
