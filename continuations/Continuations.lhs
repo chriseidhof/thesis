@@ -67,7 +67,7 @@ continuation.
 
 > run :: Env -> URL -> FormData -> (Html, Env)
 > run env page post = case lookup page env of
->   Nothing -> error "Task not found"
+>   Nothing -> (error "Task not found", env)
 >   Just  x -> case restructure (x post) of
 >                   (Single a)  -> (toHtml a, env)
 >                   (Choice cs) -> (choices cs, env)

@@ -1,6 +1,6 @@
 module HAppS where
 
-import HAppS.Server hiding (simpleInput)
+--import HAppS.Server hiding (simpleInput)
 import Control.Applicative
 import Continuations
 import Control.Concurrent.MVar
@@ -9,7 +9,8 @@ import Text.Printf
 import qualified Text.XHtml.Strict.Formlets as F
 import qualified Data.ByteString.Lazy.Char8 as B
 import Continuations.Types
-import Continuations.HAppS
+import Continuations.Salvia
+--import Continuations.HAppS
 
 main :: IO ()
 main = runServer 8016 [home, arc, adder]
