@@ -28,7 +28,7 @@ has to provide (|Form|) or the display of a text-value.
 
 > data Action a where
 >   Const   :: a -> Action a
->   Form    :: Form a -> Action a
+>   Form    :: Form a -> Maybe [String] -> Action a
 >   Display :: X.Html -> Action ()
 >   Link    :: X.Html -> Action ()
 
