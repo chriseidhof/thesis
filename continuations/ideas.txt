@@ -1,4 +1,6 @@
-Idea: Make Action applicative: combine forms, text and other things.
 Rename StartTask to EntryPoint?
-Add ability to make links to entry points
-Modify the html of an action
+Make choice working for all tasks.
+Use a Map instead of a tuple-list
+Make TaskS datatype to do (for example) IO
+
+Big: add garbage collection combinators.

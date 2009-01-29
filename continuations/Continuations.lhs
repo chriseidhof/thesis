@@ -74,7 +74,7 @@ We can use the Associativity monad law to change the spine: |(m >>= f) >>= g = m
 > restructure x@(Single _)    = x
 > restructure x@(Choice _ _)    = x
 > restructure (Step arg cont) = case restructure arg of
->                                    (Single (Const x)) -> cont x
+>                                    (Single (Const x)) -> restructure $ cont x
 >                                    (Single _)         -> Step arg cont
 >                                    (Choice _ _)       -> Step arg cont
 >                                    Step arg' cont'    -> Step arg' (\x -> cont' x >>= cont)
