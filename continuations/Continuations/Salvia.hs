@@ -34,14 +34,15 @@ handler defaultEnv sess = do
   env' <- lift $ atomically $ readTVar sess
   let env = maybe defaultEnv id (payload env')
   path <- getM (U.path % H.uri % request)
-  let contId     = if path == "/" then "/" else tail path
-  lift $ print contId
-  lift $ print ("Environment", map fst env)
-  params <- uriEncodedPostParamsUTF8
-  let formInputs = map (\(a,b) -> (a, Left $ maybe "" id b)) (maybe [] id params)
-  let  (html, e') = run env contId formInputs
-  lift $ atomically $ writeTVar sess env' {payload = Just e'}
-  enterM response $ do
-    setM H.status H.OK
-    setM H.contentType ("text/html", Nothing)
-  sendStr $ X.renderHtml html
+  if path == "/favicon.ico" then return () else do
+    let contId     = if path == "/" then "/" else tail path
+    lift $ print contId
+    lift $ print ("Environment", map fst env)
+    params <- uriEncodedPostParamsUTF8
+    let formInputs = map (\(a,b) -> (a, Left $ maybe "" id b)) (maybe [] id params)
+    let  (html, e') = run env contId formInputs
+    lift $ atomically $ writeTVar sess env' {payload = Just e'}
+    enterM response $ do
+      setM H.status H.OK
+      setM H.contentType ("text/html", Nothing)
+    sendStr $ X.renderHtml html

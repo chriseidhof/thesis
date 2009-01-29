@@ -1,6 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module HAppS where
 
---import HAppS.Server hiding (simpleInput)
 import Control.Applicative
 import Continuations
 import Control.Concurrent.MVar
@@ -8,24 +8,28 @@ import Control.Monad.Trans
 import Text.Printf
 import qualified Text.XHtml.Strict.Formlets as F
 import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Text.XHtml.Strict as X
+import Text.XHtml.Strict ((+++))
 import Continuations.Types
 import Continuations.Salvia
---import Continuations.HAppS
+import Data.Generics
+import Types
 
 main :: IO ()
 main = runServer 8016 [home, arc, adder]
 
-data User = User {name :: String, age :: Integer, email :: String}
 
-instance SimpleInput User where
-  simpleInput = User <$> simpleInput <*> simpleInput <*> simpleInput
+data User a = User {name :: String, age :: Integer, email :: String} deriving (Data, Typeable)
+
+instance SimpleInput (User a) where
+  simpleInput = User <$> label "Name:" simpleInput <*> label "Age:" simpleInput <*> label "Email:" simpleInput
 
 home = startTask "/" $ do
   choice [("Arc", arc), ("Adder", adder)]
 
 arc = startTask "arc" $ do 
   name <- input
-  link "click here"
+  wrap (\h -> "Click on the link to continue" +++ X.br +++ h) $ link "click here"
   display $ "You said: " ++ name
 
 adder = startTask "adder" $ do 
@@ -36,5 +40,4 @@ adder = startTask "adder" $ do
   display $ "The sum is : " ++ show (x + y)
   display $ "Thanks, " ++ (name user)
 
-register :: Task User
-register = input
+register = wrap (\h -> "Give your user details" +++ h) input
