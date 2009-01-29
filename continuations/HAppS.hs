@@ -12,14 +12,12 @@ import qualified Text.XHtml.Strict as X
 import Text.XHtml.Strict ((+++))
 import Continuations.Types
 import Continuations.Salvia
-import Data.Generics
-import Types
 
 main :: IO ()
 main = runServer 8016 [home, arc, adder]
 
 
-data User a = User {name :: String, age :: Integer, email :: String} deriving (Data, Typeable)
+data User a = User {name :: String, age :: Integer, email :: String}
 
 instance SimpleInput (User a) where
   simpleInput = User <$> label "Name:" simpleInput <*> label "Age:" simpleInput <*> label "Email:" simpleInput
@@ -40,4 +38,6 @@ adder = startTask "adder" $ do
   display $ "The sum is : " ++ show (x + y)
   display $ "Thanks, " ++ (name user)
 
-register = wrap (\h -> "Give your user details" +++ h) input
+register = do u <- wrap (\h -> "Give your user details" +++ h) input
+              display "Thanks for registering"
+              return u

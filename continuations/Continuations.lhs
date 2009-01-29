@@ -47,8 +47,6 @@ continuation.
 > mkHtml d url False    (Display h)   = h
 > mkHtml d url continue (Const x)     = X.toHtml "const"
 
-> choices = X.concatHtml . intersperse X.br . map (\(n, StartTask url _) ->
->             X.anchor ! [X.href $ "/" ++ url] << n)
 
 > run :: Env -> URL -> FormData -> (Html, Env)
 > run env page post = case lookup page env of
@@ -61,7 +59,7 @@ continuation.
 >                          newEnv :: FormData -> Task ()
 >                          newEnv p = case eval f p of
 >                            Success v    -> cont v
->                            Failure msgs -> (Step (Single (addMessages f msgs)) cont)
+>                            Failure msgs -> Step (Single (addMessages f msgs)) cont
 >                   _ -> (error "Restructuring error", env)
 >
 
@@ -76,9 +74,10 @@ We can use the Associativity monad law to change the spine: |(m >>= f) >>= g = m
 > restructure x@(Single _)    = x
 > restructure x@(Choice _ _)    = x
 > restructure (Step arg cont) = case restructure arg of
->                                    (Single _)      -> Step arg cont
->                                    (Choice _ _)    -> Step arg cont
->                                    Step arg' cont' -> Step arg' (\x -> cont' x >>= cont)
+>                                    (Single (Const x)) -> cont x
+>                                    (Single _)         -> Step arg cont
+>                                    (Choice _ _)       -> Step arg cont
+>                                    Step arg' cont'    -> Step arg' (\x -> cont' x >>= cont)
 
 Now, some handy utility functions.
 
@@ -90,6 +89,10 @@ Now, some handy utility functions.
 >
 > choice :: [(String, StartTask)] -> Task ()
 > choice = Choice choices
+> 
+
+> choices = X.concatHtml . intersperse X.br . map (\(n, StartTask url _) ->
+>             X.anchor ! [X.href $ "/" ++ url] << n)
 >
 > startTask = StartTask
 
