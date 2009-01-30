@@ -2,5 +2,6 @@ Rename StartTask to EntryPoint?
 Make choice working for all tasks.
 Use a Map instead of a tuple-list
 Make TaskS datatype to do (for example) IO
+Let the browser ping the server to keep tasks alive
 
 Big: add garbage collection combinators.
