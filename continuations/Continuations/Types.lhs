@@ -24,8 +24,9 @@ steps:
 >   Single  :: Action a -> Task a
 >   Choice  :: (StartTasks -> X.Html) -> StartTasks -> Task ()
 >   Step    :: Task a -> (a -> Task b) -> Task b
+>   Start   :: String -> Task ()
 
-> data StartTask = StartTask {url :: String, task :: Task ()}
+> data StartTask = StartTask String (Task ())
 
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
 has to provide (|Form|) or the display of a text-value.
