@@ -12,14 +12,14 @@ import qualified Text.XHtml.Strict.Formlets as F
 import Data.Maybe (fromJust)
 
 gRepInput :: (Representable a b) => Maybe a -> Form a
-gRepInput x = from <$> inp (rep $ fromJust x)
+gRepInput x = from <$> inp (rep $ fromJust x) (to <$> x)
 
-inp :: Rep r -> Form r
-inp RInt          = fromIntegral <$> F.inputInteger Nothing
-inp RInteger      = F.inputInteger Nothing
-inp RString       = F.input Nothing
-inp (Field lbl v) = (F.plug (\x -> (X.label << (capitalize lbl ++ ": ") +++ x)) $ inp v)
-inp (l :*: r)     = (,) <$> inp l <*> (F.plug (\x -> X.br +++ x) $ inp r)
+inp :: Rep r -> Maybe r -> Form r
+inp RInt          x = fromIntegral <$> F.inputInteger (fromIntegral <$> x)
+inp RInteger      x = F.inputInteger x
+inp RString       x = F.input x
+inp (Field lbl v) x = (F.plug (\x -> (X.label << (capitalize lbl ++ ": ") +++ x)) $ inp v x)
+inp (l :*: r)     x = (,) <$> inp l (fst <$> x) <*> (F.plug (\x -> X.br +++ x) $ inp r (snd <$> x))
 
 capitalize "" = ""
 capitalize (c:cs) = toUpper c : cs

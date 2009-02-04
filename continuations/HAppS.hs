@@ -45,7 +45,9 @@ tableTask = startTask "table" $ do
 
 xmlTask = startTask "xml" $ do
   user <- register
-  display (ppTopElement $ xml user)
+  display "Now you have a chance to edit the user again"
+  user' <- gEdit user
+  display (ppTopElement $ xml user')
 
 register :: Task User
 register = do u <- wrap (\h -> "Give your user details" +++ h) gInput

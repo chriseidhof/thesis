@@ -110,3 +110,6 @@ Generalized inputs:
 
 > gInput :: (Representable a r, FromAction f) => f a
 > gInput = form (gRepInput Nothing)
+
+> gEdit :: (Representable a r, FromAction f) => a -> f a
+> gEdit = form . gRepInput . Just
