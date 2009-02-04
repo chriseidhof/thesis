@@ -8,6 +8,8 @@
 > import Control.Monad.Identity (Identity, runIdentity)
 > import Continuations.Types
 > import Data.List (intersperse)
+> import Generics.Records
+> import Generics.SimpleInput
 
 A |Form| consists of Html and a function that parses the user input. Due to the
 nature of web applications, user input always arrives as a list of key/value
@@ -38,7 +40,7 @@ The page will display some Html and possibly extend the environment with a new
 continuation.
 
 > mkHtml :: FormData -> URL -> Bool -> Action a -> X.Html
-> mkHtml d url continue (Form f msgs) = X.form ! [X.action $ "/" ++ url, X.method "POST"] << (html +++ X.submit "next" "next")
+> mkHtml d url continue (Form f msgs) = X.form ! [X.action $ "/" ++ url, X.method "POST"] << (html +++ X.br +++ X.submit "next" "next")
 >                                       where html = maybe noHtml unordList msgs +++ runIdentity formHtml
 >                                             (_, formHtml, _) = runFormState d "" f
 > mkHtml d url continue (Link txt)    = X.anchor ! [X.href $ "/" ++ url] << txt
@@ -103,3 +105,8 @@ Now, some handy utility functions.
 > addMessages (Wrapped f w) ms = Wrapped f (addMessages w ms)
 > addMessages (Form f _) ms    = (Form f $ Just ms)
 > addMessages _          _     = error "Internal error: addMessages not possible for this action"
+
+Generalized inputs:
+
+> gInput :: (Representable a r, FromAction f) => f a
+> gInput = form gRepInput
