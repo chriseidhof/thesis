@@ -9,14 +9,14 @@ class Xml a where
   xml :: a -> X.Element
 
 instance (Representable a b) => Xml a where
-  xml = el "item" . repXml . to
+  xml a = el "item" . repXml (rep a) $ to a
    
-repXml :: Rep a r -> [X.Content]
-repXml (TInt i)      = [showXml i]
-repXml (TInteger i)  = [showXml i]
-repXml (TString s)   = [X.Text $ X.CData X.CDataText s Nothing]
-repXml (Field lbl v) = [simple lbl (repXml v)]
-repXml (l :*: r)     = repXml l ++ repXml r
+repXml :: Rep r -> r -> [X.Content]
+repXml (RInt)      i = [showXml i]
+repXml (RInteger)  i = [showXml i]
+repXml (RString)   s = [X.Text $ X.CData X.CDataText s Nothing]
+repXml (Field lbl r) i = [simple lbl (repXml r i)]
+repXml (r1 :*: r2) (l,r) = repXml r1 l ++ repXml r2 r
 
 showXml :: Show s => s -> X.Content
 showXml x = X.Text $ X.CData X.CDataText (show x) Nothing

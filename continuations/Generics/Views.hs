@@ -11,14 +11,14 @@ class View a where
   view :: a -> X.Html
 
 instance (Representable a b) => View a where
-  view = repView . to
+  view x = repView (rep x) $ to x
    
-repView :: Rep a r -> X.Html
-repView (TInt i)      = toHtml (show i)
-repView (TInteger i)  = toHtml (show i)
-repView (TString s)   = toHtml s
-repView (Field lbl v) = (X.label << (capitalize lbl ++ ": ")) +++ repView v
-repView (l :*: r)     = repView l +++ X.br +++ repView r
+repView :: Rep r -> r -> X.Html
+repView RInt             i = toHtml (show i)
+repView RInteger         i = toHtml (show i)
+repView RString          s = toHtml s
+repView (Field lbl r)    v = (X.label << (capitalize lbl ++ ": ")) +++ repView r v
+repView (r1 :*: r2) (l, r) = repView r1 l +++ X.br +++ repView r2 r
 
 capitalize "" = ""
 capitalize (c:cs) = toUpper c : cs
@@ -29,21 +29,21 @@ class TableView a where
 
 instance (Representable a r) => TableView a where
   headers x = repHeaders (rep x)
-  cells   x = repCells   (to x)
+  cells   x = repCells (rep x) (to x)
 
 table :: TableView a => [a] -> X.Html
 table ls = X.table << ((tr << (concatHtml $ map th $ headers $ head ls)) +++
                        (concatHtml $ map (tr . concatHtml . map td . cells) ls)
                       )
 
-repHeaders :: RepT a r -> [X.Html]
-repHeaders (RField lbl _) = [toHtml $ capitalize lbl]
-repHeaders (RProduct l r) = repHeaders l ++ repHeaders r
-repHeaders _              = []
+repHeaders :: Rep r -> [X.Html]
+repHeaders (Field lbl _) = [toHtml $ capitalize lbl]
+repHeaders (l :*: r)     = repHeaders l ++ repHeaders r
+repHeaders _             = []
 
-repCells :: Rep a r -> [X.Html]
-repCells (TInt i)      = [toHtml $ show i]
-repCells (TInteger i)  = [toHtml $ show i]
-repCells (TString s)   = [toHtml s]
-repCells (Field lbl v) = [concatHtml (repCells v)]
-repCells (l :*: r)     = repCells l ++ repCells r
+repCells :: Rep r -> r -> [X.Html]
+repCells RInt            i = [toHtml $ show i]
+repCells RInteger        i = [toHtml $ show i]
+repCells RString         s = [toHtml s]
+repCells (Field lbl r)   v = [concatHtml (repCells r v)]
+repCells (r1 :*: r2) (l,r) = repCells r1 l ++ repCells r2 r

@@ -109,4 +109,4 @@ Now, some handy utility functions.
 Generalized inputs:
 
 > gInput :: (Representable a r, FromAction f) => f a
-> gInput = form gRepInput
+> gInput = form (gRepInput Nothing)
