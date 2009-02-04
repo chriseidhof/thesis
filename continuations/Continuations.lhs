@@ -10,6 +10,7 @@
 > import Data.List (intersperse)
 > import Generics.Records
 > import Generics.SimpleInput
+> import Generics.Documentation
 
 A |Form| consists of Html and a function that parses the user input. Due to the
 nature of web applications, user input always arrives as a list of key/value
@@ -113,3 +114,6 @@ Generalized inputs:
 
 > gEdit :: (Representable a r, FromAction f) => a -> f a
 > gEdit = form . gRepInput . Just
+
+> gDoc :: (Representable a r, FromAction f) => a -> f ()
+> gDoc = display . documentation

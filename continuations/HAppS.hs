@@ -35,7 +35,7 @@ adder = startTask "adder" $ do
   (x,y) <- input :: Task (Integer, Integer)
   link "add the two numbers"
   display $ "The sum is : " ++ show (x + y)
-  wrap (\h -> "Thanks, " +++ X.br +++ h) $ display (view user)
+  wrap (("Thanks, " +++ X.br) +++) $ display (view user)
 
 tableTask = startTask "table" $ do
   display "Register two users and display them in a table"
@@ -48,6 +48,7 @@ xmlTask = startTask "xml" $ do
   display "Now you have a chance to edit the user again"
   user' <- gEdit user
   display (ppTopElement $ xml user')
+  wrap (("Documentation for the user type: " +++ X.br) +++ ) $ gDoc (undefined :: User)
 
 register :: Task User
 register = do u <- wrap (\h -> "Give your user details" +++ h) gInput
