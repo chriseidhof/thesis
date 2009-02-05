@@ -32,11 +32,12 @@ Furthermore, an Action can be either a simple value (|Const|), a value that the 
 has to provide (|Form|) or the display of a text-value.
 
 > data Action a where
->   Const   :: a -> Action a
->   Form    :: Form a -> Maybe [String] -> Action a
->   Display :: X.Html -> Action ()
->   Link    :: X.Html -> Action ()
->   Wrapped :: (X.Html -> X.Html) -> Action a -> Action a
+>   Const    :: a -> Action a
+>   IOAction :: IO a -> Action a
+>   Form     :: Form a -> Maybe [String] -> Action a
+>   Display  :: X.Html -> Action ()
+>   Link     :: X.Html -> Action ()
+>   Wrapped  :: (X.Html -> X.Html) -> Action a -> Action a
 
 The FromAction class is a utility class that allows us for nice polymorphic programming. 
 We can modify (wrap) our actions and still have a Task as result. The compiler will 
@@ -60,7 +61,7 @@ Now, because we have the FromAction class, we can define a generic wrap function
 Finally, we need some convenience types.
 
 > type URL = String
-> type Env = [(URL, FormData -> Task ())]
+> type Env = [(URL, FormData -> IO (Task ()))]
 > emptyEnv = [] :: Env
 
 This provides us with default inputs for certain datatypes.

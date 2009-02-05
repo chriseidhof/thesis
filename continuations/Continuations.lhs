@@ -11,6 +11,9 @@
 > import Generics.Records
 > import Generics.SimpleInput
 > import Generics.Documentation
+> import Generics.HDBC
+> import Control.Applicative hiding (Const)
+> import Database.HDBC
 
 A |Form| consists of Html and a function that parses the user input. Due to the
 nature of web applications, user input always arrives as a list of key/value
@@ -27,12 +30,13 @@ our Tasks an instance of |Monad|:
 Now, if we have an action, we want to be able to evaluate its result given the
 FormData:
 
-> eval :: Action a -> FormData -> Failing a
-> eval (Const x)     e = Success x
-> eval (Link s)      e = Success ()
-> eval (Display s)   e = Success ()
+> eval :: Action a -> FormData -> IO (Failing a)
+> eval (Const x)     e = return $ Success x
+> eval (Link s)      e = return $ Success ()
+> eval (Display s)   e = return $ Success ()
 > eval (Wrapped f x) e = eval x e
-> eval (Form f _ )   e = runIdentity compValue
+> eval (IOAction i)  e = Success <$> i
+> eval (Form f _ )   e = return $ runIdentity compValue
 >   where (compValue, _, _) = runFormState e "" f
 
 
@@ -49,21 +53,24 @@ continuation.
 > mkHtml d url True     (Display h)   = h +++ X.br +++ X.anchor ! [X.href $ "/" ++ url] << ("next")
 > mkHtml d url False    (Display h)   = h
 > mkHtml d url continue (Const x)     = X.toHtml "const"
+> mkHtml d url continue (IOAction _)  = X.toHtml "ioaction"
 
 
-> run :: Env -> URL -> FormData -> (Html, Env)
+> run :: Env -> URL -> FormData -> IO (Html, Env)
 > run env page post = case lookup page env of
->   Nothing -> (error $ "Task not found: " ++ page ++ show (map fst env), env)
->   Just  x -> case restructure (x post) of
->                   (Single a)    -> (mkHtml post page False a, env)
->                   (Choice f cs) -> (f cs, env)
->                   (Step (Single f) cont) -> (mkHtml post nextUrl True f, ((nextUrl, newEnv):env))
+>   Nothing -> return (error $ "Task not found: " ++ page ++ show (map fst env), env)
+>   Just  x -> do res <- x post >>= restructure
+>                 case res of
+>                   (Single a)    -> return (mkHtml post page False a, env)
+>                   (Choice f cs) -> return (f cs, env)
+>                   (Step (Single f) cont) -> return (mkHtml post nextUrl True f, ((nextUrl, newEnv):env))
 >                    where nextUrl = show (length env)
->                          newEnv :: FormData -> Task ()
->                          newEnv p = case eval f p of
->                            Success v    -> cont v
->                            Failure msgs -> Step (Single (addMessages f msgs)) cont
->                   _ -> (error "Restructuring error", env)
+>                          newEnv :: FormData -> IO (Task ())
+>                          newEnv p = do x <- eval f p
+>                                        return $ case x of
+>                                          Success v    -> cont v
+>                                          Failure msgs -> Step (Single (addMessages f msgs)) cont
+>                   _ -> return (error "Restructuring error", env)
 >
 
 The careful reader will see a possible problem with the code above: the patterns
@@ -73,14 +80,16 @@ restructures the spine of a task so that it will either be a |Single| or a
 
 We can use the Associativity monad law to change the spine: |(m >>= f) >>= g = m >>= (\x -> f x >>= g)|
 
-> restructure :: Task a -> Task a
-> restructure x@(Single _)    = x
-> restructure x@(Choice _ _)    = x
-> restructure (Step arg cont) = case restructure arg of
->                                    (Single (Const x)) -> restructure $ cont x
->                                    (Single _)         -> Step arg cont
->                                    (Choice _ _)       -> Step arg cont
->                                    Step arg' cont'    -> Step arg' (\x -> cont' x >>= cont)
+> restructure :: Task a -> IO (Task a)
+> restructure x@(Single _)    = return x
+> restructure x@(Choice _ _)  = return x
+> restructure (Step arg cont) = do r <- restructure arg
+>                                  case r of
+>                                      (Single (IOAction a)) -> a >>= restructure . cont
+>                                      (Single (Const x))    -> restructure $ cont x
+>                                      (Single _)            -> return $ Step arg cont
+>                                      (Choice _ _)          -> return $ Step arg cont
+>                                      Step arg' cont'       -> return $ Step arg' (\x -> cont' x >>= cont)
 
 Now, some handy utility functions.
 
@@ -89,6 +98,9 @@ Now, some handy utility functions.
 
 > display :: (HTML a, FromAction f) => a -> f ()
 > display =  fromAction . Display . toHtml
+>
+> ioAction :: (FromAction f) => IO a -> f a
+> ioAction = fromAction . IOAction
 >
 > choice :: [(String, StartTask)] -> Task ()
 > choice = Choice choices
@@ -117,3 +129,12 @@ Generalized inputs:
 
 > gDoc :: (Representable a r, FromAction f) => a -> f ()
 > gDoc = display . documentation
+
+> gNew :: (Representable a r, FromAction f, IConnection i) => i -> a -> f Integer
+> gNew c x = ioAction $ new c x
+
+> gFind :: (Representable a r, FromAction f, IConnection i) => i -> Integer -> f (Maybe a)
+> gFind c x = ioAction $ find undef c x
+
+> gFindAll :: (Representable a r, FromAction f, IConnection i) => i -> f [(Integer, a)]
+> gFindAll c = ioAction $ findAll undef c

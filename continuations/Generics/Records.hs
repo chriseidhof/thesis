@@ -20,11 +20,13 @@ infixr :*:
 infixr &
 
 class Representable a r | a -> r where
-  to   :: a -> r
-  from :: r -> a
-  rep  :: a -> Rep r
+  to    :: a -> r
+  from  :: r -> a
+  rep   :: a -> Rep r
+  undef :: a
 
 instance Representable String String where
   to = id
   from = id
   rep _ = RString
+  undef = undefined

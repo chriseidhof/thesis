@@ -20,13 +20,13 @@ import qualified Data.ByteString.Lazy.Char8 as B
 
 runServer :: Int -> [StartTask] -> IO ()
 runServer p startTasks = do
-    let env = map (\(StartTask u t) -> (u, const t)) startTasks
+    let env = map (\(StartTask u t) -> (u, const $ return t)) startTasks
     count <- atomically $ newTVar 0
     sessions <- mkSessions :: IO (Sessions (Env))
     cfg <- defaultConfig
     start cfg  {listenPort = fromIntegral p} $ hDefault count sessions (handler env)
 
-instance Show (FormData -> Task ()) where
+instance Show (FormData -> IO (Task ())) where
   show = const "continuation"
 
 handler :: Env -> TVar (Session Env) -> Handler ()
@@ -40,7 +40,7 @@ handler defaultEnv sess = do
     lift $ print ("Environment", map fst env)
     params <- uriEncodedPostParamsUTF8
     let formInputs = map (\(a,b) -> (a, Left $ maybe "" id b)) (maybe [] id params)
-    let  (html, e') = run env contId formInputs
+    (html, e') <- lift $ run env contId formInputs
     lift $ atomically $ writeTVar sess env' {payload = Just e'}
     enterM response $ do
       setM H.status H.OK

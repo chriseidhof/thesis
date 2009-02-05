@@ -12,6 +12,7 @@ data User = User {name :: String, age :: Integer, email :: String, city :: Strin
 
 -- TODO: this should be template haskell.
 instance Representable User (String, (Integer, (String, String))) where
+  undef = undefined
   to (User a b c d)     = a & b & c & d
   from (a, (b, (c, d))) = User a b c d
   rep _ =  Field "name"  RString

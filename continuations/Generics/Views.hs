@@ -31,9 +31,9 @@ instance (Representable a r) => TableView a where
   headers x = repHeaders (rep x)
   cells   x = repCells (rep x) (to x)
 
-table :: TableView a => [a] -> X.Html
-table ls = X.table << ((tr << (concatHtml $ map th $ headers $ head ls)) +++
-                       (concatHtml $ map (tr . concatHtml . map td . cells) ls)
+table :: TableView a => [(Integer, a)] -> X.Html
+table ls = X.table << ((tr << (concatHtml $ map th $ headers $ head $ map snd ls)) +++
+                       (concatHtml $ map (tr . concatHtml . map td . cells) (map snd ls))
                       )
 
 repHeaders :: Rep r -> [X.Html]
