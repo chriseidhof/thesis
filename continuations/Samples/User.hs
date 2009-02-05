@@ -24,6 +24,4 @@ findUser c = startTask "findUser" $ do
   display $ maybe (X.toHtml "Not Found") view (u :: Maybe User)
 
 register :: Task User
-register = do u <- wrap (\h -> "Give your user details" +++ h) gInput
-              display "Thanks for registering"
-              return u
+register = u <- wrap (\h -> "Give your user details" +++ h) gInput
