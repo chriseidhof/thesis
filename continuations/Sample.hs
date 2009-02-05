@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-module HAppS where
+module Sample where
 
 import Continuations
 import Continuations.Salvia
