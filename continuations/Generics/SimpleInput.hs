@@ -3,8 +3,8 @@
 module Generics.SimpleInput where
 
 import Generics.Records
-import Text.XHtml.Strict ((+++))
-import Text.XHtml.Strict as X
+import Text.XHtml.Strict ((+++), (<<))
+import qualified Text.XHtml.Strict as X
 import Data.Char (toUpper)
 import Continuations.Types
 import Control.Applicative
