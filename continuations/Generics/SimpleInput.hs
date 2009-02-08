@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Generics.SimpleInput where
 
 import Generics.Records
@@ -11,7 +9,7 @@ import Control.Applicative
 import qualified Text.XHtml.Strict.Formlets as F
 import Data.Maybe (fromJust)
 
-gRepInput :: (Representable a b) => Maybe a -> Form a
+gRepInput :: Representable a => Maybe a -> Form a
 gRepInput x = from <$> inp (rep $ fromJust x) (to <$> x)
 
 inp :: Rep r -> Maybe r -> Form r

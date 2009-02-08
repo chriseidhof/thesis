@@ -10,7 +10,7 @@ import Data.Char (toUpper)
 class View a where
   view :: a -> X.Html
 
-instance (Representable a b) => View a where
+instance Representable a => View a where
   view x = repView (rep x) $ to x
    
 repView :: Rep r -> r -> X.Html
@@ -27,7 +27,7 @@ class TableView a where
    headers :: a -> [X.Html]
    cells   :: a -> [X.Html]
 
-instance (Representable a r) => TableView a where
+instance Representable a => TableView a where
   headers x = repHeaders (rep x)
   cells   x = repCells (rep x) (to x)
 

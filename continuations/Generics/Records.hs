@@ -1,9 +1,5 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Generics.Records where
 
@@ -13,14 +9,17 @@ data Rep r where
   RString  :: Rep String
   Field    :: String -> Rep r -> Rep r
   (:*:)    :: Rep r1 -> Rep r2 -> Rep (r1,r2)
+  Con      :: String -> Rep r -> Rep r
 
 infixr :*:
 
 (&) = (,)
 infixr &
 
-class Representable a r | a -> r where
-  to    :: a -> r
-  from  :: r -> a
-  rep   :: a -> Rep r
+type family PF a
+
+class Representable a where
+  to    :: a -> PF a
+  from  :: PF a -> a
+  rep   :: a -> Rep (PF a)
   undef :: a

@@ -11,7 +11,7 @@ import Data.Maybe (fromJust)
 class Documentation a where
   documentation :: a -> X.Html
 
-instance (Representable a b) => Documentation a where
+instance (Representable a) => Documentation a where
   documentation x = repDoc (rep x)
    
 repDoc :: Rep r -> X.Html

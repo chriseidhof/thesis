@@ -1,3 +1,4 @@
+{-# LANGUAGE OverlappingInstances #-}
 module Samples.User (xmlTask, findUser, register) where
 
 import Continuations
