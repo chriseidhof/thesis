@@ -19,7 +19,7 @@ repXml (RInteger)  i = [showXml i]
 repXml (RString)   s = [X.Text $ X.CData X.CDataText s Nothing]
 repXml (Field lbl r) i = [simple lbl (repXml r i)]
 repXml (r1 :*: r2) (l,r) = repXml r1 l ++ repXml r2 r
-repXml (Con lbl r) x = [simple lbl (repXml r x)]
+-- repXml (Con lbl r) x = [simple lbl (repXml r x)]
 
 showXml :: Show s => s -> X.Content
 showXml x = X.Text $ X.CData X.CDataText (show x) Nothing

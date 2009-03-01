@@ -9,7 +9,7 @@ data Rep r where
   RString  :: Rep String
   Field    :: String -> Rep r -> Rep r
   (:*:)    :: Rep r1 -> Rep r2 -> Rep (r1,r2)
-  Con      :: String -> Rep r -> Rep r
+--  Con      :: String -> Rep r -> Rep r
 
 infixr :*:
 

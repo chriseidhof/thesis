@@ -32,7 +32,7 @@ repValues RInteger         i = [toSql i]
 repValues RString          s = [toSql s]
 repValues (Field lbl r)    v = repValues r v
 repValues (r1 :*: r2) (l, r) = repValues r1 l ++ repValues r2 r
-repValues (Con s r)        x = repValues r x
+--repValues (Con s r)        x = repValues r x
 
 parseDb :: Rep r -> [SqlValue] -> (r, [SqlValue])
 parseDb RInt          (x:xs) = (fromSql x, xs)
@@ -42,7 +42,7 @@ parseDb (Field lbl r)    xs  = parseDb r xs
 parseDb (r1 :*: r2)      xs  = let (l, xs') = parseDb r1 xs
                                    (r, xs'') = parseDb r2 xs'
                                in  ((l,r), xs'')
-parseDb (Con lbl r)      xs  = parseDb r xs
+--parseDb (Con lbl r)      xs  = parseDb r xs
 
 -- New records
 
@@ -95,5 +95,6 @@ findAllRep x conn = do let query = findAllQuery "users" (rep x)
 
 -- Utility functions
 tableName :: Rep a -> String
-tableName (Con s _) = (map toLower s) ++ "s"
-tableName _         = error "Couldn't produce the table-name"
+tableName _ = "users"
+-- tableName (Con s _) = (map toLower s) ++ "s"
+-- tableName _         = error "Couldn't produce the table-name"

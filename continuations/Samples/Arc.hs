@@ -8,5 +8,5 @@ import qualified Text.XHtml.Strict as X
 
 arc = startTask "arc" $ do 
   name <- input
-  wrap (\h -> "Click on the link to continue" +++ X.br +++ h) $ link "click here"
+  link "click here"
   display $ "You said: " ++ name

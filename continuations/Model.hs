@@ -17,7 +17,7 @@ instance Representable User  where
   undef = undefined
   to (User a b c d)     = a & b & c & d
   from (a, (b, (c, d))) = User a b c d
-  rep _ =  Con "User" $ Field "name"  RString
+  rep _ =  {- Con "User" $ -} Field "name"  RString
        :*: Field "age"   RInteger 
        :*: Field "email" RString 
        :*: Field "city"  RString
