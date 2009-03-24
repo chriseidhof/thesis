@@ -1,8 +1,10 @@
+{-# LANGUAGE FlexibleContexts      #-}
 module Continuations.Generics where
 
 import Continuations.Types
 import Generics.Records
-import Generics.SimpleInput
+import qualified Generics.EMGM as E
+import Generics.EMGM.Form
 import Generics.Documentation
 import Generics.HDBC
 import Database.HDBC
@@ -11,11 +13,11 @@ import Continuations.Actions
 
 -- Generic views
 
-gInput :: (Representable a, FromAction f) => f a
-gInput = form (gRepInput Nothing)
+gInput :: (E.Rep GForm a, FromAction f) => f a
+gInput = form gForm
 
 gEdit :: (Representable a, FromAction f) => a -> f a
-gEdit = form . gRepInput . Just
+gEdit = undefined -- form . gRepInput . Just
 
 -- Generate documentation for a datatype
 
@@ -30,5 +32,5 @@ gNew c x = ioAction $ new c x
 gFind :: (Representable a, FromAction f, IConnection i) => i -> Integer -> f (Maybe a)
 gFind c x = ioAction $ find undef c x
 
-gFindAll :: (Representable a, FromAction f, IConnection i) => i -> f [(Integer, a)]
-gFindAll c = ioAction $ findAll undef c
+gFindAll :: (Representable a, FromAction f, IConnection i) => i -> Options -> f [(Integer, a)]
+gFindAll c = ioAction . findAll undef c

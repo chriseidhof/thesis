@@ -24,7 +24,6 @@ steps:
 >   Single  :: Action a -> Task a
 >   Choice  :: (StartTasks -> X.Html) -> StartTasks -> Task ()
 >   Step    :: Task a -> (a -> Task b) -> Task b
->   Start   :: String -> Task ()
 
 > data StartTask = StartTask String (Task ())
 
@@ -32,11 +31,11 @@ Furthermore, an Action can be either a simple value (|Const|), a value that the 
 has to provide (|Form|) or the display of a text-value.
 
 > data Action a where
->   Const    :: a -> Action a
->   IOAction :: IO a -> Action a
->   Form     :: Form a -> Maybe [String] -> Action a
->   Display  :: X.Html -> Action ()
->   Link     :: X.Html -> Action ()
+>   Const    :: a       ->                        Action a
+>   IOAction :: IO a    ->                        Action a
+>   Form     :: Form a  -> Maybe [String]      -> Action a
+>   Display  :: X.Html  ->                        Action ()
+>   Link     :: X.Html  ->                        Action ()
 >   Wrapped  :: (X.Html -> X.Html) -> Action a -> Action a
 
 The FromAction class is a utility class that allows us for nice polymorphic programming. 
@@ -84,12 +83,6 @@ This provides us with default inputs for certain datatypes.
 Once we can generate forms for our datatypes, we can also generate tasks. But because we want to use the |wrap| 
 function, we generate either an |Action| or a |Task|.
 
-> class DefaultTask a where
->   input :: (FromAction f) => f a
-> 
-> instance SimpleInput a => DefaultTask a where
->   input = form simpleInput
->
 > form f = fromAction $ Form f Nothing
 >
 > instance Applicative Identity where

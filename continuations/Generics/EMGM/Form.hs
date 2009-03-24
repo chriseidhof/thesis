@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
 
-module Generics.EMGM.ToHtml where
+module Generics.EMGM.Form where
 
 import Generics.EMGM hiding (show, Show, read, Read)
 import Control.Monad (ap)
@@ -47,20 +47,16 @@ rconstantToForm lbls =
 
 rsumToForm ra rb lbls = L <$> selToForm ra lbls
 
-rprodToForm ra rb lbls =
-  case lbls of
-    [] -> frm id []
-    l:ls -> frm (label l) ls
-  where frm f ls = (:*:) <$> f (selToForm ra []) <*> selToForm rb ls
+rprodToForm ra rb (l:ls) = (:*:) <$> selToForm ra [l] <*> selToForm rb ls
 
 rconToForm cd ra _ = selToForm ra (conLabels cd)
 
 rtypeToForm ep ra lbls =
   let frm = to ep <$> selToForm ra [] in
   case lbls of
-    []     -> frm
-    lbl:[] -> label lbl frm
-    other  -> error $ "Unexpected labels in rtype: " ++ show other
+    []    -> error $ "No labels available in rtype"
+    [lbl] -> label lbl frm
+    other -> error $ "Unexpected labels in rtype: " ++ show other
 
 instance Generic GForm where
   rconstant      = GForm rconstantToForm
@@ -70,7 +66,7 @@ instance Generic GForm where
   rtype ep ra    = GForm (rtypeToForm ep ra)
 
 instance Rep GForm String where
-  rep = GForm (\_ -> F.input Nothing)
--- 
--- gToHtml :: (Rep ToHtml a) => a -> Html
--- gToHtml = selToHtml rep []
+  rep = GForm (\[l] -> label l $ F.input Nothing)
+
+gForm :: (Rep GForm a) => Form a
+gForm = selToForm rep []

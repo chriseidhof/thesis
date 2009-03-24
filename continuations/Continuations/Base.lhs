@@ -53,7 +53,6 @@ continuation.
 >                                          Success v    -> cont v
 >                                          Failure msgs -> Step (Single (addMessages f msgs)) cont
 >                   _ -> return (error "Restructuring error", env)
->
 
 The careful reader will see a possible problem with the code above: the patterns
 look like they are non-exhaustive. However, the function |restructure|

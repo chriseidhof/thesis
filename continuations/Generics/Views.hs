@@ -19,6 +19,7 @@ repView RInteger         i = toHtml (show i)
 repView RString          s = toHtml s
 repView (Field lbl r)    v = (X.label << (capitalize lbl ++ ": ")) +++ repView r v
 repView (r1 :*: r2) (l, r) = repView r1 l +++ X.br +++ repView r2 r
+repView (Con lbl r)      v = (X.h1 << (capitalize lbl)) +++ repView r v
 
 capitalize "" = ""
 capitalize (c:cs) = toUpper c : cs

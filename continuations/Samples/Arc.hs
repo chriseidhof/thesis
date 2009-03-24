@@ -2,11 +2,13 @@
 module Samples.Arc (arc) where
 
 import Continuations
-import Continuations.Types
-import Text.XHtml.Strict ((+++))
-import qualified Text.XHtml.Strict as X
 
 arc = startTask "arc" $ do 
   name <- input
-  link "click here"
-  display $ "You said: " ++ name
+  (x,y) <- input
+  link "click on this link"
+  display $ "Hello, " ++ name
+  display $ show $ multiply x y
+
+multiply :: Integer -> Integer -> Integer
+multiply x y = x * y

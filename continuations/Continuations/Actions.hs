@@ -7,13 +7,13 @@ import Text.XHtml.Strict hiding (URL, input, form, label)
 import qualified Text.XHtml.Strict as X
 import qualified Text.XHtml.Strict.Formlets as F
 
-link :: (HTML a, FromAction f) => a -> f ()
+link :: (HTML html, FromAction task) => html -> task ()
 link =  fromAction . Link . toHtml
 
-display :: (HTML a, FromAction f) => a -> f ()
+display :: (HTML html, FromAction task) => html -> task ()
 display =  fromAction . Display . toHtml
 
-ioAction :: (FromAction f) => IO a -> f a
+ioAction :: (FromAction task) => IO a -> task a
 ioAction = fromAction . IOAction
 
 choice :: [(String, StartTask)] -> Task ()

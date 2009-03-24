@@ -4,6 +4,7 @@ module Samples.User (xmlTask, findUser, register) where
 import Continuations
 import Continuations.Types
 import Generics.Views
+import Generics.HDBC (defaultOptions)
 import Generics.Xml
 import Model
 import Text.XHtml.Strict ((+++))
@@ -18,7 +19,7 @@ xmlTask = startTask "xml" $ do
   wrap (("Documentation for the user type: " +++ X.br) +++ ) $ gDoc (undefined :: User)
 
 findUser c = startTask "findUser" $ do
-  users <- gFindAll c
+  users <- gFindAll c defaultOptions
   display (table (users :: [(Integer, User)]))
   i <- wrap ("Enter the users id" +++) input
   u <- gFind c i
