@@ -26,7 +26,7 @@ handle env req = do let contId     = foldr const "/" (rqPaths req)
                         formInputs = map (\(k,v) -> (k, Left $ B.unpack $ inputValue v)) $ rqInputs req
                     e <- liftIO $ takeMVar env
                     liftIO $ print (map fst e)
-                    let  (html, e') = run e contId formInputs
+                    (html, e') <- liftIO $ run e contId formInputs
                     liftIO $ putMVar env e'
                     return $ toResponse html
 

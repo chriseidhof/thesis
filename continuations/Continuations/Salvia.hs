@@ -4,8 +4,8 @@ module Continuations.Salvia (runServer) where
 import Network.Salvia.Httpd
 import qualified Network.Protocol.Http as H
 import qualified Network.Protocol.Uri as U
-import Network.Salvia.Handlers.Session hiding (start)
-import Network.Salvia.Handlers.Default
+import Network.Salvia.Handler.Session
+import Network.Salvia.Handler.Environment
 import Data.Record.Label
 import Continuations
 import Continuations.Types
@@ -24,7 +24,7 @@ runServer p startTasks = do
     count <- atomically $ newTVar 0
     sessions <- mkSessions :: IO (Sessions (Env))
     cfg <- defaultConfig
-    start cfg  {listenPort = fromIntegral p} $ hDefault count sessions (handler env)
+    start cfg  {listenPort = fromIntegral p} $ hSessionEnv count sessions (handler env)
 
 instance Show (FormData -> IO (Task ())) where
   show = const "continuation"
@@ -32,7 +32,7 @@ instance Show (FormData -> IO (Task ())) where
 handler :: Env -> TVar (Session Env) -> Handler ()
 handler defaultEnv sess = do
   env' <- lift $ atomically $ readTVar sess
-  let env = maybe defaultEnv id (payload env')
+  let env = maybe defaultEnv id (sPayload env')
   path <- getM (U.path % H.uri % request)
   if path == "/favicon.ico" then return () else do
     let contId     = if path == "/" then "/" else tail path
@@ -41,7 +41,7 @@ handler defaultEnv sess = do
     params <- uriEncodedPostParamsUTF8
     let formInputs = map (\(a,b) -> (a, Left $ maybe "" id b)) (maybe [] id params)
     (html, e') <- lift $ run env contId formInputs
-    lift $ atomically $ writeTVar sess env' {payload = Just e'}
+    lift $ atomically $ writeTVar sess env' {sPayload = Just e'}
     enterM response $ do
       setM H.status H.OK
       setM H.contentType ("text/html", Nothing)

@@ -4,7 +4,7 @@ module Samples.Arc (arc) where
 import Continuations
 
 arc = startTask "arc" $ do 
-  name <- input
+  name  <- input
   (x,y) <- input
   link "click on this link"
   display $ "Hello, " ++ name

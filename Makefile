@@ -1,3 +1,6 @@
+all: proposal.pdf
+	open $<
+
 proposal.pdf: proposal.lhs
 
 %.tex: %.lhs

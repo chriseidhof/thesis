@@ -7,6 +7,7 @@
 module Model where
 
 import Generics.EMGM hiding (Show, show, Read, read)
+import Generics.EMGM.Derive
 import Generics.Records
 import qualified Generics.Records as R
 import Generics.SimpleInput
