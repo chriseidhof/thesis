@@ -27,33 +27,32 @@ Using techniques like GADTs, we can develop a combinator-library similar to
 Clean's iTasks library \cite{iTasks} or Orc's standard combinators, which 
 are both suited for continuation-based \cite{webInteractions} programming. We
 will show how we can express all basic workflow patterns as defined by Van Der
-Aalst (TODO).
+Aalst \cite{workflowpatterns}.
 
 Also, using a data-type generic
 programming library inspired by EMGM \cite{EMGM} we can build generic functions
 similar to Clean's iData \cite{iData}. 
-By using generic functions, we can change the domain-model
-without having to change the code that generates the forms, for example.
-This allows for real domain-driven design, and can prevent a number of bugs:
-there is a minimal amount of application-specific code.
+By writing generic functions we can generate a lot of code from our domain
+model.  This allows for real domain-driven design, and can prevent a number of
+bugs: there is a minimal amount of application-specific code.
 
 In the domain model, there is often a lot of information that is vital for the
 application but should not be presented to the user. Often, a user can only see
 a projection (view) of the data and it is only possible to edit a subset of the
 data. Therefore, we want to explore techniques similar to lenses \cite{lenses}
-we can provide updatable views.
+with which we can provide updatable views.
 
 The last part of our system will focus on analyzing workflows. Because we have
-deep embedding of our combinator language, we can not only execute workflows but
-also transform and analyze the workflow graph. Here, it wil be interesting to
-see how we can deal with loops.
+a deep embedding of our combinator language, we can not only execute workflows
+but also transform and analyze the workflow graph. Here, it wil be interesting
+to see how we can deal with loops.
 
 \section{Workflow specifications}
 
 Typically, web applications are built in a way that maps URLs to specific
 actions. The workflow of web applications is very implicit: it is much like
-goto. For every page there is one or more URLs that can be reached from it, and
-often this is encoded in the view where it should be part of the domain logic.
+programming with \texttt{goto}: every edge in the flow graph has to be
+specifically mentioned and workflows are not composable.
 
 By working with continuations (cite WASH, PG) we can provide a different
 interface for programming the web. Here, every requests loads a continuation (a
@@ -66,41 +65,36 @@ powerful enough to model all common web-applications. We will then build
 combinators on top of that. Higher-order combinators are also interesting, but
 might be problematic if we want to do analyses.
 
-TODO: WebWorkFlows \cite{WebWorkFlow}
 
 \subsection{Using GADTs}
-Tell something about why GADTs matter (also compared to clean)
+Tell something about why GADTs matter (also compared to clean), deep embedding
+vs. shallow embedding.
 
 \section{Generic Programming}
 
-For web applications in general, we can
-build a lot more generic functions for dealing with XML, JSON, building APIs
-\cite{staticapis} and generating documentation, for a start.
-Our goal is to make it easy to write your own extensible generic functions on
-the data-model. 
+Typically, web applications contain a fair amount of boilerplate code. We can
+build a generic functions to deal with This. For examples, we will build
+functions for dealing with XML, JSON, building APIs \cite{staticapis} and
+generating documentation.  One of our goals is to make it easy to write your own
+extensible generic functions on the data-model.
 
 Often much of the application functionality is directly dependent on the domain
 model. In a lot of programming environments much code has to be changed whenever
-the domain model changes. However, in recent web frameworks a lot of work is
-done using meta-programming or code generation. This helps keeping the
-domain-model flexible. However, it is notoriously hard to write your own generic
-functions, and that is one of the problems we want to solve by having a
-structured approach to generic programming.
+the domain model changes. However, in recent web frameworks a lot of
+datatype-generic programming  is done using meta-programming or code generation.
+This helps keeping the domain-model flexible. However, it is notoriously hard to
+write your own generic functions. Often times, generated code is also edited by
+the programmer, which makes it harder to change the original domain model.
 
 By developing a library similar to EMGM, we wish to make it as easy as possible
-for a developers using our framework to her own generic function. By having
+for a developer using our framework to write her own generic function. By having
 functionality as generic as possible you can easily change your domain model
 without having to change a lot more code.
 
 However, there is an issue when working with generic functions: often, you would
-want a function like the generic one but with just a small exception. This can
-be captured by using |newtype|s. For example, the default form element for an
-integer-value is a textbox that tries to parse the 
-
-TODO: write about doing this in views (or even forms) only
-
-TODO: tell about specialization/customization of generic functions using, e.g.,
-newtype.
+want a function like the generic one but with just a small exception. We will
+investigate how we can deal with this in a good way. For views, we could use
+lenses and |newtype|s to encode exceptional behavior.
 
 \subsection{Forms}
 
@@ -145,8 +139,11 @@ the system is extensible, i.e. it should be easy to add analyses.
 
 Iets over WASH \cite{wash}, WebFunctions \cite{webfunctions},
 \cite{programmingtheweb}, Orc (TODO)
+TODO: WebWorkFlows \cite{WebWorkFlow}
 
 \section{Conclusion}
+
+% TODO: helder geformuleerde vraag
 
 A lot of the techniques described above have been implemented partially and
 often without integrating them into one system. Our goal is to reuse (and
@@ -172,6 +169,8 @@ application we want to show that our system works on more than just toy
 examples.
 
 \section*{Planning}
+
+% TODO: Compleet werkplan
 
 May 30: reading, proposal ready.
 June-Aug: research (implementing, reading)

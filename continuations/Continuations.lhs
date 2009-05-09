@@ -1,5 +1,5 @@
 > module Continuations ( module Continuations.Base
->                      , module Continuations.Generics  
+>--                      , module Continuations.Generics  
 >                      , module Continuations.Actions
 >                      , input) 
 > where

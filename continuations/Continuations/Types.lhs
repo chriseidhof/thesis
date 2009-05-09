@@ -2,6 +2,7 @@
 > {-# LANGUAGE TypeSynonymInstances #-}
 > {-# LANGUAGE FlexibleInstances #-}
 > {-# LANGUAGE UndecidableInstances #-}
+> {-# LANGUAGE TypeOperators #-}
 > module Continuations.Types where
 > 
 > import qualified Text.XHtml.Strict as X
@@ -18,14 +19,14 @@ We start with a representation of a |Task|. A |Task| can be either a single
 indexed by its result. The result from the first step can be used in the next
 steps:
 
-> type StartTasks = [(String, StartTask)]
+> data (:->) a b where
+>   Box         :: (a -> r)        -> a :-> r
+>   Action      :: (Show a, Read a) => (a -> Action b) -> a :-> b
+>   Edge        :: (Show b, Read b) => a :-> b -> (b :-> c) -> (a :-> c)
+>   Choice      :: (a -> Bool)     -> a :-> c -> a :-> c -> a :-> c
 
-> data Task a where
->   Single  :: Action a -> Task a
->   Choice  :: (StartTasks -> X.Html) -> StartTasks -> Task ()
->   Step    :: Task a -> (a -> Task b) -> Task b
+> type Trace = [Either () Bool]
 
-> data StartTask = StartTask String (Task ())
 
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
 has to provide (|Form|) or the display of a text-value.
@@ -34,9 +35,18 @@ has to provide (|Form|) or the display of a text-value.
 >   Const    :: a       ->                        Action a
 >   IOAction :: IO a    ->                        Action a
 >   Form     :: Form a  -> Maybe [String]      -> Action a
->   Display  :: X.Html  ->                        Action ()
->   Link     :: X.Html  ->                        Action ()
 >   Wrapped  :: (X.Html -> X.Html) -> Action a -> Action a
+
+> instance Functor Action where
+>   fmap f (Const x)     = Const (f x)
+>   fmap f (IOAction io) = IOAction (fmap f io)
+>   fmap f (Form form m) = Form (fmap f form) m
+>   fmap f (Wrapped h a) = Wrapped h (fmap f a)
+
+We can store continuations like this:
+
+> data Cont b where
+>   Cont :: (Show x, Read x) => x -> x :-> b -> Cont b
 
 The FromAction class is a utility class that allows us for nice polymorphic programming. 
 We can modify (wrap) our actions and still have a Task as result. The compiler will 
@@ -48,8 +58,8 @@ inference this for us.
 > instance FromAction Action where
 >   fromAction = id
 >
-> instance FromAction Task where
->   fromAction = Single
+> instance (Read a, Show a) => FromAction ((:->) a) where
+>   fromAction = Action . const
 
 Now, because we have the FromAction class, we can define a generic wrap function that can modify the html.
 
@@ -60,7 +70,7 @@ Now, because we have the FromAction class, we can define a generic wrap function
 Finally, we need some convenience types.
 
 > type URL = String
-> type Env = [(URL, FormData -> IO (Task ()))]
+> type Env = [(URL, (Trace, FormData -> Cont ()))]
 > emptyEnv = [] :: Env
 
 This provides us with default inputs for certain datatypes.
@@ -93,12 +103,12 @@ function, we generate either an |Action| or a |Task|.
 Some default instances for convenience
 
 > instance (Show a) => Show (Action a) where
->   show (Display h)   = "Display: " ++ show h
->   show (Link text)   = "Link: " ++ show text
 >   show (Const x)     = "Const: " ++ (show x)
 >   show (Wrapped _ _) = "Wrapped"
 >   show (Form _ _ )   = "Form"
 >
-> instance (Show a) => Show (Task a) where
->   show (Single x) = "Endpoint: " ++ show x
->   show (Step x y) = "Partial application, left of the bind is a " ++ (case x of {Single _ -> "single"; _ -> "step"})
+> instance Show (a :-> b) where
+>   show (Box _ ) = "Box"
+>   show (Edge l r) = "Edge (" ++ show l ++ ") (" ++ show r ++ ")"
+>   show (Choice _ l r) = "Choice (" ++ show l ++ ") (" ++ show r ++ ")"
+>   show (Action _) = "Interaction"

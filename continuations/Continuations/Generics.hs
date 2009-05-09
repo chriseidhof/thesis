@@ -16,9 +16,6 @@ import Continuations.Actions
 gInput :: (E.Rep GForm a, FromAction f) => f a
 gInput = form gForm
 
-gEdit :: (Representable a, FromAction f) => a -> f a
-gEdit = undefined -- form . gRepInput . Just
-
 -- Generate documentation for a datatype
 
 gDoc :: (Representable a, FromAction f) => a -> f ()
