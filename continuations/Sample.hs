@@ -11,22 +11,24 @@ import Generics.Views
 import Text.XHtml.Strict ((+++))
 import qualified Text.XHtml.Strict as X
 
-import Model
-import Samples.Arc
-import Samples.User
+-- import Model
+-- import Samples.Arc
+-- import Samples.User
 
 main :: IO ()
-main = do conn <- connectSqlite3 "sample.sqlite3"
-          runServer 8016 [home conn, arc, adder conn, xmlTask, findUser conn]
-          commit conn
+main = runServer 8016 [display "hello" `Edge` display "test"]
+-- main :: IO ()
+-- main = do conn <- connectSqlite3 "sample.sqlite3"
+--           runServer 8016 [home conn, arc, adder conn, xmlTask, findUser conn]
+--           commit conn
 
-home conn = startTask "/" $ do
-  choice [("Arc", arc), ("Adder", adder conn), ("Xml", xmlTask), ("Find User", findUser conn)]
-
-adder conn = startTask "adder" $ do 
-  display "Please register first."
-  user <- register
-  display $ show user
+-- home conn = startTask "/" $ do
+--   choice [("Arc", arc), ("Adder", adder conn), ("Xml", xmlTask), ("Find User", findUser conn)]
+-- 
+-- adder conn = startTask "adder" $ do 
+--   display "Please register first."
+--   user <- register
+--   display $ show user
   -- userId <- gNew conn user
   -- display $ "Your user id is: " ++ show userId
   -- (x,(y, z)) <- input :: Task (Integer, (Integer, Integer))

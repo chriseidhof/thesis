@@ -8,7 +8,7 @@ import qualified Text.XHtml.Strict as X
 import qualified Text.XHtml.Strict.Formlets as F
 
 display :: (HTML html, FromAction task) => html -> task ()
-display =  undefined -- fromAction . Display . toHtml
+display html =  fromAction $ Wrapped (const $ X.toHtml html) (Const ())
 
 ioAction :: (FromAction task) => IO a -> task a
 ioAction = fromAction . IOAction

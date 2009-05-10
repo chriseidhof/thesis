@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-} -- for debugging
+{-# LANGUAGE TypeOperators #-} -- for debugging
 module Continuations.Salvia (runServer) where
 
 import Network.Salvia.Httpd
@@ -18,16 +19,13 @@ import qualified Text.XHtml.Strict as X
 import qualified Data.ByteString.Lazy.Char8 as B
 
 
-runServer :: Int -> [StartTask] -> IO ()
+runServer :: Int -> [() :-> ()] -> IO ()
 runServer p startTasks = do
-    let env = map (\(StartTask u t) -> (u, const $ return t)) startTasks
+    let env = map (\t -> ("/", ([], Cont () t))) startTasks
     count <- atomically $ newTVar 0
     sessions <- mkSessions :: IO (Sessions (Env))
     cfg <- defaultConfig
     start cfg  {listenPort = fromIntegral p} $ hSessionEnv count sessions (handler env)
-
-instance Show (FormData -> IO (Task ())) where
-  show = const "continuation"
 
 handler :: Env -> TVar (Session Env) -> Handler ()
 handler defaultEnv sess = do

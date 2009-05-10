@@ -25,23 +25,26 @@ steps:
 >   Edge        :: (Show b, Read b) => a :-> b -> (b :-> c) -> (a :-> c)
 >   Choice      :: (a -> Bool)     -> a :-> c -> a :-> c -> a :-> c
 
-> type Trace = [Either () Bool]
+> type Trace = [TraceStep]
+> data TraceStep = TrEdge | TrChoice Bool
 
 
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
 has to provide (|Form|) or the display of a text-value.
 
 > data Action a where
->   Const    :: a       ->                        Action a
->   IOAction :: IO a    ->                        Action a
->   Form     :: Form a  -> Maybe [String]      -> Action a
->   Wrapped  :: (X.Html -> X.Html) -> Action a -> Action a
+>   Const        :: a       ->                        Action a
+>   Display      :: X.Html  ->                        Action ()
+>   IOAction     :: IO a    ->                        Action a
+>   Form         :: Form a  -> Maybe [String]      -> Action a
+>   PendingForm  :: Form a  -> Maybe [String]      -> Action a
+>   Wrapped      :: (X.Html -> X.Html) -> Action a -> Action a
 
-> instance Functor Action where
->   fmap f (Const x)     = Const (f x)
->   fmap f (IOAction io) = IOAction (fmap f io)
->   fmap f (Form form m) = Form (fmap f form) m
->   fmap f (Wrapped h a) = Wrapped h (fmap f a)
+> -- instance Functor Action where
+> --   fmap f (Const x)     = Const (f x)
+> --   fmap f (IOAction io) = IOAction (fmap f io)
+> --   fmap f (Form form m) = Form (fmap f form) m
+> --   fmap f (Wrapped h a) = Wrapped h (fmap f a)
 
 We can store continuations like this:
 
@@ -70,25 +73,10 @@ Now, because we have the FromAction class, we can define a generic wrap function
 Finally, we need some convenience types.
 
 > type URL = String
-> type Env = [(URL, (Trace, FormData -> Cont ()))]
+> type Env = [(URL, (Trace, Cont ()))]
 > emptyEnv = [] :: Env
 
 This provides us with default inputs for certain datatypes.
-
-> class SimpleInput a where
->   simpleInput :: Form a
-> 
-> instance SimpleInput Integer where
->   simpleInput = F.inputInteger Nothing
-> 
-> instance SimpleInput String where
->   simpleInput = F.input Nothing
-> 
-> instance (SimpleInput a, SimpleInput b) => SimpleInput (a, b) where
->  simpleInput = (,) <$> simpleInput <*> simpleInput
->
-> instance (SimpleInput a, SimpleInput b, SimpleInput c) => SimpleInput (a, b, c) where
->  simpleInput = (,,) <$> simpleInput <*> simpleInput <*> simpleInput
 
 Once we can generate forms for our datatypes, we can also generate tasks. But because we want to use the |wrap| 
 function, we generate either an |Action| or a |Task|.
