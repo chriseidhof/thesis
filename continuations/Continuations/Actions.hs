@@ -10,6 +10,9 @@ import qualified Text.XHtml.Strict.Formlets as F
 display :: (HTML html, FromAction task) => html -> task ()
 display html =  fromAction $ Wrapped (const $ X.toHtml html) (Const ())
 
+wrap :: (FromAction task) => (X.Html -> X.Html) -> Action a -> task a
+wrap f = fromAction . Wrapped f
+
 ioAction :: (FromAction task) => IO a -> task a
 ioAction = fromAction . IOAction
 

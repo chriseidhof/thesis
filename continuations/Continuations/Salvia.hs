@@ -35,10 +35,11 @@ handler defaultEnv sess = do
   if path == "/favicon.ico" then return () else do
     let contId     = if path == "/" then "/" else tail path
     lift $ print contId
-    lift $ print ("Environment", map fst env)
+    lift $ print ("Environment (before)", map (fst . snd) env)
     params <- uriEncodedPostParamsUTF8
     let formInputs = map (\(a,b) -> (a, Left $ maybe "" id b)) (maybe [] id params)
     (html, e') <- lift $ run env contId formInputs
+    lift $ print ("Environment (after)", map (fst . snd) e')
     lift $ atomically $ writeTVar sess env' {sPayload = Just e'}
     enterM response $ do
       setM H.status H.OK

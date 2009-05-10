@@ -10,13 +10,14 @@ import Control.Concurrent (forkIO)
 import Generics.Views
 import Text.XHtml.Strict ((+++))
 import qualified Text.XHtml.Strict as X
+import Text.XHtml.Strict.Formlets (inputInteger)
 
 -- import Model
 -- import Samples.Arc
 -- import Samples.User
 
 main :: IO ()
-main = runServer 8016 [display "hello" `Edge` display "test"]
+main = runServer 8016 [(wrap (+++ "hi") (form (inputInteger Nothing))) `Edge` (Choice (\x -> x > 5) (display "Larger than 5") (display "Smaller than 5")) `Edge` display "Thanks"]
 -- main :: IO ()
 -- main = do conn <- connectSqlite3 "sample.sqlite3"
 --           runServer 8016 [home conn, arc, adder conn, xmlTask, findUser conn]

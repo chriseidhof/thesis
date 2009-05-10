@@ -22,7 +22,9 @@ FormData:
 > eval (Const x)     e = return $ Success x
 > eval (Wrapped f x) e = eval x e
 > eval (IOAction i)  e = Success <$> i
-> eval (Form f _ )   e = error "No eval defined for Form"
+> eval (PendingForm f _ ) e = return $ runIdentity compValue
+>   where (compValue, _, _) = runFormState e "" f
+> eval x e = error $ "No eval defined for: " ++ showType x
 
 > unwrap (Wrapped _ x) = unwrap x
 > unwrap x             = x
@@ -42,22 +44,25 @@ continuation.
 
 > run' :: URL -> FormData -> Trace -> Cont () -> IO (Html, Maybe (Trace, Cont ()))
 > run' freshUrl post tr (Cont x c) = do
->   (tr', (Cont x' c')) <- takeSteps tr (Cont x $ restructure c)
+>   (tr', (Cont x' c')) <- takeSteps post tr (Cont x $ restructure c)
+>   print c'
+>   print ("restructured", restructure c')
 >   case restructure c' of
 >              (Box f)             -> return (noHtml, Nothing)
 >              (Action i)          -> return (maybe noHtml id $ mkHtml post freshUrl False (i x'), Nothing)
 >              (Edge (Action i) r) -> do let html    = mkHtml post freshUrl True (i x')
+>                                        print (unwrap $ i x')
 >                                        case (unwrap $ i x') of           -- TODO: we should trace something below
 >                                          Form f msgs        -> return (fromJust $ html, Just (tr', Cont x' (Edge (Action (const $ PendingForm f msgs)) r)))
 >                                          action -> do 
 >                                             result <- eval action post
 >                                             case result of
->                                               Failure msgs -> error "Reenter form" -- (html, Just (tr', Cont x' (PendingForm f msgs)))
+>                                               Failure msgs -> return (fromJust html, Just (tr', Cont x' $ Edge (Action i) r))
 >                                               Success x    -> case html of
->                                                                 Nothing -> run' freshUrl post (tr ++ [TrEdge]) (Cont x r)
->                                                                 Just h -> return (h, Just (tr ++ [TrEdge], (Cont x r)))
+>                                                                 Nothing -> run' freshUrl post (tr' ++ [TrEdge]) (Cont x r)
+>                                                                 Just h -> return (h, Just (tr' ++ [TrEdge], (Cont x r)))
 >                                     
->              (Choice cond l r)   -> undefined --t
+>              x  -> error $ "Run not defined for " ++ show x
 > 
 >                 --case res of
 >                 --  (Single a)    -> return (mkHtml post page False a, env)
@@ -79,19 +84,29 @@ We can use the Arrow laws to change the spine. After executing the arrow law, th
 >                            _ -> Edge l r
 > restructure x = x
 
-> takeSteps :: Trace -> Cont b -> IO (Trace, Cont b)
-> takeSteps tr cont@(Cont x (Edge (Action a)     r)) = case a x of
+> takeSteps :: FormData -> Trace -> Cont b -> IO (Trace, Cont b)
+> takeSteps postData tr cont@(Cont x (Edge (Action a)     r)) = case a x of
+>                                                   action@(PendingForm f _) -> do result <- eval action postData
+>                                                                                  case result of
+>                                                                                    Failure msgs -> return (tr, Cont x (Edge (Action $ const $ PendingForm f (Just msgs)) r))
+>                                                                                    Success x -> do let tr' = tr ++ [TrEdge]
+>                                                                                                    takeSteps postData tr' (Cont x r)
+>                                                                             
 >                                                   (Const c) -> do let tr' = tr ++ [TrEdge]
->                                                                   takeSteps tr' (Cont c r)
+>                                                                   takeSteps postData tr' (Cont c r)
 >                                                   (IOAction io) -> do c <- io
 >                                                                       let tr' = tr ++ [TrEdge]
->                                                                       takeSteps tr' (Cont c r)
+>                                                                       takeSteps postData tr' (Cont c r)
 >
 >                                                   _ -> return (tr, cont)
-> takeSteps tr cont@(Cont x (Edge (Choice cond l' r')    r)) = do let condVal = cond x
->                                                                     tr' = tr ++ [TrChoice condVal]
->                                                                 takeSteps tr' (Cont x $ restructure $ (if condVal then l' else r') `Edge` r)
-> takeSteps tr x = return (tr, x)
+> takeSteps postData tr cont@(Cont x (Edge (Choice cond l' r')    r)) = do let condVal = cond x
+>                                                                              tr' = tr ++ [TrChoice condVal]
+>                                                                          takeSteps postData tr' (Cont x $ restructure $ (if condVal then l' else r') `Edge` r)
+> --TODO: almost exactly like above
+> takeSteps postData tr cont@(Cont x (Choice cond l' r')) = do let condVal = cond x
+>                                                                  tr' = tr ++ [TrChoice condVal]
+>                                                              takeSteps postData tr' (Cont x $ restructure $ (if condVal then l' else r'))
+> takeSteps postData tr x = return (tr, x)
 
 Now, some handy utility functions
 

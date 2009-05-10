@@ -27,6 +27,7 @@ steps:
 
 > type Trace = [TraceStep]
 > data TraceStep = TrEdge | TrChoice Bool
+>   deriving Show
 
 
 Furthermore, an Action can be either a simple value (|Const|), a value that the user
@@ -34,7 +35,6 @@ has to provide (|Form|) or the display of a text-value.
 
 > data Action a where
 >   Const        :: a       ->                        Action a
->   Display      :: X.Html  ->                        Action ()
 >   IOAction     :: IO a    ->                        Action a
 >   Form         :: Form a  -> Maybe [String]      -> Action a
 >   PendingForm  :: Form a  -> Maybe [String]      -> Action a
@@ -91,12 +91,21 @@ function, we generate either an |Action| or a |Task|.
 Some default instances for convenience
 
 > instance (Show a) => Show (Action a) where
+>   show (IOAction x)  = "IOAction"
 >   show (Const x)     = "Const: " ++ (show x)
 >   show (Wrapped _ _) = "Wrapped"
 >   show (Form _ _ )   = "Form"
+>   show (PendingForm _ _)= "PendingForm"
 >
 > instance Show (a :-> b) where
 >   show (Box _ ) = "Box"
 >   show (Edge l r) = "Edge (" ++ show l ++ ") (" ++ show r ++ ")"
 >   show (Choice _ l r) = "Choice (" ++ show l ++ ") (" ++ show r ++ ")"
->   show (Action _) = "Interaction"
+>   show (Action a) = "Action"
+
+> showType :: Action a -> String
+> showType (Const _) = "Const"
+> showType (IOAction _) = "IOAction"
+> showType (Form _ _) = "Form"
+> showType (PendingForm _ _) = "PendingForm"
+> showType (Wrapped _ w) = "Wrapped (" ++ showType w ++ ")"
