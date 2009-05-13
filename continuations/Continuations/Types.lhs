@@ -82,11 +82,6 @@ Once we can generate forms for our datatypes, we can also generate tasks. But be
 function, we generate either an |Action| or a |Task|.
 
 > form f = fromAction $ Form f Nothing
->
-> instance Applicative Identity where
->   pure  = return
->   (<*>) = ap
->
 
 Some default instances for convenience
 

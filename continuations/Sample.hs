@@ -1,14 +1,19 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Sample where
 
+import SampleModel
+import Control.Applicative
 import Continuations
 import Continuations.Salvia
 import Continuations.Types
 import Database.HDBC (commit)
 import Database.HDBC.Sqlite3
-import Generics.Records (Rep)
+import Generics.Records (Rep, rep)
 import Generics.Records.ModelName (ModelName)
+import Generics.Records.Relations
 import Text.XHtml.Strict ((+++))
 import Text.XHtml.Strict.Formlets (enumSelect)
 import qualified Generics.Records.Database as DB
@@ -22,10 +27,17 @@ data CRU = Create | List
  deriving (Show, Read, Eq, Enum, Bounded)
 
 sample =     (form $ enumSelect Nothing)
-     `Edge` (Choice (\x -> x == Create) create list)
+     `Edge` (Choice (\x -> x == Create) (create (Empty :: PT User)) list)
 
-create = undefined -- (form (GF.form Nothing)) `Edge` dbNew
-list = undefined
+data PT a = Empty
+
+create pt = (form $ form' pt) `Edge` dbNew `Edge` (display "Thanks")
+list = display "List"
+
+-- helpers
+
+form' :: Rep GF.Form a => PT a -> Form a
+form' _ = GF.form Nothing
 
 dbNew :: (Rep DB.Values a, Rep DB.Columns a, Rep ModelName a, Show a, Read a) => a :-> Int
 dbNew = dbAction DB.new
@@ -33,7 +45,12 @@ dbNew = dbAction DB.new
 dbAction :: (Show a, Read a) => (a -> DB.DB b) -> a :-> b
 dbAction a = Action (IOAction . doIt)
  where doIt x = do conn <- connectSqlite3 "sample.sqlite3"
-                   DB.runDB conn (a x)
+                   result <- DB.runDB conn (a x)
+                   commit conn
+                   return result
+
+instance Rep GF.Form (BelongsTo Post) where
+  rep = GF.ToForm (const $ pure BTNotFetched)
 
 -- main :: IO ()
 -- main = do conn <- connectSqlite3 "sample.sqlite3"
