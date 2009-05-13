@@ -5,6 +5,5 @@
 > where
 
 > import Continuations.Base
-> import Continuations.Generics
 > import Continuations.Actions
 > import Continuations.Types
