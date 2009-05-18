@@ -1,0 +1,20 @@
+Name:            web-continuations
+Version:         0.1
+Synopsis:        Continuation-based web development based on arrows
+Description:     TODO
+Category:        Generics, Web, Database
+License:         BSD3
+License-file:    LICENSE
+Copyright:       (c) Chris Eidhof
+Author:          Chris Eidhof
+Maintainer:      Chris Eidhof <ce+hackage@tupil.com>
+Exposed-Modules:   Continuations,
+                   Continuations.Salvia
+Other-Modules:     Continuations.Actions,
+                   Continuations.Base,
+                   Continuations.Types
+Build-Type:      Simple
+Build-Depends:   base >= 4, 
+                 mtl,
+                 xhtml,
+                 salvia == 0.1.2
