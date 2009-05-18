@@ -176,6 +176,9 @@ May 30: reading, proposal ready.
 June-Aug: research (implementing, reading)
 Sep-Dec: writing
 
+\section*{TODO}
+\cite{Hughes98generalisingmonads} (Using arrows for web programming)
+
 \bibliographystyle{plain}
 \bibliography{bibliography}
 

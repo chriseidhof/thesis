@@ -29,12 +29,12 @@ data CRU = Create | List
 sample =     (form $ enumSelect Nothing)
      `Edge` (Choice (\x -> x == Create) (create (Empty :: PT User)) list)
 
-data PT a = Empty
 
 create pt = (form $ form' pt) `Edge` dbNew `Edge` (display "Thanks")
 list = display "List"
 
 -- helpers
+data PT a = Empty
 
 form' :: Rep GF.Form a => PT a -> Form a
 form' _ = GF.form Nothing

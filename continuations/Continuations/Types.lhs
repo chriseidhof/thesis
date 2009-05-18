@@ -40,12 +40,6 @@ has to provide (|Form|) or the display of a text-value.
 >   PendingForm  :: Form a  -> Maybe [String]      -> Action a
 >   Wrapped      :: (X.Html -> X.Html) -> Action a -> Action a
 
-> -- instance Functor Action where
-> --   fmap f (Const x)     = Const (f x)
-> --   fmap f (IOAction io) = IOAction (fmap f io)
-> --   fmap f (Form form m) = Form (fmap f form) m
-> --   fmap f (Wrapped h a) = Wrapped h (fmap f a)
-
 We can store continuations like this:
 
 > data Cont b where
