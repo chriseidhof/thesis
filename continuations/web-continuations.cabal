@@ -17,4 +17,9 @@ Build-Type:      Simple
 Build-Depends:   base >= 4, 
                  mtl,
                  xhtml,
+                 bytestring,
+                 formlets >= 0.4.8,
+                 stm,
+                 fclabels,
+                 applicative-extras,
                  salvia == 0.1.2
