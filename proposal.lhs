@@ -11,113 +11,142 @@
 \begin{document}
 \author{Chris Eidhof}
 \title{Thesis Proposal: Generic Web Interaction in Haskell}
+
+% TODO: remove "often"
  
 \maketitle
 
 \section {Introduction}
 
-A lot of business systems these days are automated and made available online.
-These systems typically contain complex workflows that enable the users of the
-system to accomplish business-specific tasks. By expressing combinators for
-workflows in Haskell, a strongly typed functional language, we aim to provide
-powerful building blocks to model these workflows and create executable
-specifications.
+Most business processes these days are automated and made available online.
+These processes typically contain complex interactions that enable the users of the
+system to accomplish business-specific tasks.  A workflow systems describes
+the interaction between humans and machines in these processes.
+
+By expressing combinators for workflows in Haskell, a strongly typed functional
+language, we aim to provide powerful building blocks to model these workflows
+and create executable specifications.
 
 Using techniques like GADTs, we can develop a combinator-library similar to
-Clean's iTasks library \cite{iTasks} or Orc's standard combinators, which 
-are both suited for continuation-based \cite{webInteractions} programming. We
-will show how we can express all basic workflow patterns as defined by Van Der
-Aalst \cite{workflowpatterns}.
+Clean's iTasks library \cite{iTasks} or the standard combinators from Orc
+\cite{orc}, which are both suited for continuation-based \cite{webInteractions}
+programming. We show how we can express all basic workflow patterns as
+defined by Van Der Aalst \cite{workflowpatterns}.
 
-Also, using a data-type generic
-programming library inspired by EMGM \cite{EMGM} we can build generic functions
-similar to Clean's iData \cite{iData}. 
-By writing generic functions we can generate a lot of code from our domain
-model.  This allows for real domain-driven design, and can prevent a number of
-bugs: there is a minimal amount of application-specific code.
+Secondly, we would like to facilitate for domain driven design \cite{ddd} by
+using a data-type generic programming library \cite{gpintro}. We can build
+generic functions similar to Clean's iData \cite{iData}.  By writing generic
+functions we can generate a lot of code from just our domain model.  This allows
+for real domain-driven design, and can prevent a number of bugs: there is a
+  minimal amount of application-specific code.
 
-In the domain model, there is often a lot of information that is vital for the
-application but should not be presented to the user. Often, a user can only see
-a projection (view) of the data and it is only possible to edit a subset of the
-data. Therefore, we want to explore techniques similar to lenses \cite{lenses}
-with which we can provide updatable views.
+Thirdly, in the domain model, there is often a lot of information that is vital
+for the application but should not be presented to the user. Often, a user can
+only see a projection (view) of the data and it is only possible to edit a
+subset of the data. Therefore, we want to explore techniques to facilitate
+this.
 
-The last part of our system will focus on analyzing workflows. Because we have
-a deep embedding of our combinator language, we can not only execute workflows
-but also transform and analyze the workflow graph. Here, it wil be interesting
-to see how we can deal with loops.
+In the last part of our research we focus on analyzing workflows. We want to be
+able to transform and analyze the workflow graph. For example, we could draw a
+diagram of the graph, optimize some flows or give information about the
+complexity.
 
 \section{Workflow specifications}
 
-Typically, web applications are built in a way that maps URLs to specific
-actions. The workflow of web applications is very implicit: it is much like
-programming with \texttt{goto}: every edge in the flow graph has to be
-specifically mentioned and workflows are not composable.
+A workflow specifies the way humans interact with a machine. However, there is
+not always a clear mapping from a workflow specification to a working
+application. The encoding of a workflow as an application is either done via
+workflow modeling tools or manually. In our research we will try to
+automatically generate web applications from a workflow specification. Our
+approach is not limited to webapplications, however. This technique is relevant
+for construction of all kinds of user interfaces.
 
-By working with continuations (cite WASH, PG) we can provide a different
-interface for programming the web. Here, every requests loads a continuation (a
-function with an environment) which was stored on the server. This allows you as
-a programmer to keep state without having to explicitly restore it.
+Typically, web applications are built in a way that maps URLs to standalone
+programs.  The workflow of web applications is very implicit: every program may
+send the user to a different program on the webserver. There are often no real
+contracts between the input/output of those programs, and no state is shared.
+This also makes web applications notoriously hard to compose.
 
-We represent our web-application by a number of Tasks. We will investigate what
-the minimal number of basic combinators is to be able to have a language that is
-powerful enough to model all common web-applications. We will then build
-combinators on top of that. Higher-order combinators are also interesting, but
-might be problematic if we want to do analyses.
-
+By working with continuations (such as in WASH \cite{wash}) we can provide a different
+interface for programming the web. Here, every requests loads a continuation
+which was kept on the server. This allows to keep state without having to
+explicitly restore it.
 
 \subsection{Using GADTs}
-Tell something about why GADTs matter (also compared to clean), deep embedding
-vs. shallow embedding.
+
+By representing our workflow as a GADT we will have a deep embedding of our
+combinator language. If we would represent our workflows using only functions we
+would have a shallow embedding. By using a deep embedding, we open up the way
+for analysis and transformation. Using GADTs we can even enforce type-safety at
+the datatype-level.
+
+\subsection{Building continuations}
+
+There are several approaches to representing continuations. We could represent
+them with a monadic interface, an arrow interface or an applicative interface.
+Each of them has its advantages. However, as Hughes described in Generalizing
+Monads to Arrows \cite{Hughes98generalisingmonads}, monads are not optimal for
+representing these types of continuations. Due to the nature of monads, we can
+not easily serialize a monadic expression. Serialization is of vital importance
+if we want to be able to stop and resume our application. 
+  
+We will investigate whether Arrows are the best fit for representing these
+continuations. So far, it looks promising. One of the other applications of
+arrows is GUI applications. For example, there is the Arrowlets \cite{arrowlets}
+library that aims to make browser-based GUI programming (in which there also are
+asynchronous events) easier.
 
 \section{Generic Programming}
 
 Typically, web applications contain a fair amount of boilerplate code. We can
-build a generic functions to deal with This. For examples, we will build
+build generic functions to deal with this. For example, we can build
 functions for dealing with XML, JSON, building APIs \cite{staticapis} and
-generating documentation.  One of our goals is to make it easy to write your own
-extensible generic functions on the data-model.
+generating documentation. However, it should be easy for the users of the
+library to write their own generic functions.
 
 Often much of the application functionality is directly dependent on the domain
 model. In a lot of programming environments much code has to be changed whenever
 the domain model changes. However, in recent web frameworks a lot of
 datatype-generic programming  is done using meta-programming or code generation.
 This helps keeping the domain-model flexible. However, it is notoriously hard to
-write your own generic functions. Often times, generated code is also edited by
+write your own generic functions. Oftentimes, generated code is also edited by
 the programmer, which makes it harder to change the original domain model.
 
-By developing a library similar to EMGM, we wish to make it as easy as possible
+By choosing the right library, we wish to make it as easy as possible
 for a developer using our framework to write her own generic function. By having
 functionality as generic as possible you can easily change your domain model
 without having to change a lot more code.
 
-However, there is an issue when working with generic functions: often, you would
-want a function like the generic one but with just a small exception. We will
-investigate how we can deal with this in a good way. For views, we could use
-lenses and |newtype|s to encode exceptional behavior.
-
 \subsection{Forms}
 
-TODO: Voorbeeld forms in php/ruby
-Iets over formlets \cite{formlets}, curry and user interfaces \cite{curryui}.
+When writing a form for an HTML page, there are two parts of code that are
+related: one part displays the form, the other parses the user input once the
+form is submitted to the server. It is obvious that these parts are dependent on
+each other, but often little care is taken to make sure they share the same
+interface.
+
+Therefore, we believe that the code for displaying and parsing a form should not
+be written seperately. In the paper on formlets \cite{formlets}, Cooper et al.
+design a library for generating these kinds of forms in a composable, type-safe
+way. Similar work has been done for user interfaces in the Curry language
+\cite{curryui}.
 
 \subsection{Bi-directional transformations}
 
- (or forms) like iEditors \cite{iEditors}.
 
 When a user is confronted with the data from the model, it is often a simplified
 view. This is because some properties of the data model might be for internal
-use only or are only editable by a certain group of users. Often, these views
-are done in an ad-hoc fashion. By using a technique similar to lenses
-\cite{lenses} or bi-directional dependencies as described in a technical report
-by Schrage and Swierstra \cite{haskelladl} we can provide these views and have
-reasonable guarantees about the consistency of the transformations.
+use only or are only editable by a certain group of users. In common web
+programming, these views are done in an ad-hoc fashion. By using a technique
+similar to lenses \cite{lenses} or bi-directional dependencies as described in a
+technical report by Schrage and Swierstra \cite{haskelladl} we can provide these
+views and have strong guarantees about the consistency of the transformations.
 
-These views are very much like the embedding-projection pairs used in EMGM, the
-main difference is that the view of the original data is often a subset, so
-there is not necessarily an isomorphism. We will investigate the differences
-between the embedding-projection pairs and these bidirectional views in order to
-see if we can abstract out common code and patterns.
+These views are very much like the embedding-projection pairs used in Generic
+Programming, the main difference is that the view of the original data is often
+a subset, so there is not necessarily an isomorphism. We investigate the
+differences between the embedding-projection pairs and these bidirectional views
+in order to see if we can abstract out common code and patterns.
 
 \section{Analyses}
 
@@ -135,6 +164,9 @@ might be:
 We want to construct analyses on top of the basic workflows in such a way that
 the system is extensible, i.e. it should be easy to add analyses.
 
+Here, it wil be
+interesting to see how we can deal with loops.
+
 \section{Related work}
 
 Iets over WASH \cite{wash}, WebFunctions \cite{webfunctions},
@@ -148,10 +180,10 @@ TODO: WebWorkFlows \cite{WebWorkFlow}
 A lot of the techniques described above have been implemented partially and
 often without integrating them into one system. Our goal is to reuse (and
 reimplement where necessary) these techniques into one system for writing web
-applications. To prevent ourselves from writing unnecessary functions we will
+applications. To prevent ourselves from writing unnecessary functions we 
 port an existing PHP-application to our system. Our goal is to
 keep the code as small and readable as possible. Also, we expect that the
-resulting application will run a lot faster that its PHP-variant because we
+resulting application runs a lot faster that its PHP-variant because we
 work in a compiled language, as opposed to an interpreted one.
 
 Of course, with iTasks and Orc available, why would there be a need for another
@@ -163,7 +195,7 @@ that has written a lot of software which we can build upon. In Orc it is very
 easy to use Java classes and use other Java libraries, but, as the authors state
 in their User Guide, it is not meant to be a general purpose language. Thirdly,
 we believe that exploring alternative implementations and solutions of the same
-problem will give rise to new solutions and insights. Lastly, the other two
+problem gives rise to new solutions and insights. Lastly, the other two
 systems are currently mainly used for academic purposes. By porting a real
 application we want to show that our system works on more than just toy
 examples.
@@ -177,7 +209,8 @@ June-Aug: research (implementing, reading)
 Sep-Dec: writing
 
 \section*{TODO}
-\cite{Hughes98generalisingmonads} (Using arrows for web programming)
+\cite{emgm}
+\cite{iEditors}
 
 \bibliographystyle{plain}
 \bibliography{bibliography}
