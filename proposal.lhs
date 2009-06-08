@@ -74,8 +74,8 @@ explicitly restore it.
 
 \subsection{Using GADTs}
 
-By representing our workflow as a GADT we will have a deep embedding of our
-combinator language. If we would represent our workflows using only functions we
+By representing a workflow as a GADT we will have a deep embedding of our
+combinator language, whereas if we would represent our workflows using only functions we
 would have a shallow embedding. By using a deep embedding, we open up the way
 for analysis and transformation. Using GADTs we can even enforce type-safety at
 the datatype-level.
@@ -83,12 +83,12 @@ the datatype-level.
 \subsection{Building continuations}
 
 There are several approaches to representing continuations. We could represent
-them with a monadic interface, an arrow interface or an applicative interface.
-Each of them has its advantages. However, as Hughes described in Generalizing
-Monads to Arrows \cite{Hughes98generalisingmonads}, monads are not optimal for
-representing these types of continuations. Due to the nature of monads, we can
-not easily serialize a monadic expression. Serialization is of vital importance
-if we want to be able to stop and resume our application. 
+them with a monadic interface or an arrow interface.  Each of them has its
+advantages. However, as Hughes described in Generalizing Monads to Arrows
+\cite{Hughes98generalisingmonads}, monads are not optimal for representing these
+types of continuations. Due to the nature of monads, we can not easily serialize
+a monadic expression. Serialization is of vital importance if we want to be able
+to stop and resume our application. 
   
 We will investigate whether Arrows are the best fit for representing these
 continuations. So far, it looks promising. One of the other applications of
@@ -134,25 +134,27 @@ way. Similar work has been done for user interfaces in the Curry language
 \subsection{Bi-directional transformations}
 
 
-When a user is confronted with the data from the model, it is often a simplified
-view. This is because some properties of the data model might be for internal
-use only or are only editable by a certain group of users. In common web
-programming, these views are done in an ad-hoc fashion. By using a technique
-similar to lenses \cite{lenses} or bi-directional dependencies as described in a
-technical report by Schrage and Swierstra \cite{haskelladl} we can provide these
-views and have strong guarantees about the consistency of the transformations.
+When a user is confronted with the data from the domain model, it is often a
+simplified view of the internal structure. This is because some properties of
+the data model might be for internal use only or are only editable by a certain
+group of users. In common web programming, these views are done in an ad-hoc
+fashion. By using a technique similar to lenses \cite{lenses} or bi-directional
+dependencies as described in a technical report by Schrage and Swierstra
+\cite{haskelladl} we can provide these views and have strong guarantees about
+the consistency of the transformations.
 
 These views are very much like the embedding-projection pairs used in Generic
-Programming, the main difference is that the view of the original data is often
-a subset, so there is not necessarily an isomorphism. We investigate the
-differences between the embedding-projection pairs and these bidirectional views
-in order to see if we can abstract out common code and patterns.
+Programming, the main difference is that the data in the view is often
+a subset of the original data, so there is not necessarily an isomorphism. We
+investigate the differences between the embedding-projection pairs and these
+bidirectional views in order to see if we can abstract out common code and
+patterns.
 
 \section{Analyses}
 
 Because our task-tree is a datastructure we can inspect, we can do analyses in a
 type-safe way. An analysis can be seen as a transformation, for this we could
-possibly build upon the work of Swierstra \cite{ttaas}. Some possible analyses
+possibly build upon the work of Baars et al. \cite{tttas}. Some possible analyses
 might be:
 
 \begin{itemize}

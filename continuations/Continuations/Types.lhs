@@ -98,3 +98,9 @@ Some default instances for convenience
 > showType (Form _ _) = "Form"
 > showType (PendingForm _ _) = "PendingForm"
 > showType (Wrapped _ w) = "Wrapped (" ++ showType w ++ ")"
+
+> instance Functor ((:->) a) where
+>   fmap f (Box x)        = Box (f . x)
+>   fmap f (Edge a b)     = Edge a (fmap f b)
+>   fmap f (Action a)     = undefined
+>   fmap f (Choice c a b) = Choice c (fmap f a) (fmap f b)
