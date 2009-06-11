@@ -46,7 +46,6 @@ continuation.
 > run' freshUrl post tr (Cont x c) = do
 >   (tr', (Cont x' c')) <- takeSteps post tr (Cont x $ restructure c)
 >   case restructure c' of
->              (Box f)             -> return (noHtml, Nothing)
 >              (Action i)          -> return (maybe noHtml id $ mkHtml post freshUrl False (i x'), Nothing)
 >              (Edge (Action i) r) -> do let html    = mkHtml post freshUrl True (i x')
 >                                        case (unwrap $ i x') of           -- TODO: we should trace something below
@@ -74,7 +73,6 @@ continuation.
 
 We can use the Arrow laws to change the spine. After executing the arrow law, the left part of the topmost Edge will not contain an Edge.
 
-> -- TODO: maybe account for 
 > restructure :: a :-> b -> a :-> b
 > restructure (Edge l r) = case restructure l of
 >                            (Edge l'' r') -> Edge l'' (restructure (Edge r' r))

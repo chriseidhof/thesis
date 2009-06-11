@@ -1,5 +1,6 @@
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
+%format :-> = "\mapsto"
 \usepackage{a4wide}
 \usepackage{times}
 \usepackage{fancyvrb}
@@ -10,22 +11,31 @@
 
 \begin{document}
 \author{Chris Eidhof}
-\title{Thesis Proposal: Generic Web Interaction in Haskell}
+\title{Thesis Proposal: Generic Web Interactions in Haskell}
 
 % TODO: remove "often"
  
 \maketitle
+
+\abstract {
+  In this research we will try to make developing workflow systems in the
+  language Haskell as naturally as possible. By integrating several topics of
+  research (Generic Programming, Compiler techniques
+}
 
 \section {Introduction}
 
 Most business processes these days are automated and made available online.
 These processes typically contain complex interactions that enable the users of the
 system to accomplish business-specific tasks.  A workflow systems describes
-the interaction between humans and machines in these processes.
+the interaction between humans and machines in these processes. Our goal is to
+make developing these workflow systems as easy as possible.
 
 By expressing combinators for workflows in Haskell, a strongly typed functional
 language, we aim to provide powerful building blocks to model these workflows
-and create executable specifications.
+and create executable specifications. In contrast to related work in this area,
+we strongly believe that a typed approach and an extensive set of readily
+available libraries are vital for the succes of building real applications.
 
 Using techniques like GADTs, we can develop a combinator-library similar to
 Clean's iTasks library \cite{iTasks} or the standard combinators from Orc
@@ -53,6 +63,8 @@ complexity.
 
 \section{Workflow specifications}
 
+% TODO: veel te low-level
+
 A workflow specifies the way humans interact with a machine. However, there is
 not always a clear mapping from a workflow specification to a working
 application. The encoding of a workflow as an application is either done via
@@ -78,24 +90,47 @@ By representing a workflow as a GADT we will have a deep embedding of our
 combinator language, whereas if we would represent our workflows using only functions we
 would have a shallow embedding. By using a deep embedding, we open up the way
 for analysis and transformation. Using GADTs we can even enforce type-safety at
-the datatype-level.
+the datatype-level. If we encode our workflows in an Arrow-like style, we get
+the following datatype:
+
+> data (:->) a b where
+>   Action      :: (Show a, Read a)  =>  (a -> Action b)          -> (a :-> b)
+>   Edge        :: (Show b, Read b)  =>  (a :-> b)  -> (b :-> c)  -> (a :-> c)
+>   Choice      ::    (a -> Bool)    ->  (a :-> c)  -> (a :-> c)  -> (a :-> c)
+
+The |Action| constructor defines a single step that is taken. This action might
+yield a value or request an interaction with the user. An |Edge| is a sequencing
+of two steps, and |Choice| makes a dynamic choice based on a boolean condition.
+We have parameterized our datatype by both its input (|a|) and its output (|b|).
+
+We will investigate which basic constructs are neccessary for expressing
+and analyzing workflows.
 
 \subsection{Building continuations}
 
-There are several approaches to representing continuations. We could represent
-them with a monadic interface or an arrow interface.  Each of them has its
-advantages. However, as Hughes described in Generalizing Monads to Arrows
-\cite{Hughes98generalisingmonads}, monads are not optimal for representing these
-types of continuations. Due to the nature of monads, we can not easily serialize
-a monadic expression. Serialization is of vital importance if we want to be able
-to stop and resume our application. 
-  
-We will investigate whether Arrows are the best fit for representing these
-continuations. So far, it looks promising. One of the other applications of
-arrows is GUI applications. For example, there is the Arrowlets \cite{arrowlets}
-library that aims to make browser-based GUI programming (in which there also are
-asynchronous events) easier.
+So far, we have investigated two possible designs for our library. The first
+design was based on monads. However, if we want to pause execution at some
+point, and serialize it, we have to serialize the entire state, i.e. all free
+variables. Consider the following example:
 
+> register = do name <- inputString
+>               display "Are you sure you want to register?"
+>               addUserToDatabase name
+
+Here, the |name|-variable is used at a later point in the execution. However,
+directly after executing the first line we don't know whether we are ever going
+to need |name| again. Thus, we have to store it in our environment if we ever
+want to use it again.
+
+In contrast, when we work with arrows, we explicitly give the input and output
+of each part of the computation. Therefore, if we want to store a continuation
+we can suffice with a pair of type |(a, a :-> b)|. In our research so far, we
+have also found the same solution in a paper by John Hughes about generalizing
+Monads to Arrows \cite{Hughes98generalisingmonads}. It seems that Arrows are a
+more natural fit for web programming in this style.
+
+We will investigate which abstractions are a good fit.
+  
 \section{Generic Programming}
 
 Typically, web applications contain a fair amount of boilerplate code. We can
@@ -117,6 +152,15 @@ for a developer using our framework to write her own generic function. By having
 functionality as generic as possible you can easily change your domain model
 without having to change a lot more code.
 
+A sensible generic library might be \cite{emgm}, because we need a couple of its
+key features. First, it should be possible for the user of the library to write
+her own generic functions. Secondly, it should be possible for the user to add
+her own datatypes.
+
+We have built a variant of EMGM which we have used for prototyping our research.
+We will investigate what the best library would be for doing generic programming
+like this.
+
 \subsection{Forms}
 
 When writing a form for an HTML page, there are two parts of code that are
@@ -127,12 +171,12 @@ interface.
 
 Therefore, we believe that the code for displaying and parsing a form should not
 be written seperately. In the paper on formlets \cite{formlets}, Cooper et al.
-design a library for generating these kinds of forms in a composable, type-safe
-way. Similar work has been done for user interfaces in the Curry language
-\cite{curryui}.
+design a library for generating these kinds of forms in a \emph{composable},
+\emph{type-safe} way. Similar work has been done for user interfaces in the Curry language
+\cite{curryui}. We will investigate different ways to build forms and discuss
+their advantages and disadvantages.
 
 \subsection{Bi-directional transformations}
-
 
 When a user is confronted with the data from the domain model, it is often a
 simplified view of the internal structure. This is because some properties of
@@ -146,7 +190,7 @@ the consistency of the transformations.
 These views are very much like the embedding-projection pairs used in Generic
 Programming, the main difference is that the data in the view is often
 a subset of the original data, so there is not necessarily an isomorphism. We
-investigate the differences between the embedding-projection pairs and these
+will investigate the differences between the embedding-projection pairs and these
 bidirectional views in order to see if we can abstract out common code and
 patterns.
 
@@ -163,11 +207,32 @@ might be:
 \item Checking for deadlocks
 \end{itemize}
 
-We want to construct analyses on top of the basic workflows in such a way that
-the system is extensible, i.e. it should be easy to add analyses.
+\subsection{Observable Sharing}
 
-Here, it wil be
-interesting to see how we can deal with loops.
+We want to construct analyses on top of the basic workflows in such a way that
+the system is extensible, i.e. it should be easy to add analyses. In order to do
+these analyses, we need to observe sharing. For example, consider the following
+workflow:
+
+> addUsers = choices  [ ("Add another user",  userForm `Edge` addUsers)
+>                     , ("Stop",              display "Thanks")
+>                     ]
+
+Here, the |addUsers| recursively calls itself. By using a general mechanism to turn
+recursive structures into explicit graphs with explicit sharing we can observe
+these recursive calls. This can also be used to compile our high-level DSL into
+a lower-level (more optimized) representation. There is recent unpublished work
+by Gill \cite{reify} that provides a way to turn recursive structures into
+structures with explicit sharing. We can then use existing compiler techniques
+to analyze our data structures.
+
+\subsection{Finite State Machines}
+
+Another way we could view our workflows is as finite state machines: an
+|Action| is a state and the |Edge| and |Choice| constructors define edges and
+choices, respectively. Here, we will do literature research to investigate how
+we can use existing theory and practice from finite state machine research to
+our advantage.
 
 \section{Related work}
 
@@ -202,18 +267,46 @@ systems are currently mainly used for academic purposes. By porting a real
 application we want to show that our system works on more than just toy
 examples.
 
+\subsection{Research question}
+
+Our main research question is: \emph{How can we model workflows in Haskell as
+naturally as possible?}.  We will try to answer that using the following subquestions:
+
+\begin{itemize}
+\item How can we use Haskell's type system to prevent errors?
+\item How can we use generic programming to eliminate boilerplate?
+\item Which techiques for bidirectional transformations can we use to 
+\item Which analyses can we do on the workflow graph?
+\end{itemize}
+
 \section*{Planning}
 
-% TODO: Compleet werkplan
+We have split up our research in a couple of orthogonal topics that will be
+investigated during week 27 - week 35. Week 36 and 37 are designated for the
+integration of the research in the weeks before. Weeks 38-50 are reserved for
+writing and 50-2 for preparing the presentation.
 
-May 30: reading, proposal ready.
-June-Aug: research (implementing, reading)
-Sep-Dec: writing
+\begin{tabular}{l l}
+Week  & Action \\
+26    & Proposal ready \\
+27    & Research: Modeling continuations \\
+28    & Research: Modeling continuations \\
+29    & Research: Generic programming \\
+30    & Research: Generic programming \\
+31    & Research: Forms \\
+32    & Research: Bi-directional transformations \\
+33    & Research: Analyses \\
+34    & Research: Analyses \\
+35    & Research: Finite State Machines \\
+36    & Research: Integration \\
+37    & Research: Integration \\
+38-49 & Writing \\
+50-2  & Presentation preparation \\
+2     & Presentation
+\end{tabular}
 
-\section*{TODO}
-\cite{emgm}
-\cite{iEditors}
-
+\nocite{arrowlets}
+\nocite{iEditors}
 \bibliographystyle{plain}
 \bibliography{bibliography}
 

@@ -26,11 +26,13 @@ main = runServer 8016 [sample]
 data CRU = Create | List
  deriving (Show, Read, Eq, Enum, Bounded)
 
-sample =     (form $ enumSelect Nothing)
-     `Edge` (Choice (\x -> x == Create) (create (Empty :: PT User)) list)
+sample = form (enumSelect Nothing)
+     >>> if_ (== Create) (create (Empty :: PT User)) list
 
+create pt =  form (form' pt) 
+         >>> dbNew 
+         >>> display "Thanks"
 
-create pt = (form $ form' pt) `Edge` dbNew `Edge` (display "Thanks")
 list = display "List"
 
 -- helpers

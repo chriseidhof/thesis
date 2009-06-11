@@ -20,10 +20,9 @@ indexed by its result. The result from the first step can be used in the next
 steps:
 
 > data (:->) a b where
->   Box         :: (a -> r)        -> a :-> r
->   Action      :: (Show a, Read a) => (a -> Action b) -> a :-> b
->   Edge        :: (Show b, Read b) => a :-> b -> (b :-> c) -> (a :-> c)
->   Choice      :: (a -> Bool)     -> a :-> c -> a :-> c -> a :-> c
+>   Action      :: (Show a, Read a) => (a -> Action b) -> (a :-> b)
+>   Edge        :: (Show b, Read b) => (a :-> b) -> (b :-> c) -> (a :-> c)
+>   Choice      :: (a -> Bool)     -> (a :-> c) -> (a :-> c) -> (a :-> c)
 
 > type Trace = [TraceStep]
 > data TraceStep = TrEdge | TrChoice Bool
@@ -87,7 +86,6 @@ Some default instances for convenience
 >   show (PendingForm _ _)= "PendingForm"
 >
 > instance Show (a :-> b) where
->   show (Box _ ) = "Box"
 >   show (Edge l r) = "Edge (" ++ show l ++ ") (" ++ show r ++ ")"
 >   show (Choice _ l r) = "Choice (" ++ show l ++ ") (" ++ show r ++ ")"
 >   show (Action a) = "Action"
@@ -99,8 +97,8 @@ Some default instances for convenience
 > showType (PendingForm _ _) = "PendingForm"
 > showType (Wrapped _ w) = "Wrapped (" ++ showType w ++ ")"
 
-> instance Functor ((:->) a) where
->   fmap f (Box x)        = Box (f . x)
->   fmap f (Edge a b)     = Edge a (fmap f b)
->   fmap f (Action a)     = undefined
->   fmap f (Choice c a b) = Choice c (fmap f a) (fmap f b)
+> -- instance Functor ((:->) a) where
+> --   fmap f (Edge a b)      = Edge a (fmap f b)
+> --   fmap f (Action a)      = undefined -- TODO
+> --   fmap f (Choice c a b)  = Choice c (fmap f a) (fmap f b)
+> --   fmap f (Thread x)      = Thread 'a'
