@@ -11,7 +11,9 @@
 
 \begin{document}
 \author{Chris Eidhof}
-\title{Thesis Proposal: Generic Web Interactions in Haskell}
+\title{Thesis Proposal: The Pesto framework \\
+\normalsize{Building generic web interactions in Haskell}
+}
 
 % TODO: remove "often"
  
@@ -19,8 +21,10 @@
 
 \abstract {
   In this research we will try to make developing workflow systems in the
-  language Haskell as naturally as possible. By integrating several topics of
-  research (Generic Programming, Compiler techniques
+  language Haskell as easy as possible. By integrating several topics of
+  research (generic programming, compiler techniques, domain specific languages)
+  we hope to build an integrated framework composed of several orthogonal
+  libraries.
 }
 
 \section {Introduction}
@@ -29,18 +33,19 @@ Most business processes these days are automated and made available online.
 These processes typically contain complex interactions that enable the users of the
 system to accomplish business-specific tasks.  A workflow systems describes
 the interaction between humans and machines in these processes. Our goal is to
-make developing these workflow systems as easy as possible.
+make developing these workflow systems as easy as possible. 
 
 By expressing combinators for workflows in Haskell, a strongly typed functional
 language, we aim to provide powerful building blocks to model these workflows
 and create executable specifications. In contrast to related work in this area,
-we strongly believe that a typed approach and an extensive set of readily
-available libraries are vital for the succes of building real applications.
+we strongly believe that the combination of both a typed approach and an
+extensive set of readily available libraries can be a catalyst for building real
+applications.
 
 Using techniques like GADTs, we can develop a combinator-library similar to
 Clean's iTasks library \cite{iTasks} or the standard combinators from Orc
 \cite{orc}, which are both suited for continuation-based \cite{webInteractions}
-programming. We show how we can express all basic workflow patterns as
+web programming. We show how we can express all basic workflow patterns as
 defined by Van Der Aalst \cite{workflowpatterns}.
 
 Secondly, we would like to facilitate for domain driven design \cite{ddd} by
@@ -60,6 +65,9 @@ In the last part of our research we focus on analyzing workflows. We want to be
 able to transform and analyze the workflow graph. For example, we could draw a
 diagram of the graph, optimize some flows or give information about the
 complexity.
+
+By integrating these components into a single framework we will build 
+% TODO: explain pesto
 
 \section{Workflow specifications}
 
@@ -236,9 +244,49 @@ our advantage.
 
 \section{Related work}
 
-Iets over WASH \cite{wash}, WebFunctions \cite{webfunctions},
-\cite{programmingtheweb}, Orc (TODO)
-TODO: WebWorkFlows \cite{WebWorkFlow}
+In earlier days, Thiemann has built the Web Authoring System Haskell (WASH)
+\cite{wash}. This is a set of libraries for doing web programming in Haskell.
+However, it does not use generic programming nor focus on tasks. The library
+hasn't been maintained for more than two years. The WASH system is also very
+focused on lower-level building of HTML pages instead of describing workflows on
+a high level.
+
+We also have looked into WebFunctions \cite{webfunctions}. This is also a
+library that is designed for programming the web on a higher level. Again,
+WebFunctions suffers from a lack of updates (the last update was in 2005).
+WebFunctions doesn't use any generic programming, which makes it tedious to
+write large programs where a lot of functionality can be automated.
+
+One of the foundational papers in the field of web programming is by Felleisen
+et al \cite{programmingtheweb}. They have shown how web programming can be
+liberated from an imperative style by using continuations to represent web
+applications.
+
+Orc \cite{orc} is a recent research language that is designed for asynchronous
+and concurrent applications. Orc is an untyped language, and is based on the
+JVM. It is not meant as a general purpose language. We think that by embedding
+this kind of functionality within a general purpose language like Haskell, it
+will be much easier to construct applications that use other libraries.
+
+iTasks \cite{iTasks} is a system built in Clean, a language quite similar to
+Haskell. It provided the main inspiration for this research proposal. However,
+iTasks is built in a monadic style with a shallow embedding of the tasks, which
+makes it currently impossible to analyze. Secondly, the environment of Clean is
+quite isolated. By building on the foundations of Haskell we have a vast amount
+of packages available that will save a lot of work for application programmers.
+
+Lastly, recent work by Visser et al.  \cite{WebWorkFlow} describes the design
+of WebWorkFlow, a language defined specifically for building web-based
+workflows. By building a custom language they provide an integrated way to build
+workflows. They use generic programming (the |derive| construct) to build forms,
+but unfortunately, it is hard for users to write their own generic functions.
+Also, like Orc, it is hard to integrate existing libraries into your code.
+
+None of the libraries above make it easy to inspect the structure of the
+generated application. This is something that is hard to later on add to a
+language, and ideally is added while designing the (embedded) language. We
+believe that this is a big advantage of our approach over all existing
+approaches.
 
 \section{Conclusion}
 
@@ -283,8 +331,9 @@ naturally as possible?}.  We will try to answer that using the following subques
 
 We have split up our research in a couple of orthogonal topics that will be
 investigated during week 27 - week 35. Week 36 and 37 are designated for the
-integration of the research in the weeks before. Weeks 38-50 are reserved for
-writing and 50-2 for preparing the presentation.
+integration of the research and porting the PHP application. Weeks 38-50 are
+reserved for writing and 50-2 for preparing the presentation.
+\\
 
 \begin{tabular}{l l}
 Week  & Action \\
@@ -293,13 +342,11 @@ Week  & Action \\
 28    & Research: Modeling continuations \\
 29    & Research: Generic programming \\
 30    & Research: Generic programming \\
-31    & Research: Forms \\
-32    & Research: Bi-directional transformations \\
+31    & Research: Forms \& Bi-directional transformations \\
+32    & Research: Analyses \\
 33    & Research: Analyses \\
-34    & Research: Analyses \\
-35    & Research: Finite State Machines \\
-36    & Research: Integration \\
-37    & Research: Integration \\
+34    & Research: Finite State Machines \\
+35-37 & Research: Porting an application \\
 38-49 & Writing \\
 50-2  & Presentation preparation \\
 2     & Presentation
