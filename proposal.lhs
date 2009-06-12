@@ -304,7 +304,7 @@ work in a compiled language, as opposed to an interpreted one.
 \section{Research question}
 
 Our main research question is: \emph{How can we model executable workflows in Haskell as
-easy as possible?}.  We will try to answer that using the following subquestions:
+easy as possible?}  We will try to answer that using the following subquestions:
 
 \begin{itemize}
 \item How can we use Haskell's type system to prevent errors?
