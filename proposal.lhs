@@ -20,11 +20,11 @@
 \maketitle
 
 \abstract {
-  In this research we will try to make developing workflow systems in the
-  language Haskell as easy as possible. By integrating several topics of
-  research (generic programming, compiler techniques, domain specific languages)
-  we hope to build an integrated framework composed of several orthogonal
-  libraries.
+  During the course of this research we will try to make developing workflow
+  systems in the language Haskell as easy as possible. By integrating several
+  topics of research (generic programming, compiler techniques, domain specific
+  languages) we hope to build an integrated framework composed of several
+  orthogonal libraries.
 }
 
 \section {Introduction}
@@ -66,8 +66,11 @@ able to transform and analyze the workflow graph. For example, we could draw a
 diagram of the graph, optimize some flows or give information about the
 complexity.
 
-By integrating these components into a single framework we will build 
-% TODO: explain pesto
+
+By combining all these ingredients into a single framework we hope to give a
+powerful recipe to build your own web applications. We named our framework
+Pesto, after the Italian sauce: the ingredients can be enjoyed on their own, but
+it is the combination that gives true enjoyment.
 
 \section{Workflow specifications}
 
@@ -78,14 +81,14 @@ not always a clear mapping from a workflow specification to a working
 application. The encoding of a workflow as an application is either done via
 workflow modeling tools or manually. In our research we will try to
 automatically generate web applications from a workflow specification. Our
-approach is not limited to webapplications, however. This technique is relevant
+approach is not limited to web applications, however. This technique is relevant
 for construction of all kinds of user interfaces.
 
 Typically, web applications are built in a way that maps URLs to standalone
-programs.  The workflow of web applications is very implicit: every program may
-send the user to a different program on the webserver. There are often no real
-contracts between the input/output of those programs, and no state is shared.
-This also makes web applications notoriously hard to compose.
+programs, using HTTP. HTTP is a stateless protocol, which makes 
+the workflow of web applications often very implicit when the programmer doesn't
+use abstractions for this. In a lot of web applications, the state has to be
+rebuilt from the ground up at every request.
 
 By working with continuations (such as in WASH \cite{wash}) we can provide a different
 interface for programming the web. Here, every requests loads a continuation
@@ -107,11 +110,12 @@ the following datatype:
 >   Choice      ::    (a -> Bool)    ->  (a :-> c)  -> (a :-> c)  -> (a :-> c)
 
 The |Action| constructor defines a single step that is taken. This action might
-yield a value or request an interaction with the user. An |Edge| is a sequencing
-of two steps, and |Choice| makes a dynamic choice based on a boolean condition.
-We have parameterized our datatype by both its input (|a|) and its output (|b|).
+yield a value of type |b| or request an interaction with the user. An |Edge| is
+a sequence of two steps, and |Choice| makes a dynamic choice based on a boolean
+condition.  We have parameterized our datatype by both its input (|a|) and its
+output (|b|).
 
-We will investigate which basic constructs are neccessary for expressing
+We will investigate which basic constructs are necessary for expressing
 and analyzing workflows.
 
 \subsection{Building continuations}
@@ -121,9 +125,9 @@ design was based on monads. However, if we want to pause execution at some
 point, and serialize it, we have to serialize the entire state, i.e. all free
 variables. Consider the following example:
 
-> register = do name <- inputString
->               display "Are you sure you want to register?"
->               addUserToDatabase name
+> register = do  name <- inputString
+>                display "Are you sure you want to register?"
+>                addUserToDatabase name
 
 Here, the |name|-variable is used at a later point in the execution. However,
 directly after executing the first line we don't know whether we are ever going
@@ -132,28 +136,29 @@ want to use it again.
 
 In contrast, when we work with arrows, we explicitly give the input and output
 of each part of the computation. Therefore, if we want to store a continuation
-we can suffice with a pair of type |(a, a :-> b)|. In our research so far, we
-have also found the same solution in a paper by John Hughes about generalizing
-Monads to Arrows \cite{Hughes98generalisingmonads}. It seems that Arrows are a
-more natural fit for web programming in this style.
+we can suffice by storing a pair of type |(a, a :-> b)|. In our research so far,
+we have also found the same solution in a paper by John Hughes about
+generalizing Monads to Arrows \cite{Hughes98generalisingmonads}. It seems that
+Arrows are a more natural fit for web programming in this style.
 
-We will investigate which abstractions are a good fit.
+In our research, we will investigate which control abstractions are a good fit.
   
 \section{Generic Programming}
+
+Much of the functionality of an  application is directly dependent on the domain
+model. In a lot of programming environments code has to be manually updated whenever
+the domain model changes. However, in recent web frameworks a lot of
+datatype-generic programming is done using meta-programming or code generation.
+This helps keeping the domain-model flexible. However, it is notoriously hard to
+write your own generic functions. Oftentimes, generated code is also edited by
+the programmer, which makes it harder to change the original domain model.
 
 Typically, web applications contain a fair amount of boilerplate code. We can
 build generic functions to deal with this. For example, we can build
 functions for dealing with XML, JSON, building APIs \cite{staticapis} and
-generating documentation. However, it should be easy for the users of the
-library to write their own generic functions.
-
-Often much of the application functionality is directly dependent on the domain
-model. In a lot of programming environments much code has to be changed whenever
-the domain model changes. However, in recent web frameworks a lot of
-datatype-generic programming  is done using meta-programming or code generation.
-This helps keeping the domain-model flexible. However, it is notoriously hard to
-write your own generic functions. Oftentimes, generated code is also edited by
-the programmer, which makes it harder to change the original domain model.
+generating documentation. However, the generic functions should not be limited
+to those envisioned by the authors of a framework: it should be easy for the
+users of the framework to write their own generic functions.
 
 By choosing the right library, we wish to make it as easy as possible
 for a developer using our framework to write her own generic function. By having
@@ -226,19 +231,19 @@ workflow:
 >                     , ("Stop",              display "Thanks")
 >                     ]
 
-Here, the |addUsers| recursively calls itself. By using a general mechanism to turn
-recursive structures into explicit graphs with explicit sharing we can observe
-these recursive calls. This can also be used to compile our high-level DSL into
-a lower-level (more optimized) representation. There is recent unpublished work
-by Gill \cite{reify} that provides a way to turn recursive structures into
-structures with explicit sharing. We can then use existing compiler techniques
-to analyze our data structures.
+Here, the |addUsers| recursively calls itself. By using a general mechanism to
+turn recursive structures into explicit graphs with explicit sharing we can
+observe these recursive calls. This can also be used to compile our high-level
+DSL into a lower-level (more optimized) representation. There is recent
+unpublished work by Gill \cite{reify} that provides a way to turn recursive
+structures into structures with explicit sharing. We can then use existing
+compiler techniques to analyze our data structures.
 
 \subsection{Finite State Machines}
 
 Another way we could view our workflows is as finite state machines: an
 |Action| is a state and the |Edge| and |Choice| constructors define edges and
-choices, respectively. Here, we will do literature research to investigate how
+choices, respectively. We will do literature research to investigate how
 we can use existing theory and practice from finite state machine research to
 our advantage.
 
@@ -246,12 +251,12 @@ our advantage.
 
 In earlier days, Thiemann has built the Web Authoring System Haskell (WASH)
 \cite{wash}. This is a set of libraries for doing web programming in Haskell.
-However, it does not use generic programming nor focus on tasks. The library
-hasn't been maintained for more than two years. The WASH system is also very
+However, it does not use generic programming nor focus on workflows. The library
+has not been maintained for more than two years. The WASH system is also very
 focused on lower-level building of HTML pages instead of describing workflows on
 a high level.
 
-We also have looked into WebFunctions \cite{webfunctions}. This is also a
+We also have looked into WebFunctions \cite{webfunctions}. This is a
 library that is designed for programming the web on a higher level. Again,
 WebFunctions suffers from a lack of updates (the last update was in 2005).
 WebFunctions doesn't use any generic programming, which makes it tedious to
@@ -265,8 +270,8 @@ applications.
 Orc \cite{orc} is a recent research language that is designed for asynchronous
 and concurrent applications. Orc is an untyped language, and is based on the
 JVM. It is not meant as a general purpose language. We think that by embedding
-this kind of functionality within a general purpose language like Haskell, it
-will be much easier to construct applications that use other libraries.
+its functionality within a general purpose language like Haskell, it will be
+much easier to construct applications that use other libraries.
 
 iTasks \cite{iTasks} is a system built in Clean, a language quite similar to
 Haskell. It provided the main inspiration for this research proposal. However,
@@ -288,48 +293,28 @@ language, and ideally is added while designing the (embedded) language. We
 believe that this is a big advantage of our approach over all existing
 approaches.
 
-\section{Conclusion}
+\section{Proven functionality}
 
-% TODO: helder geformuleerde vraag
-
-A lot of the techniques described above have been implemented partially and
-often without integrating them into one system. Our goal is to reuse (and
-reimplement where necessary) these techniques into one system for writing web
-applications. To prevent ourselves from writing unnecessary functions we 
-port an existing PHP-application to our system. Our goal is to
+To prove that this framework works for real applications we
+will port an existing PHP-application to our system. Our goal is to
 keep the code as small and readable as possible. Also, we expect that the
-resulting application runs a lot faster that its PHP-variant because we
+resulting application runs a lot faster than its PHP-variant because we
 work in a compiled language, as opposed to an interpreted one.
 
-Of course, with iTasks and Orc available, why would there be a need for another
-system? First of all, we believe strong typing is very important if you want to
-write robust applications. Orc is currently not typed yet, and iTasks uses the
-|Dynamic| type a lot because there is no support yet for type constructs such as
-GADTs. Secondly, using Haskell we have the benefit of having a huge community
-that has written a lot of software which we can build upon. In Orc it is very
-easy to use Java classes and use other Java libraries, but, as the authors state
-in their User Guide, it is not meant to be a general purpose language. Thirdly,
-we believe that exploring alternative implementations and solutions of the same
-problem gives rise to new solutions and insights. Lastly, the other two
-systems are currently mainly used for academic purposes. By porting a real
-application we want to show that our system works on more than just toy
-examples.
+\section{Research question}
 
-\subsection{Research question}
-
-Our main research question is: \emph{How can we model workflows in Haskell as
-naturally as possible?}.  We will try to answer that using the following subquestions:
+Our main research question is: \emph{How can we model executable workflows in Haskell as
+easy as possible?}.  We will try to answer that using the following subquestions:
 
 \begin{itemize}
 \item How can we use Haskell's type system to prevent errors?
 \item How can we use generic programming to eliminate boilerplate?
-\item Which techiques for bidirectional transformations can we use to 
 \item Which analyses can we do on the workflow graph?
 \end{itemize}
 
 \section*{Planning}
 
-We have split up our research in a couple of orthogonal topics that will be
+We have split up our research into a couple of orthogonal topics that will be
 investigated during week 27 - week 35. Week 36 and 37 are designated for the
 integration of the research and porting the PHP application. Weeks 38-50 are
 reserved for writing and 50-2 for preparing the presentation.
@@ -342,9 +327,9 @@ Week  & Action \\
 28    & Research: Modeling continuations \\
 29    & Research: Generic programming \\
 30    & Research: Generic programming \\
-31    & Research: Forms \& Bi-directional transformations \\
+31    & Research: Analyses \\
 32    & Research: Analyses \\
-33    & Research: Analyses \\
+33    & Research: Forms \& Bi-directional transformations \\
 34    & Research: Finite State Machines \\
 35-37 & Research: Porting an application \\
 38-49 & Writing \\
