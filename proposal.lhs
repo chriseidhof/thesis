@@ -31,16 +31,15 @@
 
 Most business processes these days are automated and made available online.
 These processes typically contain complex interactions that enable the users of the
-system to accomplish business-specific tasks.  A workflow systems describes
+system to accomplish business-specific tasks.  A workflow system describes
 the interaction between humans and machines in these processes. Our goal is to
 make developing these workflow systems as easy as possible. 
 
 By expressing combinators for workflows in Haskell, a strongly typed functional
 language, we aim to provide powerful building blocks to model these workflows
-and create executable specifications. In contrast to related work in this area,
-we strongly believe that the combination of both a typed approach and an
-extensive set of readily available libraries can be a catalyst for building real
-applications.
+and create executable specifications.  We strongly believe that the combination
+of both a typed approach and an extensive set of readily available libraries can
+be a catalyst for building real applications.
 
 Using techniques like GADTs, we can develop a combinator-library similar to
 Clean's iTasks library \cite{iTasks} or the standard combinators from Orc
@@ -52,14 +51,15 @@ Secondly, we would like to facilitate for domain driven design \cite{ddd} by
 using a data-type generic programming library \cite{gpintro}. We can build
 generic functions similar to Clean's iData \cite{iData}.  By writing generic
 functions we can generate a lot of code from just our domain model.  This allows
-for real domain-driven design, and can prevent a number of bugs: there is a
-  minimal amount of application-specific code.
+for real domain-driven design, and can prevent a number of bugs: we try to
+reduce the amount of application-specific code and have most code in well-tested
+libraries.
 
-Thirdly, in the domain model, there is often a lot of information that is vital
+Thirdly, in the domain model, there is a lot of information that is vital
 for the application but should not be presented to the user. Often, a user can
 only see a projection (view) of the data and it is only possible to edit a
-subset of the data. Therefore, we want to explore techniques to facilitate
-this.
+subset of the data. Therefore, we want to explore techniques from bi-directional
+programming to facilitate this.
 
 In the last part of our research we focus on analyzing workflows. We want to be
 able to transform and analyze the workflow graph. For example, we could draw a
@@ -77,23 +77,22 @@ it is the combination that gives true enjoyment.
 % TODO: veel te low-level
 
 A workflow specifies the way humans interact with a machine. However, there is
-not always a clear mapping from a workflow specification to a working
-application. The encoding of a workflow as an application is either done via
+not always a clear mapping from a workflow specification to an executable
+programming. The encoding of a workflow as an application is either done via
 workflow modeling tools or manually. In our research we will try to
 automatically generate web applications from a workflow specification. Our
-approach is not limited to web applications, however. This technique is relevant
+approach is not limited to web applications, this technique is relevant
 for construction of all kinds of user interfaces.
 
-Typically, web applications are built in a way that maps URLs to standalone
-programs, using HTTP. HTTP is a stateless protocol, which makes 
-the workflow of web applications often very implicit when the programmer doesn't
-use abstractions for this. In a lot of web applications, the state has to be
-rebuilt from the ground up at every request.
+Virtually all web applications are built on top of HTTP.  HTTP is a stateless
+protocol, which makes the workflow of web applications often very implicit when
+the programmer doesn't use abstractions. In most web applications, the state has
+to be rebuilt from the ground up at every request.
 
 By working with continuations (such as in WASH \cite{wash}) we can provide a different
 interface for programming the web. Here, every requests loads a continuation
-which was kept on the server. This allows to keep state without having to
-explicitly restore it.
+which was kept on the server. A continuation in this case is a representation of
+a function that describes what to do next, together with its state.
 
 \subsection{Using GADTs}
 
@@ -113,7 +112,7 @@ The |Action| constructor defines a single step that is taken. This action might
 yield a value of type |b| or request an interaction with the user. An |Edge| is
 a sequence of two steps, and |Choice| makes a dynamic choice based on a boolean
 condition.  We have parameterized our datatype by both its input (|a|) and its
-output (|b|).
+output (|b|). 
 
 We will investigate which basic constructs are necessary for expressing
 and analyzing workflows.
@@ -139,7 +138,7 @@ of each part of the computation. Therefore, if we want to store a continuation
 we can suffice by storing a pair of type |(a, a :-> b)|. In our research so far,
 we have also found the same solution in a paper by John Hughes about
 generalizing Monads to Arrows \cite{Hughes98generalisingmonads}. It seems that
-Arrows are a more natural fit for web programming in this style.
+Arrows are a more natural fit for web programming in this style. 
 
 In our research, we will investigate which control abstractions are a good fit.
   
@@ -150,8 +149,9 @@ model. In a lot of programming environments code has to be manually updated when
 the domain model changes. However, in recent web frameworks a lot of
 datatype-generic programming is done using meta-programming or code generation.
 This helps keeping the domain-model flexible. However, it is notoriously hard to
-write your own generic functions. Oftentimes, generated code is also edited by
-the programmer, which makes it harder to change the original domain model.
+write your own generic functions in those frameworks. Oftentimes, generated code
+is also edited by the programmer, which makes it harder to change the original
+domain model.
 
 Typically, web applications contain a fair amount of boilerplate code. We can
 build generic functions to deal with this. For example, we can build
@@ -165,8 +165,8 @@ for a developer using our framework to write her own generic function. By having
 functionality as generic as possible you can easily change your domain model
 without having to change a lot more code.
 
-A sensible generic library might be \cite{emgm}, because we need a couple of its
-key features. First, it should be possible for the user of the library to write
+A sensible generic library might be EMGM \cite{emgm}, because we need a couple of its
+key features: first, it should be possible for the user of the library to write
 her own generic functions. Secondly, it should be possible for the user to add
 her own datatypes.
 
@@ -289,9 +289,9 @@ Also, like Orc, it is hard to integrate existing libraries into your code.
 
 None of the libraries above make it easy to inspect the structure of the
 generated application. This is something that is hard to later on add to a
-language, and ideally is added while designing the (embedded) language. We
-believe that this is a big advantage of our approach over all existing
-approaches.
+language, and ideally is taken into account while designing the (embedded)
+language. We believe that this is a big advantage of our approach over all
+existing approaches.
 
 \section{Proven functionality}
 
@@ -315,7 +315,7 @@ easy as possible?}  We will try to answer that using the following subquestions:
 \section*{Planning}
 
 We have split up our research into a couple of orthogonal topics that will be
-investigated during week 27 - week 35. Week 36 and 37 are designated for the
+investigated during weeks 27-35. Week 36 and 37 are designated for the
 integration of the research and porting the PHP application. Weeks 38-50 are
 reserved for writing and 50-2 for preparing the presentation.
 \\

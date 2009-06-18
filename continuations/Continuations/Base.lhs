@@ -81,19 +81,19 @@ We can use the Arrow laws to change the spine. After executing the arrow law, th
 
 > takeSteps :: FormData -> Trace -> Cont b -> IO (Trace, Cont b)
 > takeSteps postData tr cont@(Cont x (Edge (Action a)     r)) = case a x of
->                                                   action@(PendingForm f _) -> do result <- eval action postData
->                                                                                  case result of
->                                                                                    Failure msgs -> return (tr, Cont x (Edge (Action $ const $ PendingForm f (Just msgs)) r))
->                                                                                    Success x -> do let tr' = tr ++ [TrEdge]
->                                                                                                    takeSteps postData tr' (Cont x r)
->                                                                             
->                                                   (Const c) -> do let tr' = tr ++ [TrEdge]
->                                                                   takeSteps postData tr' (Cont c r)
->                                                   (IOAction io) -> do c <- io
->                                                                       let tr' = tr ++ [TrEdge]
->                                                                       takeSteps postData tr' (Cont c r)
+>   action@(PendingForm f _) -> do result <- eval action postData
+>                                  case result of
+>                                    Failure msgs -> return (tr, Cont x (Edge (Action $ const $ PendingForm f (Just msgs)) r))
+>                                    Success x -> do let tr' = tr ++ [TrEdge]
+>                                                    takeSteps postData tr' (Cont x r)
+>                             
+>   (Const c) -> do let tr' = tr ++ [TrEdge]
+>                   takeSteps postData tr' (Cont c r)
+>   (IOAction io) -> do c <- io
+>                       let tr' = tr ++ [TrEdge]
+>                       takeSteps postData tr' (Cont c r)
 >
->                                                   _ -> return (tr, cont)
+>   _ -> return (tr, cont)
 > takeSteps postData tr cont@(Cont x (Edge (Choice cond l' r')    r)) = do let condVal = cond x
 >                                                                              tr' = tr ++ [TrChoice condVal]
 >                                                                          takeSteps postData tr' (Cont x $ restructure $ (if condVal then l' else r') `Edge` r)
