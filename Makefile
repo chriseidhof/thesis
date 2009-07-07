@@ -1,7 +1,7 @@
-all: proposal.pdf
+all: rewrite.pdf
 	open $<
 
-proposal.pdf: proposal.lhs
+rewrite.pdf: rewrite.lhs
 
 %.tex: %.lhs
 	lhs2Tex -o $@ $<
