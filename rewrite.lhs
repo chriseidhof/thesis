@@ -1,6 +1,7 @@
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %format :-> = "\mapsto"
+% vim:spell
 \usepackage{a4wide}
 \usepackage{times}
 \usepackage{fancyvrb}
@@ -15,76 +16,146 @@
 \normalsize{Building generic web interactions in Haskell}
 }
 
-\section{Introduction}
- 
 \maketitle
-Virtually every business is automated these days, in varying degrees. For
-maximal efficiency, some business processes are automated. In the system that
-comes out of such an automation there is a specification of which steps need to
-be taken and how humans interact with the computer. We call such a system a
-\emph{workflow application}.
+\tableofcontents
 
-There exist a number of systems designed to make modeling of these business
-processes easier. They aim to have executable specifications of the
-different workflows in an organization. We call such a system a \emph{workflow
-modeling tool}. The person or team who implements such a workflow is called the
-\emph{implementor}
+\section{Introduction}
 
-Some of the most sophisticated workflow modeling tools are a group of libraries
-in higher-order programming languages.  Using such a library, the programmer
-gives a specification of the workflow as a computer program.  That specification
-is then directly executable: for example, it can be run as a web application.
-Because the workflow is written down  in a programming language, the designer
-has all the advantages of a such a language. An example workflow might look like
-this (written down in Haskell):
+% soort abstract die persoonlijke motivatie geeft?
+ 
+
+Workflow systems describe how humans and computers interact. A \emph{workflow process
+definition} describes which activities are needed to complete a certain business
+process. These activities can be either human (for example, filling in a form,
+confirming a message) or done by the computer (storing a record to the database,
+calculating a result). A workflow process definition not only specifies the
+activities, but also in what order they need to be executed.
+
+Workflow management system
+Expressive power
+
+Patterns, transitions
+
+Data: domain-model, etc.
+
+Platform-agnostic
+
+\subsection{Implementation approaches}
+
+Extensibility. (misschien quality requirements van SE?)
+TODO
+
+\subsubsection{Domain specific languages}
+
+A \emph{domain specific language} (DSL) is a programming language designed to express
+solutions in a specific domain. It is the opposite of a general-purpose
+programming language. A DSL can be designed to help model a certain class of
+problems more directly. At the very minimum, a DSL consists of a set of
+\emph{symbols} and a set of rules (syntax) that describe how to combine these
+symbols into well-formed expressions.
+
+Symbols in a DSL can take many forms. For example, the syntax might closely
+resemble a programming language. Alternatively, in workflow languages, the
+modeling of the workflow is often done graphically.  The symbols are the
+elements used to draw a workflow graph.
+
+The solution expressed using a DSL can be used for several purposes. Often, it
+is given a semantics by interpreting it or compiling it into executable code.
+Also, a tool can check for well-formedness (with regard to the syntax) and
+correctness (with regard to the semantics) of the expressed solutions.
+
+\subsubsection{Embedded domain specific languages}
+
+When a DSL is integrated into another language, it is called an \emph{embedded
+domain specific language}. Here, the symbols of the DSL are also symbols in the
+\emph{host language}. By embedding the DSL into another language, the DSL will
+inherit all kinds of properties of that language. 
+
+Using all the features of the host languages gives a DSL a great amount of
+interoperability with other libraries. Also, by using the type system of the
+host language, a partial correctness check can be done by modeling logical rules
+in the type system.  We will elaborate on this in a later section.
+
+As a good example, in the Haskell programming language, there are several
+libraries for describing parsers. These libraries provide a number of symbols
+that can be combined to write parsers. They use Haskell's type system to give
+partial proofs about what the result of parsing might be.
+
+\section{Generic Programming}
+
+TODO
+
+\section{Research Statement}
+
+Monads vs. arrows
+Observable sharing
+
+\section{Our approach}
+% Duidelijk afbakenen: wat gaan we wel en wat gaan we niet doen?
+\subsection{Writing libraries with EDSLs}
+Using data-reify for compilers
+Proofs as programs / Curry-Howard.
+\subsection{Porting an existing application}
+\subsection{Control flow: a library for workflow control-flows}
+\subsection{Domain model: generic programming}
+
+
+% TODO:
+% research statement?
+% 
+
+%----------------------------------------
+
+To give a concrete example, a workflow might look like this (written down in Haskell):
+
 
 \begin{code}
-example = do name <- getName
-             age  <- getAge
-             display ("Hi, " ++ name ++ ".")
-             return (age * 2)
+example = do  name  <- getName
+              email <- lookupEmailInDatabase name
+              display  ("Hi, " ++ email ++ ".")
+              return   name
 \end{code}
 
-This workflow presents the user with a form to enter her name, then a form to
-enter her age, next it displays the name and it will return the age. These tasks
-are sequenced. Not every line requires user interaction, this is a typical
-mixture of human tasks and computer tasks.
+This workflow presents the user with a task to enter her name, then a task to
+find the correspond e-mail address. Next it displays the address and it will
+return the name. These tasks are sequenced, and not every line requires user
+interaction. This is a typical interleaving of human tasks and computer tasks as
+can be found in workflows.
 
-We believe that having an executable specification is essential. However, it
-should not be limited to just one platform.  We envision a system where a
-workflow is an abstract description of a business process, and not mixed with
-implementation-specific code such as HTML fragments. For example, as mobile
-phones get more advanced, it would make a lot of sense to have a mobile version
-of a workflow application next to a web application. In other words, the
-workflow specification has to be \emph{platform-agnostic}.
+Building executable specifications is what workflow modeling tools are all
+about. However, execution should not be limited to just one platform, such as the web
+.  We envision a system where a workflow is an abstract description of a
+business process, and not mixed with implementation-specific code such as HTML
+fragments. For example, as mobile phones get more advanced, it would make a lot
+of sense to have a mobile version of a workflow application next to a web
+application. In other words, the workflow specification has to be
+\emph{platform-agnostic}.
 
 When designing an application that contains the workflow of an organization,
 there are multiple stakeholders. Not all of these people might know how to read
-a specification in the form of a computer program. On the other side, the
+a specification in the form of a computer program. On the other hand, the
 implementor might have to deal with unclear or incomplete requirements. From our
-own experience, we know that a lot of misunderstanding can be helped by
-integrating all stakeholders in the process of developing an application. In a
+own experience, we know that a lot of misunderstanding can be prevented by
+integrating all stakeholders in the development process. In a
 workflow system, workflows can be modelled as graphs and thus have a direct
 visual representation. By drawing this graph automatically from the
 specification there is always an up-to-date and understandable representation of
 the system that can be communicated to non-technical users.
 
-From a technical perspective, we believe that strong typing is essential for
-building reliable software. While the combinators of iTasks have rich types,
-iTasks is untyped at its core. When implementing and analyzing transformation
-functions on the core syntax, we would like the compiler to check that
-everything stays type-correct. By using a type system that is powerful enough to
-support features like GADTs, we can do typed transformations on the core datatypes.
+From a technical perspective, we believe that strong typing at every level is
+essential for building reliable software.  When implementing and analyzing
+transformation functions on the workflows, we would like the compiler to check
+that everything stays type-correct. By using a type system that is powerful
+enough to support features like GADTs, we can do typed transformations on the
+core datatypes.
 
 Workflows are very much about the processes, i.e. the flow of the language.
-Another important part when modeling business processes is the domain model. For
+Another important part when modeling applications is the domain model. For
 rapid development and maintenance, it is important to keep the domain model
 flexible. This means that the domain-specific code should be kept to a minimum.
 Generic programming is a technique that can facilitate this. For example, using
 generic programming, we can automatically generate forms, overview pages,
-database interfaces and API interfaces. We could not possibly envision all the
-generic functions, so a requirement is that it should be easy for a programmer
-to write their own generic functions.
+database interfaces and API interfaces. 
 
 \subsection{Related work}
 
@@ -109,14 +180,14 @@ be the end-product of a workflow, not the way to design it.
 
 \section{Research question}
 
-This thesis will investigate what is needed to have a workflow modeling tool
+This thesis project will investigate what is needed to have a workflow modeling tool
 where the implementor can build workflows in a composable way using the language
 Haskell. We want to know: 
 
 \begin{itemize}
-How can we design a system where a workflow specification is platform-agnostic?
-How can we design such a system in such a way that it is type-safe at every level?
-How can we minimize application-specific code by using generic programming?
+\item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
+\item How can we design that system in such a way that it has a type-safe core language?  
+\item How can we minimize application-specific code by using generic programming?
 \end{itemize}
 
 \subsection{Contribution}
@@ -124,16 +195,15 @@ How can we minimize application-specific code by using generic programming?
 Compared to other approaches, we will deliver a solution that is strongly typed
 at the highest and lowest level. By using modern techniques like GADTs and
 type-level programming we can build libraries that are fully type-checked using
-the compiler.
+the compiler. Also, we will build a number of libraries that can be used for
+building workflow applications.
 
 \section{Approach}
 
 We propose to build a workflow modeling tool in Haskell that provides the user
-with a way to express workflows in an implementation-agnostic way. We port an
+with a way to express workflows in an implementation-agnostic way. We will port an
 existing workflow application that is written in PHP to show how our system
-compares against a manual implementation of a workflow application. We will
-discuss how this application could have been implemented using other workflow
-modeling tools.
+compares against a manual implementation of a workflow application. 
 
 Using this application as a starting point, we will try to keep the
 application-specific code to a minimum by generalizing as much code as possible
@@ -159,7 +229,9 @@ faster than its PHP variant because we will compile it using an optimizing
 compiler, whereas the PHP variant is interpreted.
 
 \section{Planning}
-\section{Bibliography}
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
 
 \end{document}
 
