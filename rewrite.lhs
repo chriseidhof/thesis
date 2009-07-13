@@ -19,7 +19,7 @@
 \maketitle
 \tableofcontents
 
-\section{Introduction}
+\section{Introduction to Workflows}
 
 % soort abstract die persoonlijke motivatie geeft?
  
@@ -45,7 +45,7 @@ Platform-agnostic
 Extensibility. (misschien quality requirements van SE?)
 TODO
 
-\subsubsection{Domain specific languages}
+\section{Domain specific languages}
 
 A \emph{domain specific language} (DSL) is a programming language designed to express
 solutions in a specific domain. It is the opposite of a general-purpose
@@ -64,7 +64,7 @@ is given a semantics by interpreting it or compiling it into executable code.
 Also, a tool can check for well-formedness (with regard to the syntax) and
 correctness (with regard to the semantics) of the expressed solutions.
 
-\subsubsection{Embedded domain specific languages}
+\subsection{Embedded domain specific languages}
 
 When a DSL is integrated into another language, it is called an \emph{embedded
 domain specific language}. Here, the symbols of the DSL are also symbols in the
@@ -81,23 +81,91 @@ libraries for describing parsers. These libraries provide a number of symbols
 that can be combined to write parsers. They use Haskell's type system to give
 partial proofs about what the result of parsing might be.
 
-\section{Generic Programming}
+\section{Model Driven Development}
 
-TODO
+The domain model describes the entities and relations in a problem domain. In
+model driven development, the domain model is kept close to concepts in the
+problem domain, in contrast to computing concepts. This again opens up
+possibilities for non-technical people to understand part of the application
+development.
+
+As new insights arrive from communicating with the stakeholders in the
+application development process, the model often changes. From our experience,
+we know that it takes a couple of iterations before the domain model arrives at
+its final state. Therefore, we believe that it is vital to keep the domain model
+as flexible as possible.
+
+\subsection{Generic Programming}
+
+TODO: explain nominative vs. structural.
+
+Using datatype-generic programming we can write functions that operate on the
+structure of data. A generic function is a function that operates on an
+arbitrary value as long as it can be generically inspected. In a language with a
+nominative type system, generic programming often does not come for free. A
+value first needs to be converted into a structural view before it can be
+processed by generic functions. Afterwards, it needs to be converted back. An
+\emph{embedded projection pair} is the pair of functions that does these
+conversions.
+
+Generic programming can be used to keep the domain model flexible. If we specify
+our domain model as nominative types and derive the embedding projection pair,
+we can do generic programming on the domain model. We can build a lot of useful
+generic functions: a generic database interface, generic forms, XML generation,
+to name a few. 
+
+We are not the first to envision this. In recent research, iData has done this
+in the Clean programming language. iData is a library of generic functions that
+generates forms and offers serialization (in files or a database) of values.
+However, it is not clear if it is easy to write custom functions.
 
 \section{Research Statement}
 
-Monads vs. arrows
-Observable sharing
 
 \section{Our approach}
+Tell about choosing Haskell.
 % Duidelijk afbakenen: wat gaan we wel en wat gaan we niet doen?
-\subsection{Writing libraries with EDSLs}
+
+
+\subsection{Writing libraries as EDSLs}
+
+When writing a library as an EDSLs there are a couple of implementation issues. For
+example, consider the following Haskell expression:
+
+\begin{code}
+data Graph = Branch Tree Tree | Leaf Int
+infiniteGraph = Branch (Leaf 1) myTree
+\end{code}
+
+The expression |infiniteGraph| is a finite representation of an infinite value.
+When analyzing the value, we can endlessly keep unfolding the recursive call to
+|myTree|. An alternative way of representing this graph is as following:
+
+\begin{code}
+newtype Ref    =  Ref Int -- A reference to a tree expression
+data Graph     =  Branch Ref Ref | Leaf Int
+infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
+                  ,(Ref 2, Leaf 1)
+                  ]
+\end{code}
+
+Here, we have made the sharing explicit. However, this method has the
+disadvantage of being a lot more verbose, and not as safe. 
+
+In workflow definitions, we also want to be able to use recursion.
+However, when we analyze a workflow definition, we want to be able to detect
+recursion.
+
+
 Using data-reify for compilers
 Proofs as programs / Curry-Howard.
+Monads vs. arrows
+Observable sharing
 \subsection{Porting an existing application}
 \subsection{Control flow: a library for workflow control-flows}
 \subsection{Domain model: generic programming}
+\subsubsection{Generic database access}
+\subsubsection{Generic forms}
 
 
 % TODO:
