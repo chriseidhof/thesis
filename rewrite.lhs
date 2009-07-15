@@ -31,14 +31,13 @@ confirming a message) or done by the computer (storing a record to the database,
 calculating a result). A workflow process definition not only specifies the
 activities, but also in what order they need to be executed.
 
-Workflow management system
-Expressive power
-
-Patterns, transitions
-
-Data: domain-model, etc.
-
-Platform-agnostic
+TODO: \begin{itemize}
+\item Workflow management system
+\item Expressive power
+\item Patterns, transitions
+\item Data: domain-model, etc.
+\item Platform-agnostic
+\end{itemize}
 
 \subsection{Implementation approaches}
 
@@ -90,7 +89,7 @@ possibilities for non-technical people to understand part of the application
 development.
 
 As new insights arrive from communicating with the stakeholders in the
-application development process, the model often changes. From our experience,
+application development process, the model changes. From our experience,
 we know that it takes a couple of iterations before the domain model arrives at
 its final state. Therefore, we believe that it is vital to keep the domain model
 as flexible as possible.
@@ -124,6 +123,7 @@ However, it is not clear if it is easy to write custom functions.
 
 \section{Our approach}
 Tell about choosing Haskell.
+This is where I explain what we're going to build and how we are going to do it.
 % Duidelijk afbakenen: wat gaan we wel en wat gaan we niet doen?
 
 
@@ -254,10 +254,47 @@ Choosing one of these abstractions can have great impacts on library design, as
 we will see in the next paragraph.
 
 \subsection{Control flow: a library for workflow control-flows}
-Talk about observable sharing.
-Talk about curry-howard
-Talk about continuations/serializing with regard to control abstraction.
+
+When writing down a workflow, we could do that in a monadic style. For example,
+consider the following program:
+
+\begin{code}
+example = do  name  <- getName
+              email <- lookupEmailInDatabase name
+              display  ("Hi, " ++ email ++ ".")
+              return   name
+\end{code}
+
+This workflow presents the user with a task to enter her name, then a task to
+find the correspond e-mail address. Next it displays the e-mail address and it will
+return the name. These tasks are sequenced, and not every line requires user
+interaction. This is a typical interleaving of human tasks and computer tasks as
+can be found in workflows.
+
+If we rewrite this example without |do|-notation, we get the following code:
+
+\begin{code}
+example  =    getName 
+         >>=  \name  ->  lookupEmailInDatabase name
+                         >>= \email ->  display ("Hi, " ++ email ++ ".")
+                                        >> return name
+\end{code}
+
+It can be seen from this example that the scope of the |name| variable extends
+to the rest of the expression. 
+
+Translating this program to a web application is not straightforward. TODO:
+explain about statelessness, keeping the program in memory and serializing.
+
+
+\begin{itemize}
+\item Talk about observable sharing.
+\item Talk about curry-howard?
+\item Talk about continuations/serializing with regard to control abstraction.
+\end{itemize}
 \subsection{Domain model: generic programming}
+Show some generic functions, domain model representation, etc.
+\subsubsection{Structural representation}
 \subsubsection{Generic database access}
 \subsubsection{Generic forms}
 \subsection{Porting an existing application}
@@ -273,10 +310,6 @@ Talk about continuations/serializing with regard to control abstraction.
 % 
 % 
 % \begin{code}
-% example = do  name  <- getName
-%               email <- lookupEmailInDatabase name
-%               display  ("Hi, " ++ email ++ ".")
-%               return   name
 % \end{code}
 % 
 % This workflow presents the user with a task to enter her name, then a task to
