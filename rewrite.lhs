@@ -19,10 +19,18 @@
 \maketitle
 \tableofcontents
 
-\section{Introduction to Workflows}
+\section{Introduction}
 
-% soort abstract die persoonlijke motivatie geeft?
+In this thesis proposal we will describe the building of a workflow management
+system implemented in Haskell using domain specific languages. The next section
+will give an introduction to workflows and workflow management tools. We will
+then give an introduction to domain specific languages and generic programming.
+These sections will form the basis for our work, which we will define in
+section \ref{approach}.
+%TODO: persoonlijke motivatie.
+
  
+\section{Workflows}
 
 Workflow systems describe how humans and computers interact. A \emph{workflow process
 definition} describes which activities are needed to complete a certain business
@@ -31,18 +39,30 @@ confirming a message) or done by the computer (storing a record to the database,
 calculating a result). A workflow process definition not only specifies the
 activities, but also in what order they need to be executed.
 
-TODO: \begin{itemize}
-\item Workflow management system
-\item Expressive power
-\item Patterns, transitions
-\item Data: domain-model, etc.
-\item Platform-agnostic
-\end{itemize}
+A workflow management system is a tool to build executable specifications of
+workflows. It is often a standalone product, and sometimes integrated into a
+programming language. This distinction can make a large difference in the
+\emph{expressive power} of a workflow management system.
 
-\subsection{Implementation approaches}
+The Workflow Patterns initiative has built a set of commonly recurring patterns
+for workflow processes. They are similar to design patterns used in software
+development. Not all workflow management systems supports all patterns but
+sometimes, depending on the expressive power of such a system, it can be
+extended to support additional patterns.
 
-Extensibility. (misschien quality requirements van SE?)
-TODO
+Sometimes, when designing workflow applications, the workflow is implemented
+without a workflow management system. For example, it can be implemented in an
+ad-hoc way as a web application. This can make it very hard to support
+additional platforms, such as mobile devices. By using the right workflow
+management system an implementor can abstract over platforms.
+
+Also, a workflow system has to interact with the user and other systems or
+processes. Much of this interaction is based on the domain of the problem. In
+section \ref{domaindriven} we will see how a domain model can help keeping
+workflow applications flexible.
+
+% implementation approaches
+%   what's already there? what are the (dis)advantages?
 
 \section{Domain specific languages}
 
@@ -73,7 +93,7 @@ inherit all kinds of properties of that language.
 Using all the features of the host languages gives a DSL a great amount of
 interoperability with other libraries. Also, by using the type system of the
 host language, a partial correctness check can be done by modeling logical rules
-in the type system.  We will elaborate on this in a later section.
+in the type system.  We will elaborate on this in later sections.
 
 As a good example, in the Haskell programming language, there are several
 libraries for describing parsers. These libraries provide a number of symbols
@@ -81,6 +101,7 @@ that can be combined to write parsers. They use Haskell's type system to give
 partial proofs about what the result of parsing might be.
 
 \section{Model Driven Development}
+\label{domaindriven}
 
 The domain model describes the entities and relations in a problem domain. In
 model driven development, the domain model is kept close to concepts in the
@@ -122,25 +143,37 @@ However, it is not clear if it is easy to write custom functions.
 
 
 \section{Our approach}
-Tell about choosing Haskell.
-This is where I explain what we're going to build and how we are going to do it.
-% Duidelijk afbakenen: wat gaan we wel en wat gaan we niet doen?
+\label{approach}
 
+We are going to build two embedded domain specific languages in the Haskell
+programming language. The first EDSL will be about the control flow of workflow
+tasks. To further assist building workflow applications, we will build a library
+for building domain models. We will provide a structured view on domain models
+and build generic functions to deal with them. Before we describe the actual
+libraries, we will first discuss some relevant issues when building EDSLs in
+Haskell. We will then introduce the two EDSLs and finally discuss the porting of
+an existing application to our system.
 
 \subsection{Writing libraries as EDSLs}
 
-
-When writing a library as an EDSLs there are a couple of implementation issues.
-TODO: elaborate.
+When implementing embedded domain specific languages there are a lot of design
+choices to be made. For example, when choosing Haskell as a programming
+language, you get a lot of things for free, such as automatic sharing of values
+and a type system. We will discuss the problems that arise when using sharing
+and how we can use Haskell's type system to our advantage. Finally, we will
+discuss abstraction for stateful computations.
 
 \subsubsection{Observable Sharing}
-For
-example, consider the following Haskell expression:
+
+Due to the laziness of Haskell it is possible to construct values that can be
+infinitely unfolded. For example, consider the following Haskell expression:
 
 \begin{code}
-data Graph = Branch Tree Tree | Leaf Int
-infiniteGraph = Branch (Leaf 1) myTree
+data Graph = Branch Graph Graph | Leaf Int
+infiniteGraph = Branch (Leaf 1) infiniteGraph
 \end{code}
+
+A graphical representation looks like this: (TODO: insert graph)
 
 The expression |infiniteGraph| is a finite representation of an infinite value.
 When analyzing the value, we can endlessly keep unfolding the recursive call to
@@ -158,7 +191,7 @@ Here, we have made the sharing explicit. However, this method has the
 disadvantage of being a lot more verbose, and not as safe. It is possible to
 construct a Graph expression that refers to a non-existing graph.
 
-Ideally, we want to specify our graphs using ordinary recursion, as in the
+Sometimes, we want to specify our graphs using ordinary recursion, as in the
 first example, but we would like to be able to convert them into the second
 representation, where recursion and sharing is made explicit. By using
 techniques for observable sharing we can achieve this. It has first been
@@ -169,15 +202,8 @@ different papers?)
 
 \subsubsection{Lifting on Haskell's type system}
 
-% When building a program, we want to be able to make certain claims about it.
-% Some of these claims can be made in the form of a proof. Ideally, we want the
-% computer to check these claims. By expressing properties of a program at the
-% type-level, we can have the compiler check for correctness of our program. The
-% Curry-Howard correspondence is the relationship between the programs and the
-% proofs. When designing an EDSL, we can open up the way for users of the EDSL to
-% make static guarantees about their code by encoding important properties in the
-% type system.
-
+In this paragraph we will show how advanced features of Haskell's type system
+can be used to make stronger guarantees about the correctness of our programs.
 For example, when designing an embedded expression language, we could use the
 following approach:
 
@@ -187,8 +213,8 @@ data Exp = Num Int | Boolean Bool | If Exp Exp Exp | Add Exp Exp
 
 However, using this datatype, it is possible to construct an expression that
 adds two Booleans. In general, this is not desirable. We would like to prove
-statically that every expression is well-typed. By using GADTs, we can restrict
-the expressions to be well-typed:
+statically that every expression is well-typed. By using GADTs \cite{gadts}, 
+we can restrict the expressions to be well-typed:
 
 \begin{code}
 data Exp a where
@@ -216,12 +242,10 @@ arrows, monads and applicative functors (or idioms). When implementing an EDSL
 that does stateful computation, it can be interesting to use one or more of
 these abstractions.
 
-TODO: I stole the example from Ezra's Research.
-TODO: Cite Wadler
-
-The three abstractions in the previous paragraph are not equally powerful. An
-example is a good way to show the relative strengths. When using monads you
-can use an intermediate result at any future step:
+The three abstractions in the previous paragraph are not equally powerful. On
+his website, Cooper \cite{cooperblog} gives a very clear example of the
+the relative strengths. When using monads you can use an intermediate result at
+any future step:
 
 \begin{code}
 do  x <- compOne
@@ -293,10 +317,53 @@ explain about statelessness, keeping the program in memory and serializing.
 \item Talk about continuations/serializing with regard to control abstraction.
 \end{itemize}
 \subsection{Domain model: generic programming}
-Show some generic functions, domain model representation, etc.
+
+For our domain model, we will use generic programming. What we describe in this
+section is also known as an entity-relationship model. It describes the
+different entities and their relationships. An entity is related to an
+entity in the problem domain that we are describing.  Every entity has a number
+of attributes.
+
+For example, when modeling an organization, one of the entities might be
+|Employee|, which describes an employee in the organization. It can have
+attributes such as |name|, |address| and |birthdate|. Another entity might be
+|Department|. Typically, an employee belongs to exactly one department but a
+department might have any number of employees.
+
+In Haskell, we could define our domain model like this:
+
+\begin{code}
+data Employee   = Employee   {name :: String, address :: String, birthdate :: DateTime, department :: BelongsTo Department}
+data Department = Department {departmentTitle :: String, employees :: HasMany Employee}
+\end{code}
+
+Here, we have explicitly encoded the relationships using special types such as
+|BelongsTo| and |HasMany|. TODO: explain why or forward-reference.
+
 \subsubsection{Structural representation}
+
+In order to write generic functions on our domain model, we need a structured
+representation for the model and embedding projection pairs. The combination of
+these codes and conversion functions is called a \emph{universe}. For our
+purposes we will only consider single-constructor record types (todo: explain
+why). Therefore, we can restrict our universe to these types. 
+
+TODO: give a more formal definition.
+
+Every generic programming library has different requirements. Rodriguez et al.
+(TODO: cite) have compared a large number of different libraries for generic
+programming. From carefully analyzing the different criteria in that research we
+have chosen to develop a variant of the EMGM \cite{emgm} library. We believe it
+is important to have extensible universes so that the programmer is not limited
+to the datatypes in the library.
+
+While EMGM is applicable for virtually every kind of datatype, we have chosen a
+universe that is specific for our domain model. TODO: explain differences.
+
 \subsubsection{Generic database access}
+
 \subsubsection{Generic forms}
+
 \subsection{Porting an existing application}
 
 

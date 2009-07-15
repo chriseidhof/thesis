@@ -8,4 +8,4 @@ rewrite.pdf: rewrite.lhs
 
 %.pdf: %.tex
 	bibtex proposal
-	pdflatex $<
+	latexmk -pdf $<
