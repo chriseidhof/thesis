@@ -27,7 +27,7 @@ data CRU = Create | List
  deriving (Show, Read, Eq, Enum, Bounded)
 
 sample = form (enumSelect Nothing)
-     >>> if_ (== Create) (create (Empty :: PT User)) list
+     >>> if_ (== Create) (create userType) list
 
 create pt =  form (form' pt) 
          >>> dbNew 
@@ -37,6 +37,8 @@ list = display "List"
 
 -- helpers
 data PT a = Empty
+
+userType = (Empty :: PT User)
 
 form' :: Rep GF.Form a => PT a -> Form a
 form' _ = GF.form Nothing

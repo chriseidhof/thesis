@@ -1,6 +1,7 @@
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %format :-> = "\mapsto"
+%format +++ = "\oplus"
 % vim:spell
 \usepackage{a4wide}
 \usepackage{times}
@@ -117,15 +118,12 @@ as flexible as possible.
 
 \subsection{Generic Programming}
 
-TODO: explain nominative vs. structural.
-
 Using datatype-generic programming we can write functions that operate on the
-structure of data. A generic function is a function that operates on an
-arbitrary value as long as it can be generically inspected. In a language with a
-nominative type system, generic programming often does not come for free. A
-value first needs to be converted into a structural view before it can be
-processed by generic functions. Afterwards, it needs to be converted back. An
-\emph{embedded projection pair} is the pair of functions that does these
+structure of data.  In a language with a nominative type system, generic
+programming often does not come for free. A value first needs to be converted
+into a structural view before it can be processed by generic functions.
+Afterwards, it needs to be converted back. An \emph{embedding projection pair} is
+the pair of functions that does these
 conversions.
 
 Generic programming can be used to keep the domain model flexible. If we specify
@@ -139,6 +137,7 @@ in the Clean programming language. iData is a library of generic functions that
 generates forms and offers serialization (in files or a database) of values.
 However, it is not clear if it is easy to write custom functions.
 
+
 \section{Research Statement}
 
 
@@ -148,20 +147,20 @@ However, it is not clear if it is easy to write custom functions.
 We are going to build two embedded domain specific languages in the Haskell
 programming language. The first EDSL will be about the control flow of workflow
 tasks. To further assist building workflow applications, we will build a library
-for building domain models. We will provide a structured view on domain models
-and build generic functions to deal with them. Before we describe the actual
-libraries, we will first discuss some relevant issues when building EDSLs in
-Haskell. We will then introduce the two EDSLs and finally discuss the porting of
-an existing application to our system.
+for generic programming on domain models. 
+  
+Before we describe the actual libraries, we will first discuss some relevant
+issues when building EDSLs in Haskell. We will then introduce the two EDSLs and
+finally discuss the porting of an existing application to our system.
 
 \subsection{Writing libraries as EDSLs}
 
 When implementing embedded domain specific languages there are a lot of design
-choices to be made. For example, when choosing Haskell as a programming
-language, you get a lot of things for free, such as automatic sharing of values
-and a type system. We will discuss the problems that arise when using sharing
-and how we can use Haskell's type system to our advantage. Finally, we will
-discuss abstraction for stateful computations.
+choices to be made. We choose Haskell as our host language. This gives us a lot
+of things for free, such as automatic sharing of values and a type system. We
+will discuss the problems that arise when using sharing and how we can use
+Haskell's type system to our advantage. Finally, we will discuss abstraction for
+stateful computations.
 
 \subsubsection{Observable Sharing}
 
@@ -187,9 +186,9 @@ infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
                   ]
 \end{code}
 
-Here, we have made the sharing explicit. However, this method has the
-disadvantage of being a lot more verbose, and not as safe. It is possible to
-construct a Graph expression that refers to a non-existing graph.
+Here, we have made sharing explicit. However, writing down graphs in this way is
+error-prone and a lot more verbose. For example, it is possible to construct a
+Graph expression that refers to a non-existing graph.
 
 Sometimes, we want to specify our graphs using ordinary recursion, as in the
 first example, but we would like to be able to convert them into the second
@@ -197,8 +196,8 @@ representation, where recursion and sharing is made explicit. By using
 techniques for observable sharing we can achieve this. It has first been
 introduced to the Haskell community by Claessen and Sands \cite{sharing} and has
 been refined over the years. The solution proposed by Gill \cite{reify} has
-virtually no impact on the user of the DSL. (TODO: maybe elaborate on the
-different papers?)
+virtually no impact on the user of the DSL. A user writes down the graph using
+Haskell's recursion.
 
 \subsubsection{Lifting on Haskell's type system}
 
@@ -212,9 +211,9 @@ data Exp = Num Int | Boolean Bool | If Exp Exp Exp | Add Exp Exp
 \end{code}
 
 However, using this datatype, it is possible to construct an expression that
-adds two Booleans. In general, this is not desirable. We would like to prove
-statically that every expression is well-typed. By using GADTs \cite{gadts}, 
-we can restrict the expressions to be well-typed:
+adds two Boolean expressions. In general, this is not desirable. We would like
+to prove statically that every expression is well-typed. By using GADTs
+\cite{gadts}, we can restrict the expressions to be well-typed:
 
 \begin{code}
 data Exp a where
@@ -224,9 +223,9 @@ data Exp a where
   Add      :: Exp Int   -> Exp Int  -> Exp Int
 \end{code}
 
-This expression datatype gives a lot more guarantees about the well-typedness of
-its expressions. GADTs can help both the designer and user of an EDSL to
-guarantee correctness of the EDSL and the programs written with it.
+This datatype gives a lot more guarantees about the well-typedness of its
+expressions. GADTs can help both the designer and user of an EDSL to guarantee
+correctness of the EDSL and the programs written with it.
 
 On a more theoretical note, this relates to the Curry-Howard correspondence. For
 example, the |If|-constructor can be read as: if you give me an expression that
@@ -262,7 +261,7 @@ done explicitly.
 \begin{code}
 do  x <- compOne
     y <- compTwo x
-    return y -- It is not allowed to use 'x' here.
+    return y -- You are not allowed to use 'x' here.
 \end{code}
 
 Applicative functors restrict this even further, you can only use intermediate
@@ -274,97 +273,207 @@ do  x <- compOne
     return (x + y)
 \end{code}
 
-Choosing one of these abstractions can have great impacts on library design, as
-we will see in the next paragraph.
+Choosing one of these abstractions has great impacts on library design, as we
+will see in the next paragraph.
 
 \subsection{Control flow: a library for workflow control-flows}
 
-When writing down a workflow, we could do that in a monadic style. For example,
-consider the following program:
+We can now combine the ingredients from the previous sections to build a library
+for describing the control-flow of a workflow. In our library we will give an
+executable specification of the workflow.
 
-\begin{code}
-example = do  name  <- getName
-              email <- lookupEmailInDatabase name
-              display  ("Hi, " ++ email ++ ".")
-              return   name
-\end{code}
+Give a graphical example of the workflow, show how it can be translated into
+monads/arrows. Describe what the problems of monads are (analysis). Describe how
+we can use observable sharing to turn graph into FSM and what the advantages
+are (less state on client). Show why we can't use arrows directly. Talk about
+garbage collection of continuations.
 
-This workflow presents the user with a task to enter her name, then a task to
-find the correspond e-mail address. Next it displays the e-mail address and it will
-return the name. These tasks are sequenced, and not every line requires user
-interaction. This is a typical interleaving of human tasks and computer tasks as
-can be found in workflows.
-
-If we rewrite this example without |do|-notation, we get the following code:
-
-\begin{code}
-example  =    getName 
-         >>=  \name  ->  lookupEmailInDatabase name
-                         >>= \email ->  display ("Hi, " ++ email ++ ".")
-                                        >> return name
-\end{code}
-
-It can be seen from this example that the scope of the |name| variable extends
-to the rest of the expression. 
-
-Translating this program to a web application is not straightforward. TODO:
-explain about statelessness, keeping the program in memory and serializing.
-
-
-\begin{itemize}
-\item Talk about observable sharing.
-\item Talk about curry-howard?
-\item Talk about continuations/serializing with regard to control abstraction.
-\end{itemize}
 \subsection{Domain model: generic programming}
+
+Our domain model is described as an entity-relationship model. For example, when
+describing a weblog, our model might contain entities for users, posts and
+comments. When building an application, we need to persist the domain model,
+visualize it and maybe provide users of the application with an API for it.
+
+A lot of these functions work on the structure of a domain model. For example,
+if we generate a form for editing a post on the weblog we can derive this form
+solely from the structure of the entity. This is of course an application of
+generic programming.
 
 For our domain model, we will use generic programming. What we describe in this
 section is also known as an entity-relationship model. It describes the
-different entities and their relationships. An entity is related to an
-entity in the problem domain that we are describing.  Every entity has a number
-of attributes.
+different entities and their relationships. (TODO: expand on this?)
 
-For example, when modeling an organization, one of the entities might be
-|Employee|, which describes an employee in the organization. It can have
-attributes such as |name|, |address| and |birthdate|. Another entity might be
-|Department|. Typically, an employee belongs to exactly one department but a
-department might have any number of employees.
-
-In Haskell, we could define our domain model like this:
+In Haskell, we could define our domain model for a weblog like this:
 
 \begin{code}
-data Employee   = Employee   {name :: String, address :: String, birthdate :: DateTime, department :: BelongsTo Department}
-data Department = Department {departmentTitle :: String, employees :: HasMany Employee}
+data Post       = Post    {title :: String, body :: String, author :: BelongsTo User, comments :: HasMany Comment}
+data Comment    = Comment {text :: String, date :: DateTime, author :: BelongsTo User}
+data User       = User    {name :: String, password :: String, age :: Int}
 \end{code}
 
 Here, we have explicitly encoded the relationships using special types such as
-|BelongsTo| and |HasMany|. TODO: explain why or forward-reference.
+|BelongsTo| and |HasMany|. These are used to encode the kind of relationship
+(one-to-one, one-to-many, etc.). We will expand upon this in a later section.
 
 \subsubsection{Structural representation}
 
 In order to write generic functions on our domain model, we need a structured
 representation for the model and embedding projection pairs. The combination of
-these codes and conversion functions is called a \emph{universe}. For our
-purposes we will only consider single-constructor record types (todo: explain
-why). Therefore, we can restrict our universe to these types. 
+these codes and conversion functions is called a \emph{universe}.
 
-TODO: give a more formal definition.
+Every generic programming library has different features and requirements. We
+have used the comparison from Rodriguez et al. (todo cite) to evaluate a number of
+libraries. We built a prototype generic programming library that was based on
+\emph{EMGM} (todo cite) and we have looked at \emph{regular}, which is recent work by Van Noort et al.
+(todo cite). 
 
-Every generic programming library has different requirements. Rodriguez et al.
-(TODO: cite) have compared a large number of different libraries for generic
-programming. From carefully analyzing the different criteria in that research we
-have chosen to develop a variant of the EMGM \cite{emgm} library. We believe it
-is important to have extensible universes so that the programmer is not limited
-to the datatypes in the library.
+TODO: explain why we chose regular (only single-constructor record types)
 
-While EMGM is applicable for virtually every kind of datatype, we have chosen a
-universe that is specific for our domain model. TODO: explain differences.
+\subsubsection{Generic views and forms}
+
+Using the regular library we can derive the structure of a datatype. For
+example, the |User|-datatype described above looks like this:
+
+\begin{code}
+data User       = User    {name :: String, password :: String, age :: Int}
+\end{code}
+
+When deriving the structural view using the \emph{regular} library, we get a
+function |from| that converts a value of type |User| into the structural
+representation:
+
+\begin{code}
+from :: User -> PF User User
+\end{code}
+
+When we expand the type on the right-hand side of the arrow, we get a type that
+looks like this:
+
+\begin{code}
+from :: User 
+     -> (C User_User_  
+           (       S User_User_name_      (K String)
+              :*: (S User_User_password_  (K String)
+              :*: (S User_User_age_       (K Int)))
+           )
+           User
+           )
+\end{code}
+
+Here we can see that the structural type is a constructor with a nested product
+type. Within the product type there is an |S|-type that describes the
+label and finally a |K|-type that refers to the type of a field.
+
+We can now write a function that generically generates an HTML view.
+
+\begin{code}
+class    Html  a       where html :: a -> X.Html
+instance Html  Int     where html = X.toHtml . show
+instance Html  String  where html = X.toHtml 
+
+class GHtml f where
+  ghtmlf :: (a -> X.Html) -> f a -> X.Html
+
+instance (Constructor c, GHtml f)  => GHtml (C c f)    where
+  ghtmlf f cx@(C x)   = (X.h1 << capitalize (conName cx)) +++ ghtmlf f x
+instance Html a                    => GHtml (K a)      where
+  ghtmlf _ (K x)      = html x
+instance (GHtml f, GHtml g)        => GHtml (f :*: g)  where
+  ghtmlf f (x :*: y)  = ghtmlf f x +++ X.br +++ ghtmlf f y
+instance (Selector s, GHtml f)     => GHtml (S s f)    where
+  ghtmlf f s@(S x)    = X.label << ((h s) ++ ": ") +++ ghtmlf f x
+
+ghtml :: (Regular a, GHtml (PF a)) => a -> X.Html
+ghtml x = ghtmlf ghtml (from x)
+\end{code}
+
+The type signature for the |ghtml| function states that if can convert |a| into
+a structural representation and if it can generate HTML for that structure then
+it can generate HTML for something of type |a|.
+
+As an example, we can run ghtml on a value of the User datatype:
+
+\begin{code}
+ghtml $ User "chris" "test" 24
+\end{code}
+
+As output we will get some HTML:
+
+\begin{verbatim}
+<h1>User</h1>
+<label>Name: </label> chris<br />
+<label>Password: </label> test<br/>
+<label>Age: </label> 24
+\end{verbatim}
+
+While this is great, we often want to slightly modify the HTML that is
+generated. For example, we might not want to include the password field. As far
+as we know, all frameworks for web programming require you to write custom HTML
+at this point. However, we would like to keep generating the HTML instead of
+writing it by hand.
+
+In order to do this we need a view on the User datatype and then generate the
+HTML for it. For example:
+
+\begin{code}
+data UserView = UserView {name_ :: String, age_ :: Int}
+toUserView :: User -> UserView
+toUserView u = UserView (name u) (age u)
+\end{code}
+
+Before we generate HTML for a |User|, we will first convert it into a |UserView|
+using the |toUserView| function and then generate the HTML.
+
+Using the formlets library (TODO cite) we can also generate forms in a generic
+way, much in the same way as we generate the HTML. A formlet consists of two
+functions:
+
+\begin{code}
+runFormlet :: Formlet a -> (Maybe a -> X.Html, FormParser a)
+\end{code}
+
+The first function is used to generate the HTML for a form and it takes an
+optional default value. The second function is to be used after the form is
+submitted, and it tries to parse the HTTP request variables to construct a value
+of type |a|. We can now generate forms for, for example, a User. However, we'd
+like to apply the same trick as we did with views: generate a form for a
+UserView and afterwards convert it back into a User. The problem of updatable
+views has been studied extensively in literature (todo: citations). We will use
+a combinator library by Visser et. al (todo cite fclabels) that allows us to
+build these views in a composable, type-safe way.
 
 \subsubsection{Generic database access}
 
-\subsubsection{Generic forms}
+Just like the views and forms above, we can generically derive methods to
+persist entities on disk. Often this is done using a database. By writing a
+number of small generic methods we can easily build a persistancy layer that
+stores our model in a database. We have completed a prototype library that does
+exactly this. In our research we want to explore this area further and see
+whether we can apply more techniques from database programming.
 
 \subsection{Porting an existing application}
+
+By porting an existing application written in PHP to our framework we want to
+compare both approaches on software quality metrics as described in The Art Of
+Software Architecture \cite{taosa}:
+
+\begin{itemize}
+\item Functionality
+\item Performance (efficiency)
+\item Modifiability
+\item Reliability
+\item Usability
+\item Portability
+\end{itemize}
+
+We expect to end up with an application with the same functionality, much better
+performance (PHP is an interpreted language). Also, because Haskell allows for
+more abstraction, we expect to end up with a lot less code, which is good for
+modifiability. Because of the typechecker we expect that our program is more
+reliable and will have less bugs. The usability should be the same, but because
+of our declaritive way of building applications we expect that we can very
+easily port it to other architectures.
 
 
 % TODO:
@@ -441,55 +550,55 @@ universe that is specific for our domain model. TODO: explain differences.
 % textual specification can be much more powerful, and that a visual graph should
 % be the end-product of a workflow, not the way to design it.
 % 
-% \section{Research question}
-% 
-% This thesis project will investigate what is needed to have a workflow modeling tool
-% where the implementor can build workflows in a composable way using the language
-% Haskell. We want to know: 
-% 
-% \begin{itemize}
-% \item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
-% \item How can we design that system in such a way that it has a type-safe core language?  
-% \item How can we minimize application-specific code by using generic programming?
-% \end{itemize}
-% 
-% \subsection{Contribution}
-% 
-% Compared to other approaches, we will deliver a solution that is strongly typed
-% at the highest and lowest level. By using modern techniques like GADTs and
-% type-level programming we can build libraries that are fully type-checked using
-% the compiler. Also, we will build a number of libraries that can be used for
-% building workflow applications.
-% 
-% \section{Approach}
-% 
-% We propose to build a workflow modeling tool in Haskell that provides the user
-% with a way to express workflows in an implementation-agnostic way. We will port an
-% existing workflow application that is written in PHP to show how our system
-% compares against a manual implementation of a workflow application. 
-% 
-% Using this application as a starting point, we will try to keep the
-% application-specific code to a minimum by generalizing as much code as possible
-% into libraries. 
-% 
-% \subsection{The workflow library}
-% \subsection{Generic Programming library}
-% \subsection{Other libraries}
-% 
-% \section{Expected results}
-% 
-% We expect to end up with at least one application and two libraries. The first
-% library will be for building interactive workflows. The other library will
-% be for the generic programming on the domain model. It will provide facilities
-% for writing your own generic function as well as a number of default functions.
-% 
-% We suspect that the ported application will have less than half the LOC compared
-% to the original version. PHP provides not nearly as much mechanisms for
-% abstraction as Haskell. Also, we will end up with a fully type-checked version
-% of the application. Security is no longer an issue if we take the right
-% precautions at the type-level. Also, we expect the application to run much
-% faster than its PHP variant because we will compile it using an optimizing
-% compiler, whereas the PHP variant is interpreted.
+\section{Research question}
+
+This thesis project will investigate what is needed to have a workflow modeling tool
+where the implementor can build workflows in a composable way using the language
+Haskell. We want to know: 
+
+\begin{itemize}
+\item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
+\item How can we design that system in such a way that it has a type-safe core language?  
+\item How can we minimize application-specific code by using generic programming?
+\end{itemize}
+
+\subsection{Contribution}
+
+Compared to other approaches, we will deliver a solution that is strongly typed
+at the highest and lowest level. By using modern techniques like GADTs and
+type-level programming we can build libraries that are fully type-checked using
+the compiler. Also, we will build a number of libraries that can be used for
+building workflow applications.
+
+\section{Approach}
+
+We propose to build a workflow modeling tool in Haskell that provides the user
+with a way to express workflows in an implementation-agnostic way. We will port an
+existing workflow application that is written in PHP to show how our system
+compares against a manual implementation of a workflow application. 
+
+Using this application as a starting point, we will try to keep the
+application-specific code to a minimum by generalizing as much code as possible
+into libraries. 
+
+\subsection{The workflow library}
+\subsection{Generic Programming library}
+\subsection{Other libraries}
+
+\section{Expected results}
+
+We expect to end up with at least one application and two libraries. The first
+library will be for building interactive workflows. The other library will
+be for the generic programming on the domain model. It will provide facilities
+for writing your own generic function as well as a number of default functions.
+
+We suspect that the ported application will have less than half the LOC compared
+to the original version. PHP provides not nearly as much mechanisms for
+abstraction as Haskell. Also, we will end up with a fully type-checked version
+of the application. Security is no longer an issue if we take the right
+precautions at the type-level. Also, we expect the application to run much
+faster than its PHP variant because we will compile it using an optimizing
+compiler, whereas the PHP variant is interpreted.
 
 \section{Planning}
 
