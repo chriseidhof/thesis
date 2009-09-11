@@ -22,16 +22,32 @@
 
 \section{Introduction}
 
-In this thesis proposal we will describe the building of a workflow management
-system implemented in Haskell using domain specific languages. The next section
-will give an introduction to workflows and workflow management tools. We will
-then give an introduction to domain specific languages and generic programming.
-These sections will form the basis for our work, which we will define in
-section \ref{approach}.
-%TODO: persoonlijke motivatie.
+Web applications typically contain a lot of generated code that is based on the
+underlying ER-model. By generating the code the model can be kept flexible.
+However, oftentimes the generated code is edited and the flexibility is lost:
+changes in the model have to be encoded by hand. In this thesis proposal we will
+look at a way to keep the model flexible while still generating the code.
 
- 
-\section{Workflows}
+By using updateable views on our model we want to keep the handwritten code to a
+minimum. Instead of giving the implementation of the user interface we will give
+a description and then generate the interface. This has the advantage that no
+manual HTML needs to be written. Because our application is written down as a
+functional specification instead of as an implementation, we can easily generate
+an application for other platforms (such as mobile phones) too.
+
+Our work is inspired by contemporary web application frameworks such as Ruby on
+Rails.  They provide the user with a quick way to build and generate
+database-driven web applications. In all of these frameworks, however, the
+generated code is typically edited after generation. This means that changes to
+the model have to manually be kept in sync with the views.
+
+In the next chapter we will introduce some of the necessary vocabulary and
+background for our work. In the second chapter we will state our research
+question and the approach. We will conclude with the expected results and a
+planning.
+
+\section{Context}
+\subsection{Workflows}
 
 Workflow systems describe how humans and computers interact. A \emph{workflow process
 definition} describes which activities are needed to complete a certain business
@@ -65,7 +81,7 @@ workflow applications flexible.
 % implementation approaches
 %   what's already there? what are the (dis)advantages?
 
-\section{Domain specific languages}
+\subsection{Domain specific languages}
 
 A \emph{domain specific language} (DSL) is a programming language designed to express
 solutions in a specific domain. It is the opposite of a general-purpose
@@ -84,74 +100,22 @@ is given a semantics by interpreting it or compiling it into executable code.
 Also, a tool can check for well-formedness (with regard to the syntax) and
 correctness (with regard to the semantics) of the expressed solutions.
 
-\subsection{Embedded domain specific languages}
+\subsubsection{Embedded domain specific languages}
 
 When a DSL is integrated into another language, it is called an \emph{embedded
-domain specific language}. Here, the symbols of the DSL are also symbols in the
+domain specific language} or EDSL. Here, the symbols of the DSL are also symbols in the
 \emph{host language}. By embedding the DSL into another language, the DSL will
 inherit all kinds of properties of that language. 
 
 Using all the features of the host languages gives a DSL a great amount of
 interoperability with other libraries. Also, by using the type system of the
-host language, a partial correctness check can be done by modeling logical rules
-in the type system.  We will elaborate on this in later sections.
+host language (when applicable), some properties can be stated about programs
+written in the EDSL.  We will elaborate on this in later sections.
 
-As a good example, in the Haskell programming language, there are several
-libraries for describing parsers. These libraries provide a number of symbols
-that can be combined to write parsers. They use Haskell's type system to give
-partial proofs about what the result of parsing might be.
-
-\section{Model Driven Development}
-\label{domaindriven}
-
-The domain model describes the entities and relations in a problem domain. In
-model driven development, the domain model is kept close to concepts in the
-problem domain, in contrast to computing concepts. This again opens up
-possibilities for non-technical people to understand part of the application
-development.
-
-As new insights arrive from communicating with the stakeholders in the
-application development process, the model changes. From our experience,
-we know that it takes a couple of iterations before the domain model arrives at
-its final state. Therefore, we believe that it is vital to keep the domain model
-as flexible as possible.
-
-\subsection{Generic Programming}
-
-Using datatype-generic programming we can write functions that operate on the
-structure of data.  In a language with a nominative type system, generic
-programming often does not come for free. A value first needs to be converted
-into a structural view before it can be processed by generic functions.
-Afterwards, it needs to be converted back. An \emph{embedding projection pair} is
-the pair of functions that does these
-conversions.
-
-Generic programming can be used to keep the domain model flexible. If we specify
-our domain model as nominative types and derive the embedding projection pair,
-we can do generic programming on the domain model. We can build a lot of useful
-generic functions: a generic database interface, generic forms, XML generation,
-to name a few. 
-
-We are not the first to envision this. In recent research, iData has done this
-in the Clean programming language. iData is a library of generic functions that
-generates forms and offers serialization (in files or a database) of values.
-However, it is not clear if it is easy to write custom functions.
-
-
-\section{Research Statement}
-
-
-\section{Our approach}
-\label{approach}
-
-We are going to build two embedded domain specific languages in the Haskell
-programming language. The first EDSL will be about the control flow of workflow
-tasks. To further assist building workflow applications, we will build a library
-for generic programming on domain models. 
-  
-Before we describe the actual libraries, we will first discuss some relevant
-issues when building EDSLs in Haskell. We will then introduce the two EDSLs and
-finally discuss the porting of an existing application to our system.
+As an example, in the Haskell programming language, there are several libraries
+for describing parsers. These libraries provide a number of symbols that can be
+combined to write parsers. They use Haskell's type system to describe what the
+result of parsing might be.
 
 \subsection{Writing libraries as EDSLs}
 
@@ -165,14 +129,19 @@ stateful computations.
 \subsubsection{Observable Sharing}
 
 Due to the laziness of Haskell it is possible to construct values that can be
-infinitely unfolded. For example, consider the following Haskell expression:
+infinitely unfolded. For example, consider the following Haskell expression
+which is visualized in Figure \ref{graphfig}:
 
 \begin{code}
 data Graph = Branch Graph Graph | Leaf Int
 infiniteGraph = Branch (Leaf 1) infiniteGraph
 \end{code}
 
-A graphical representation looks like this: (TODO: insert graph)
+\begin{figure}
+\includegraphics[width=2.5cm]{reify}
+\caption{A visual representation of the graph}
+\label{graphfig}
+\end{figure}
 
 The expression |infiniteGraph| is a finite representation of an infinite value.
 When analyzing the value, we can endlessly keep unfolding the recursive call to
@@ -186,9 +155,10 @@ infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
                   ]
 \end{code}
 
-Here, we have made sharing explicit. However, writing down graphs in this way is
-error-prone and a lot more verbose. For example, it is possible to construct a
-Graph expression that refers to a non-existing graph.
+Here, we have made sharing explicit by replacing all recursive positions with
+references. However, writing down graphs in this way is error-prone and a lot
+more verbose. For example, it is possible to construct a Graph expression that
+refers to a non-existing graph.
 
 Sometimes, we want to specify our graphs using ordinary recursion, as in the
 first example, but we would like to be able to convert them into the second
@@ -196,8 +166,8 @@ representation, where recursion and sharing is made explicit. By using
 techniques for observable sharing we can achieve this. It has first been
 introduced to the Haskell community by Claessen and Sands \cite{sharing} and has
 been refined over the years. The solution proposed by Gill \cite{reify} has
-virtually no impact on the user of the DSL. A user writes down the graph using
-Haskell's recursion.
+virtually no impact on the user of the DSL. A user writes down the graph in a
+style natural to Haskell.
 
 \subsubsection{Lifting on Haskell's type system}
 
@@ -227,13 +197,7 @@ This datatype gives a lot more guarantees about the well-typedness of its
 expressions. GADTs can help both the designer and user of an EDSL to guarantee
 correctness of the EDSL and the programs written with it.
 
-On a more theoretical note, this relates to the Curry-Howard correspondence. For
-example, the |If|-constructor can be read as: if you give me an expression that
-is proven to be of type |Bool| and two expressions of type |a|, I will construct
-an expression of type |a|. The program serves as proof for the type-correctness
-of the expressions.
-
-\subsubsection{Control abstraction}
+\subsection{Control abstraction}
 
 When describing stateful computations in Haskell there are a number of
 abstraction mechanisms available. The most commonly used abstractions are
@@ -276,17 +240,74 @@ do  x <- compOne
 Choosing one of these abstractions has great impacts on library design, as we
 will see in the next paragraph.
 
-\subsection{Control flow: a library for workflow control-flows}
 
-We can now combine the ingredients from the previous sections to build a library
-for describing the control-flow of a workflow. In our library we will give an
-executable specification of the workflow.
+\subsection{Model Driven Development}
+\label{domaindriven}
 
-Give a graphical example of the workflow, show how it can be translated into
-monads/arrows. Describe what the problems of monads are (analysis). Describe how
-we can use observable sharing to turn graph into FSM and what the advantages
-are (less state on client). Show why we can't use arrows directly. Talk about
-garbage collection of continuations.
+The domain model describes the entities and relations in a problem domain. In
+model driven development, the domain model is kept close to concepts in the
+problem domain.  This opens up possibilities for non-technical people to
+understand part of the application development.
+
+As new insights arrive from communicating with the stakeholders in the
+application development process, the model changes. From our experience,
+we know that it takes a couple of iterations before the domain model arrives at
+its final state. Therefore, we believe that it is vital to keep the domain model
+as flexible as possible.
+
+\subsection{Generic Programming}
+
+Using datatype-generic programming we can write functions that operate on the
+structure of data.  In a language with a nominative type system, generic
+programming often does not come for free. A value first needs to be converted
+into a structural view before it can be processed by generic functions.
+Afterwards, it can be converted back. An \emph{embedding projection pair} is the
+pair of functions that does these conversions.
+
+Generic programming can be used to keep the domain model flexible. If we specify
+our domain model as nominative types and derive the embedding projection pair,
+we can do generic programming on the domain model. We can build a lot of useful
+generic functions: a generic database interface, generic forms, XML generation,
+to name a few. 
+
+We are not the first to envision this. In recent research, iData has done this
+in the Clean programming language. iData is a library of generic functions that
+generates forms and offers serialization (in files or a database) of values.
+However, it is not clear if it is easy to write custom functions in iData.
+
+\subsection{Updatable views}
+
+Updatable views are a problem that has been studied extensively in both
+literature and practice. When we have a function $f$ that is a view on arguments
+of type $C$: $f : C \to A$. An updatable view also has a function $f^{-1}$ that
+has type $f^{-1} : A \times C \to C$. As an example, consider the function $fst$
+on pairs: $fst : A \times B \to A$. We say that $A$ is a view of the original
+pair. Now consider the function $fst^{-1} : A \times (A \times B) \to A \times
+B$ that updates the first element in the pair. The combination of $fst$ and
+$fst^{-1}$ is called a \emph{lens} (TODO cite) and turns $A$ into an updatable
+view. (TODO: this is just a sketch, citations needed and talk about rdbm systems).
+
+\section{Our research}
+
+\subsection{Research Question}
+
+Our main question is: \emph{How far can we push the declarative way of building
+applications?}. In order to answer this, we will investigate the following
+subquestions:
+\begin{itemize}
+\item What are the limits of can we use updateable views and generic programming?
+\item What are the right abstractions for control flow?
+\end{itemize}
+
+\subsection{Our approach}
+\label{approach}
+
+We are going to build two orthogonal embedded domain specific languages in the
+Haskell programming language. The first EDSL will focus on the combination of
+datatype-generic programming and updateable views for web development. The
+second EDSL will be a way of declaring control flow for application programming.
+To make sure our libraries are powerful enough for expressing real world
+problems we will port an existing PHP application.
 
 \subsection{Domain model: generic programming}
 
@@ -297,12 +318,8 @@ visualize it and maybe provide users of the application with an API for it.
 
 A lot of these functions work on the structure of a domain model. For example,
 if we generate a form for editing a post on the weblog we can derive this form
-solely from the structure of the entity. This is of course an application of
-generic programming.
-
-For our domain model, we will use generic programming. What we describe in this
-section is also known as an entity-relationship model. It describes the
-different entities and their relationships. (TODO: expand on this?)
+solely from the structure of the entity. One way of doing this structural
+programming is by using a generic programming library.
 
 In Haskell, we could define our domain model for a weblog like this:
 
@@ -312,21 +329,21 @@ data Comment    = Comment {text :: String, date :: DateTime, author :: BelongsTo
 data User       = User    {name :: String, password :: String, age :: Int}
 \end{code}
 
-Here, we have explicitly encoded the relationships using special types such as
+Here, we have annotated the relationships using special types such as
 |BelongsTo| and |HasMany|. These are used to encode the kind of relationship
 (one-to-one, one-to-many, etc.). We will expand upon this in a later section.
 
 \subsubsection{Structural representation}
 
-In order to write generic functions on our domain model, we need a structured
-representation for the model and embedding projection pairs. The combination of
-these codes and conversion functions is called a \emph{universe}.
+In order to write generic functions on our domain model, we need structural
+representations (using a basic set of codes) and embedding projection pairs. The
+combination of these codes and conversion functions is called a \emph{universe}.
 
 Every generic programming library has different features and requirements. We
 have used the comparison from Rodriguez et al. (todo cite) to evaluate a number of
 libraries. We built a prototype generic programming library that was based on
-\emph{EMGM} (todo cite) and we have looked at \emph{regular}, which is recent work by Van Noort et al.
-(todo cite). 
+\emph{EMGM} (todo cite) and we have looked at \emph{regular}, which is recent
+work by Van Noort et al.
 
 TODO: explain why we chose regular (only single-constructor record types)
 
@@ -436,12 +453,12 @@ runFormlet :: Formlet a -> (Maybe a -> X.Html, FormParser a)
 The first function is used to generate the HTML for a form and it takes an
 optional default value. The second function is to be used after the form is
 submitted, and it tries to parse the HTTP request variables to construct a value
-of type |a|. We can now generate forms for, for example, a User. However, we'd
-like to apply the same trick as we did with views: generate a form for a
-UserView and afterwards convert it back into a User. The problem of updatable
-views has been studied extensively in literature (todo: citations). We will use
-a combinator library by Visser et. al (todo cite fclabels) that allows us to
-build these views in a composable, type-safe way.
+of type |a|. We can now generate forms for, for example, a User. 
+
+This is where updatable views come into play. When we want to generate a view
+of the |User|-datatype, we would like to update the original value. By using a
+combinator library (TODO: cite) for defining updatable views we can achieve just
+this.
 
 \subsubsection{Generic database access}
 
@@ -451,6 +468,13 @@ number of small generic methods we can easily build a persistancy layer that
 stores our model in a database. We have completed a prototype library that does
 exactly this. In our research we want to explore this area further and see
 whether we can apply more techniques from database programming.
+
+\subsection{Control flow: a library for workflow control-flows}
+
+Write about the control flow library. Using right abstraction (arrows). Explain
+why we're not using Monads. Talk about Hughes's paper. Serializing state.
+Transform control flow structure into 
+
 
 \subsection{Porting an existing application}
 
