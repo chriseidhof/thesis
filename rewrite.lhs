@@ -22,28 +22,34 @@
 
 \section{Introduction}
 
-Web applications typically contain a lot of generated code that is based on the
-underlying ER-model. By generating the code the model can be kept flexible.
-However, oftentimes the generated code is edited and the flexibility is lost:
-changes in the model have to be encoded by hand. In this thesis proposal we will
-look at a way to keep the model flexible while still generating the code.
+A lot of database-driven applications contain a large amount of code that is
+directly based on the underlying ER-model. Typically, the code is
+platform-specific and partly generated. Sometimes the generated code is edited
+by hand to achieve customization.
 
-By using updateable views on our model we want to keep the handwritten code to a
-minimum. Instead of giving the implementation of the user interface we will give
-a description and then generate the interface. This has the advantage that no
-manual HTML needs to be written. Because our application is written down as a
-functional specification instead of as an implementation, we can easily generate
-an application for other platforms (such as mobile phones) too.
+We propose a system for building database-driven applications that is completely
+declarative: we want to achieve a level of abstraction that is
+platform-independent. From a single description, it should be easy to generate
+both a web application as well as an application for mobile phones.  The
+programmer doesn't have to know about the underlying implementation but builds
+graphical user interfaces and defines control flow using a high level of abstraction.
 
 Our work is inspired by contemporary web application frameworks such as Ruby on
-Rails.  They provide the user with a quick way to build and generate
-database-driven web applications. In all of these frameworks, however, the
-generated code is typically edited after generation. This means that changes to
-the model have to manually be kept in sync with the views.
+Rails and iTasks. These frameworks are written for a specific platform: the web.
+We want to abstract away from that platform and write applications for a number
+of platforms using the same techniques.
+
+By using updateable views or lenses on our ER-model we want to keep the
+platform-specific code to a
+minimum. Instead of giving the implementation of the user interface we will give
+write a description of the GUI and then generate the interface. This has the
+advantage that no manual GUI code needs to be written. Because our application
+is written down as a functional specification instead of as an implementation,
+we can easily generate applications for multiple platforms.
 
 In the next chapter we will introduce some of the necessary vocabulary and
 background for our work. In the second chapter we will state our research
-question and the approach. We will conclude with the expected results and a
+question and our approach. We will conclude with the expected results and a
 planning.
 
 \section{Context}
@@ -65,7 +71,8 @@ The Workflow Patterns initiative has built a set of commonly recurring patterns
 for workflow processes. They are similar to design patterns used in software
 development. Not all workflow management systems supports all patterns but
 sometimes, depending on the expressive power of such a system, it can be
-extended to support additional patterns.
+extended to support additional patterns. The number of patterns supported is
+another good indication of the expressive power.
 
 Sometimes, when designing workflow applications, the workflow is implemented
 without a workflow management system. For example, it can be implemented in an
@@ -73,17 +80,12 @@ ad-hoc way as a web application. This can make it very hard to support
 additional platforms, such as mobile devices. By using the right workflow
 management system an implementor can abstract over platforms.
 
-Also, a workflow system has to interact with the user and other systems or
-processes. Much of this interaction is based on the domain of the problem. In
-section \ref{domaindriven} we will see how a domain model can help keeping
-workflow applications flexible.
-
 % implementation approaches
 %   what's already there? what are the (dis)advantages?
 
 \subsection{Domain specific languages}
 
-A \emph{domain specific language} (DSL) is a programming language designed to express
+A \emph{domain specific language} (DSL) is a language designed to express
 solutions in a specific domain. It is the opposite of a general-purpose
 programming language. A DSL can be designed to help model a certain class of
 problems more directly. At the very minimum, a DSL consists of a set of
@@ -95,10 +97,11 @@ resemble a programming language. Alternatively, in workflow languages, the
 modeling of the workflow is often done graphically.  The symbols are the
 elements used to draw a workflow graph.
 
-The solution expressed using a DSL can be used for several purposes. Often, it
+A problem solution expressed using a DSL can be used for several purposes. Often, it
 is given a semantics by interpreting it or compiling it into executable code.
-Also, a tool can check for well-formedness (with regard to the syntax) and
-correctness (with regard to the semantics) of the expressed solutions.
+On the other hand, a tool can check for well-formedness (with regard to the
+syntax) and correctness (with regard to the semantics) of the expressed
+solutions.
 
 \subsubsection{Embedded domain specific languages}
 
@@ -117,14 +120,14 @@ for describing parsers. These libraries provide a number of symbols that can be
 combined to write parsers. They use Haskell's type system to describe what the
 result of parsing might be.
 
-\subsection{Writing libraries as EDSLs}
+\subsection{Writing libraries as EDSLs in Haskell}
 
 When implementing embedded domain specific languages there are a lot of design
-choices to be made. We choose Haskell as our host language. This gives us a lot
-of things for free, such as automatic sharing of values and a type system. We
-will discuss the problems that arise when using sharing and how we can use
-Haskell's type system to our advantage. Finally, we will discuss abstraction for
-stateful computations.
+choices to be made. In the rest of this proposal, we use Haskell as our host
+language. This gives us a lot of things for free, such as automatic sharing of
+values and a type system. We will discuss the problems that arise when using
+sharing and how we can use Haskell's type system to our advantage. Finally, we
+will discuss abstractions for stateful computations.
 
 \subsubsection{Observable Sharing}
 
@@ -145,7 +148,7 @@ infiniteGraph = Branch (Leaf 1) infiniteGraph
 
 The expression |infiniteGraph| is a finite representation of an infinite value.
 When analyzing the value, we can endlessly keep unfolding the recursive call to
-|myTree|. An alternative way of representing this graph is as following:
+itself. An alternative way of representing this graph is as following:
 
 \begin{code}
 newtype Ref    =  Ref Int -- A reference to a graph expression
@@ -158,9 +161,9 @@ infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
 Here, we have made sharing explicit by replacing all recursive positions with
 references. However, writing down graphs in this way is error-prone and a lot
 more verbose. For example, it is possible to construct a Graph expression that
-refers to a non-existing graph.
+refers to a non-existing node.
 
-Sometimes, we want to specify our graphs using ordinary recursion, as in the
+Ideally, we want to specify our graphs using ordinary recursion, as in the
 first example, but we would like to be able to convert them into the second
 representation, where recursion and sharing is made explicit. By using
 techniques for observable sharing we can achieve this. It has first been
@@ -195,13 +198,15 @@ data Exp a where
 
 This datatype gives a lot more guarantees about the well-typedness of its
 expressions. GADTs can help both the designer and user of an EDSL to guarantee
-correctness of the EDSL and the programs written with it.
+correctness of the EDSL and the programs written with it. In our thesis, we want
+to make use of the type system in such a way that it prevents us from writing
+faulty expressions.
 
 \subsection{Control abstraction}
 
 When describing stateful computations in Haskell there are a number of
 abstraction mechanisms available. The most commonly used abstractions are
-arrows, monads and applicative functors (or idioms). When implementing an EDSL
+arrows, monads and applicative functors (also called idioms). When implementing an EDSL
 that does stateful computation, it can be interesting to use one or more of
 these abstractions.
 
@@ -237,17 +242,16 @@ do  x <- compOne
     return (x + y)
 \end{code}
 
-Choosing one of these abstractions has great impacts on library design, as we
+Choosing one of these abstractions has great impact on library design, as we
 will see in the next paragraph.
-
 
 \subsection{Model Driven Development}
 \label{domaindriven}
 
-The domain model describes the entities and relations in a problem domain. In
-model driven development, the domain model is kept close to concepts in the
-problem domain.  This opens up possibilities for non-technical people to
-understand part of the application development.
+The ER model describes the entities and relations in a problem domain. In
+model driven development, the model is kept close to concepts in the problem
+domain.  This opens up possibilities for non-technical people to understand part
+of the application development.
 
 As new insights arrive from communicating with the stakeholders in the
 application development process, the model changes. From our experience,
@@ -267,7 +271,7 @@ pair of functions that does these conversions.
 Generic programming can be used to keep the domain model flexible. If we specify
 our domain model as nominative types and derive the embedding projection pair,
 we can do generic programming on the domain model. We can build a lot of useful
-generic functions: a generic database interface, generic forms, XML generation,
+generic functions: a generic database interface, generic forms and XML generation,
 to name a few. 
 
 We are not the first to envision this. In recent research, iData has done this
@@ -284,12 +288,15 @@ has type $f^{-1} : A \times C \to C$. As an example, consider the function $fst$
 on pairs: $fst : A \times B \to A$. We say that $A$ is a view of the original
 pair. Now consider the function $fst^{-1} : A \times (A \times B) \to A \times
 B$ that updates the first element in the pair. The combination of $fst$ and
-$fst^{-1}$ is called a \emph{lens} (TODO cite) and turns $A$ into an updatable
-view. (TODO: this is just a sketch, citations needed and talk about rdbm systems).
+$fst^{-1}$ is called a \emph{lens} (TODO cite) and makes $A$ an updatable
+view of $C$. The $fst$ is called the \emph{get} function and the $fst^{-1}$ is called
+the \emph{putback} function. (TODO: this is just a sketch, citations needed and talk about rdbm systems).
 
 \section{Our research}
 
 \subsection{Research Question}
+
+TODO
 
 Our main question is: \emph{How far can we push the declarative way of building
 applications?}. In order to answer this, we will investigate the following
@@ -309,17 +316,37 @@ second EDSL will be a way of declaring control flow for application programming.
 To make sure our libraries are powerful enough for expressing real world
 problems we will port an existing PHP application.
 
+To write an application, the user defines her ER-model and uses the functions
+from the generic programming library to build forms, views and other GUI
+elements. The resulting screens are then composed using the control flow
+library. This \emph{application description} can then be compiled for specific
+platforms. Figure \ref{overallarch} depicts the architecture of such an
+application.
+
+\begin{figure}
+\includegraphics{architecture/overall}
+\caption{The overall architecture}
+\label{overallarch}
+\end{figure}
+
 \subsection{Domain model: generic programming}
 
 Our domain model is described as an entity-relationship model. For example, when
 describing a weblog, our model might contain entities for users, posts and
 comments. When building an application, we need to persist the domain model,
-visualize it and maybe provide users of the application with an API for it.
+visualize it and maybe provide users of the application with an API for it, as
+can be seen in figure \ref{gpfig}.
 
 A lot of these functions work on the structure of a domain model. For example,
 if we generate a form for editing a post on the weblog we can derive this form
 solely from the structure of the entity. One way of doing this structural
 programming is by using a generic programming library.
+
+\begin{figure}
+\includegraphics{architecture/generic-programming}
+\caption{Generic programming}
+\label{gpfig}
+\end{figure}
 
 In Haskell, we could define our domain model for a weblog like this:
 
@@ -385,9 +412,9 @@ label and finally a |K|-type that refers to the type of a field.
 We can now write a function that generically generates an HTML view.
 
 \begin{code}
-class    Html  a       where html :: a -> X.Html
-instance Html  Int     where html = X.toHtml . show
-instance Html  String  where html = X.toHtml 
+class     Html  a       where html :: a -> X.Html
+instance  Html  Int     where html = X.toHtml . show
+instance  Html  String  where html = X.toHtml 
 
 class GHtml f where
   ghtmlf :: (a -> X.Html) -> f a -> X.Html
@@ -405,7 +432,7 @@ ghtml :: (Regular a, GHtml (PF a)) => a -> X.Html
 ghtml x = ghtmlf ghtml (from x)
 \end{code}
 
-The type signature for the |ghtml| function states that if can convert |a| into
+The type signature for the |ghtml| function states that if |a| can be converted into
 a structural representation and if it can generate HTML for that structure then
 it can generate HTML for something of type |a|.
 
@@ -424,11 +451,11 @@ As output we will get some HTML:
 <label>Age: </label> 24
 \end{verbatim}
 
-While this is great, we often want to slightly modify the HTML that is
-generated. For example, we might not want to include the password field. As far
-as we know, all frameworks for web programming require you to write custom HTML
-at this point. However, we would like to keep generating the HTML instead of
-writing it by hand.
+While this is useful, we often want to slightly modify the presentation.
+. For example, we might not want to include the password field or use a
+textarea instead of a regular textfield. As far as we know, all frameworks for
+web programming require you to write custom HTML at this point. However, we
+would like to keep generating the HTML instead of writing it by hand.
 
 In order to do this we need a view on the User datatype and then generate the
 HTML for it. For example:
@@ -440,10 +467,14 @@ toUserView u = UserView (name u) (age u)
 \end{code}
 
 Before we generate HTML for a |User|, we will first convert it into a |UserView|
-using the |toUserView| function and then generate the HTML.
+using the |toUserView| function and then generate the HTML. There are obvious
+advantages to this approach: the programmer doesn't have to know anything about
+writing HTML and we have a very abstract description of the GUI. In fact, it is
+not tied to HTML at all: we could just as well generate a GUI for a desktop
+application.
 
 Using the formlets library (TODO cite) we can also generate forms in a generic
-way, much in the same way as we generate the HTML. A formlet consists of two
+way, much in the same way as we generate the HTML. A formlet generates two
 functions:
 
 \begin{code}
@@ -455,10 +486,19 @@ optional default value. The second function is to be used after the form is
 submitted, and it tries to parse the HTTP request variables to construct a value
 of type |a|. We can now generate forms for, for example, a User. 
 
-This is where updatable views come into play. When we want to generate a view
-of the |User|-datatype, we would like to update the original value. By using a
-combinator library (TODO: cite) for defining updatable views we can achieve just
-this.
+However, if we want to apply the same trick and use a view similar to
+|UserView|, we have a problem. We can generate the formlet, but the resulting
+value is a |UserView|. Instead of just a function with type |User -> UserView|
+we will also need a function that takes the original |User| and updates the new
+values from |UserView|. This is where we can use updatable views. We have built
+a prototype library for this, and in our research we want to see how we can
+use this to generate abstract user interfaces. We want to investigate how we can
+also customize layout while keeping our library abstract.
+
+Previous work in this area has been done by Achten et al. \cite{ggui}. However,
+their work is based on a manually written bijection. Our library is based on
+lenses and provides combinators for writing the \emph{get} and \emph{putback}
+function at the same time. We believe our approach is more powerful and safer.
 
 \subsubsection{Generic database access}
 
@@ -474,7 +514,6 @@ whether we can apply more techniques from database programming.
 Write about the control flow library. Using right abstraction (arrows). Explain
 why we're not using Monads. Talk about Hughes's paper. Serializing state.
 Transform control flow structure into 
-
 
 \subsection{Porting an existing application}
 
@@ -574,57 +613,59 @@ easily port it to other architectures.
 % textual specification can be much more powerful, and that a visual graph should
 % be the end-product of a workflow, not the way to design it.
 % 
-\section{Research question}
-
-This thesis project will investigate what is needed to have a workflow modeling tool
-where the implementor can build workflows in a composable way using the language
-Haskell. We want to know: 
-
-\begin{itemize}
-\item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
-\item How can we design that system in such a way that it has a type-safe core language?  
-\item How can we minimize application-specific code by using generic programming?
-\end{itemize}
-
-\subsection{Contribution}
-
-Compared to other approaches, we will deliver a solution that is strongly typed
-at the highest and lowest level. By using modern techniques like GADTs and
-type-level programming we can build libraries that are fully type-checked using
-the compiler. Also, we will build a number of libraries that can be used for
-building workflow applications.
-
-\section{Approach}
-
-We propose to build a workflow modeling tool in Haskell that provides the user
-with a way to express workflows in an implementation-agnostic way. We will port an
-existing workflow application that is written in PHP to show how our system
-compares against a manual implementation of a workflow application. 
-
-Using this application as a starting point, we will try to keep the
-application-specific code to a minimum by generalizing as much code as possible
-into libraries. 
-
-\subsection{The workflow library}
-\subsection{Generic Programming library}
-\subsection{Other libraries}
-
-\section{Expected results}
-
-We expect to end up with at least one application and two libraries. The first
-library will be for building interactive workflows. The other library will
-be for the generic programming on the domain model. It will provide facilities
-for writing your own generic function as well as a number of default functions.
-
-We suspect that the ported application will have less than half the LOC compared
-to the original version. PHP provides not nearly as much mechanisms for
-abstraction as Haskell. Also, we will end up with a fully type-checked version
-of the application. Security is no longer an issue if we take the right
-precautions at the type-level. Also, we expect the application to run much
-faster than its PHP variant because we will compile it using an optimizing
-compiler, whereas the PHP variant is interpreted.
+%\section{Research question}
+%
+%This thesis project will investigate what is needed to have a workflow modeling tool
+%where the implementor can build workflows in a composable way using the language
+%Haskell. We want to know: 
+%
+%\begin{itemize}
+%\item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
+%\item How can we design that system in such a way that it has a type-safe core language?  
+%\item How can we minimize application-specific code by using generic programming?
+%\end{itemize}
+%
+%\subsection{Contribution}
+%
+%Compared to other approaches, we will deliver a solution that is strongly typed
+%at the highest and lowest level. By using modern techniques like GADTs and
+%type-level programming we can build libraries that are fully type-checked using
+%the compiler. Also, we will build a number of libraries that can be used for
+%building workflow applications.
+%
+%\section{Approach}
+%
+%We propose to build a workflow modeling tool in Haskell that provides the user
+%with a way to express workflows in an implementation-agnostic way. We will port an
+%existing workflow application that is written in PHP to show how our system
+%compares against a manual implementation of a workflow application. 
+%
+%Using this application as a starting point, we will try to keep the
+%application-specific code to a minimum by generalizing as much code as possible
+%into libraries. 
+%
+%\subsection{The workflow library}
+%\subsection{Generic Programming library}
+%\subsection{Other libraries}
+%
+%\section{Expected results}
+%
+%We expect to end up with at least one application and two libraries. The first
+%library will be for building interactive workflows. The other library will
+%be for the generic programming on the domain model. It will provide facilities
+%for writing your own generic function as well as a number of default functions.
+%
+%We suspect that the ported application will have less than half the LOC compared
+%to the original version. PHP provides not nearly as much mechanisms for
+%abstraction as Haskell. Also, we will end up with a fully type-checked version
+%of the application. Security is no longer an issue if we take the right
+%precautions at the type-level. Also, we expect the application to run much
+%faster than its PHP variant because we will compile it using an optimizing
+%compiler, whereas the PHP variant is interpreted.
 
 \section{Planning}
+
+TODO
 
 \bibliographystyle{plain}
 \bibliography{bibliography}
