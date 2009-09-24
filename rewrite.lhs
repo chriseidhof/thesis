@@ -20,7 +20,18 @@
 \maketitle
 \tableofcontents
 
-\section{Introduction}
+% structure
+% Introduction
+% Summary
+% Overview of relevant literature
+% Problem definition
+% Work plan
+% Execution of the work plan: solutions, results, elaborations etc.
+% Conclusions
+% Bibliography
+
+
+\section*{Introduction}
 
 A lot of database-driven applications contain a large amount of code that is
 directly based on the underlying ER-model. Typically, the code is
@@ -37,15 +48,36 @@ graphical user interfaces and defines control flow using a high level of abstrac
 Our work is inspired by contemporary web application frameworks such as Ruby on
 Rails and iTasks. These frameworks are written for a specific platform: the web.
 We want to abstract away from that platform and write applications for a number
-of platforms using the same techniques.
+of platforms using the same techniques. Our architecture will be based on the
+model-view-controller pattern: we believe this gives a good separation of
+concerns.
 
-By using updateable views or lenses on our ER-model we want to keep the
+By using updateable views (also called lenses) on our ER-model we want to keep the
 platform-specific code to a
 minimum. Instead of giving the implementation of the user interface we will give
-write a description of the GUI and then generate the interface. This has the
+an abstract description of the GUI and then generate the interface. This has the
 advantage that no manual GUI code needs to be written. Because our application
-is written down as a functional specification instead of as an implementation,
+is written down as a functional specification instead of as a direct implementation,
 we can easily generate applications for multiple platforms.
+
+For the controller part we will try to find the right abstractions. 
+There are already extensive studies done on this subject, in libraries such as iTasks \cite{iTasks} and
+programming languages such as Orc \cite{orc}.  . We will try to
+identify other recurring patterns in existing applications and base our work on
+that.  When designing the control flow library, we can use abstractions
+such as Monads or Arrows. Choosing the right abstraction is important for both
+expresiveness and ease of use. 
+
+In order to describe our ER-model we will analyze existing models and see how
+we can represent those in Haskell. We believe it should be really easy to change
+the model without having to change a lot of the code. By writing code based on
+the structure of the model we can keep our model flexible. We will expand upon
+this in a later chapter.
+
+Our work will be implemented in Haskell.  In order to do that, we will build a
+number of libraries. Some of the libraries will be in the form of an embedded
+domain specific language. Using these libraries we will finally port an existing
+application to see how good our libraries work for real work.
 
 In the next chapter we will introduce some of the necessary vocabulary and
 background for our work. In the second chapter we will state our research
@@ -53,32 +85,41 @@ question and our approach. We will conclude with the expected results and a
 planning.
 
 \section{Context}
-\subsection{Workflows}
 
-Workflow systems describe how humans and computers interact. A \emph{workflow process
-definition} describes which activities are needed to complete a certain business
-process. These activities can be either human (for example, filling in a form,
-confirming a message) or done by the computer (storing a record to the database,
-calculating a result). A workflow process definition not only specifies the
-activities, but also in what order they need to be executed.
+\subsection{Model Driven Development}
+\label{domaindriven}
 
-A workflow management system is a tool to build executable specifications of
-workflows. It is often a standalone product, and sometimes integrated into a
-programming language. This distinction can make a large difference in the
-\emph{expressive power} of a workflow management system.
+The ER model describes the entities and relations in a problem domain. In
+model driven development, the model is kept close to concepts in the problem
+domain.  This opens up possibilities for non-technical people to understand part
+of the application development.
 
-The Workflow Patterns initiative has built a set of commonly recurring patterns
-for workflow processes. They are similar to design patterns used in software
-development. Not all workflow management systems supports all patterns but
-sometimes, depending on the expressive power of such a system, it can be
-extended to support additional patterns. The number of patterns supported is
-another good indication of the expressive power.
+As new insights arrive from communicating with the stakeholders in the
+application development process, the model changes. From our experience,
+we know that it takes a couple of iterations before the domain model arrives at
+its final state. Therefore, we believe that it is vital to keep the domain model
+as flexible as possible.
 
-Sometimes, when designing workflow applications, the workflow is implemented
-without a workflow management system. For example, it can be implemented in an
-ad-hoc way as a web application. This can make it very hard to support
-additional platforms, such as mobile devices. By using the right workflow
-management system an implementor can abstract over platforms.
+\subsection{Generic Programming}
+
+Using datatype-generic programming we can write functions that operate on the
+structure of data.  In a language with a nominative type system, generic
+programming often does not come for free. A value first needs to be converted
+into a structural view before it can be processed by generic functions.
+Afterwards, it can be converted back. An \emph{embedding projection pair} is the
+pair of functions that does these conversions.
+
+Generic programming can be used to keep the domain model flexible. If we specify
+our domain model as nominative types and derive the embedding projection pair,
+we can do generic programming on the domain model. We can build a lot of useful
+generic functions: a generic database interface, generic forms and XML generation,
+to name a few. 
+
+We are not the first to envision this. In recent research, iData has done this
+in the Clean programming language. iData is a library of generic functions that
+generates forms and offers serialization (in files or a database) of values.
+However, it is not clear if it is easy to write custom functions in iData.
+
 
 % implementation approaches
 %   what's already there? what are the (dis)advantages?
@@ -202,6 +243,33 @@ correctness of the EDSL and the programs written with it. In our thesis, we want
 to make use of the type system in such a way that it prevents us from writing
 faulty expressions.
 
+\subsection{Workflows}
+
+Workflow systems describe how humans and computers interact. A \emph{workflow process
+definition} describes which activities are needed to complete a certain business
+process. These activities can be either human (for example, filling in a form,
+confirming a message) or done by the computer (storing a record to the database,
+calculating a result). A workflow process definition not only specifies the
+activities, but also in what order they need to be executed.
+
+A workflow management system is a tool to build executable specifications of
+workflows. It is often a standalone product, and sometimes integrated into a
+programming language. This distinction can make a large difference in the
+\emph{expressive power} of a workflow management system.
+
+The Workflow Patterns initiative has built a set of commonly recurring patterns
+for workflow processes. They are similar to design patterns used in software
+development. Not all workflow management systems supports all patterns but
+sometimes, depending on the expressive power of such a system, it can be
+extended to support additional patterns. The number of patterns supported is
+another good indication of the expressive power.
+
+Sometimes, when designing workflow applications, the workflow is implemented
+without a workflow management system. For example, it can be implemented in an
+ad-hoc way as a web application. This can make it very hard to support
+additional platforms, such as mobile devices. By using the right workflow
+management system an implementor can abstract over platforms.
+
 \subsection{Control abstraction}
 
 When describing stateful computations in Haskell there are a number of
@@ -245,40 +313,6 @@ do  x <- compOne
 Choosing one of these abstractions has great impact on library design, as we
 will see in the next paragraph.
 
-\subsection{Model Driven Development}
-\label{domaindriven}
-
-The ER model describes the entities and relations in a problem domain. In
-model driven development, the model is kept close to concepts in the problem
-domain.  This opens up possibilities for non-technical people to understand part
-of the application development.
-
-As new insights arrive from communicating with the stakeholders in the
-application development process, the model changes. From our experience,
-we know that it takes a couple of iterations before the domain model arrives at
-its final state. Therefore, we believe that it is vital to keep the domain model
-as flexible as possible.
-
-\subsection{Generic Programming}
-
-Using datatype-generic programming we can write functions that operate on the
-structure of data.  In a language with a nominative type system, generic
-programming often does not come for free. A value first needs to be converted
-into a structural view before it can be processed by generic functions.
-Afterwards, it can be converted back. An \emph{embedding projection pair} is the
-pair of functions that does these conversions.
-
-Generic programming can be used to keep the domain model flexible. If we specify
-our domain model as nominative types and derive the embedding projection pair,
-we can do generic programming on the domain model. We can build a lot of useful
-generic functions: a generic database interface, generic forms and XML generation,
-to name a few. 
-
-We are not the first to envision this. In recent research, iData has done this
-in the Clean programming language. iData is a library of generic functions that
-generates forms and offers serialization (in files or a database) of values.
-However, it is not clear if it is easy to write custom functions in iData.
-
 \subsection{Updatable views}
 
 Updatable views are a problem that has been studied extensively in both
@@ -296,14 +330,58 @@ the \emph{putback} function. (TODO: this is just a sketch, citations needed and 
 
 \subsection{Research Question}
 
-TODO
+When we started out, our original question was: \emph{How can we build
+database-driven applications more easily?} In order to answer this, we will analyze existing
+database-driven applications to identify recurring patterns.
 
-Our main question is: \emph{How far can we push the declarative way of building
-applications?}. In order to answer this, we will investigate the following
-subquestions:
+Most of these applications can be modeled using the model-view-controller
+paradigm. The model is in this case the ER-model, the view is the presentation
+layer (e.g. the GUI or the API) and the controller is the glue code between the
+model and the presentation. In each of these three layers we want to identify
+common patterns. By starting out with analyzing the functionality and GUI in the
+applications, we want to get a top-down analysis of common patterns. By
+researching existing applications, we want to answer the following questions:
+
 \begin{itemize}
-\item What are the limits of can we use updateable views and generic programming?
-\item What are the right abstractions for control flow?
+\item What are commonly used interface elements?
+\item What is common functionality in database-driven applications?
+\item What does the ER-model look like for these applications?
+\end{itemize}
+
+The answers to these questions will give us a set of view patterns, controller
+patterns and model patterns. The next part of our research will be about
+implementing these patterns in Haskell libaries, which leads to the following
+questions:
+
+\begin{itemize}
+\item What are the right abstractions for views?
+  \begin{itemize}
+  \item How do they relate to the model?
+  \item How can we automatically derive (updateable) views from the model?
+  \item How can we specialize these views?
+  \item How can we model views in an implementation-independent way?
+  \end{itemize}
+\item What are the right abstractions for control flow and business logic?
+  \begin{itemize}
+  \item How can we use Haskell's control flow abstractions to our advantage?
+  \item Can we reuse existing libraries for control flow?
+  \item What are the consequences of using combinators like iTasks or Orc?
+  \end{itemize}
+\item What are the right abstractions for the model?
+  \begin{itemize}
+  \item How can we persist the model using a database?
+  \item What types of relations can we model?
+  \item How does this relate to existing theory?
+  \end{itemize}
+\end{itemize}
+
+Finally, we want to test out the code we have written by implementing an
+application:
+
+\begin{itemize}
+ \item How can we use our framework for modeling an existing application?
+ \item What are the limits of our framework compared to hand-written code?
+ \item How does our framework compare in code size and speed?
 \end{itemize}
 
 \subsection{Our approach}
@@ -351,14 +429,19 @@ programming is by using a generic programming library.
 In Haskell, we could define our domain model for a weblog like this:
 
 \begin{code}
-data Post       = Post    {title :: String, body :: String, author :: BelongsTo User, comments :: HasMany Comment}
-data Comment    = Comment {text :: String, date :: DateTime, author :: BelongsTo User}
-data User       = User    {name :: String, password :: String, age :: Int}
+data Post       = Post     {  title :: String, body :: String
+                           ,  author :: BelongsTo User, comments :: HasMany Comment}
+data Comment    = Comment  {  text :: String, date :: DateTime, author :: BelongsTo User}
+data User       = User     {  name :: String, password :: String, age :: Int}
 \end{code}
 
-Here, we have annotated the relationships using special types such as
+An entity description (such as |Post|) contains both properties (simple values)
+and relations (|BelongsTo User|, |HasMany Comment|).
+
+We have annotated the relationships using special types such as
 |BelongsTo| and |HasMany|. These are used to encode the kind of relationship
-(one-to-one, one-to-many, etc.). We will expand upon this in a later section.
+(one-to-one, one-to-many, etc.). They will also serve as an indicator for the
+database layer about where to store the foreign keys.
 
 \subsubsection{Structural representation}
 
@@ -369,10 +452,8 @@ combination of these codes and conversion functions is called a \emph{universe}.
 Every generic programming library has different features and requirements. We
 have used the comparison from Rodriguez et al. (todo cite) to evaluate a number of
 libraries. We built a prototype generic programming library that was based on
-\emph{EMGM} (todo cite) and we have looked at \emph{regular}, which is recent
-work by Van Noort et al.
-
-TODO: explain why we chose regular (only single-constructor record types)
+\emph{EMGM} (todo cite).  We have also built a prototype of our library based on
+regular.
 
 \subsubsection{Generic views and forms}
 
@@ -452,7 +533,7 @@ As output we will get some HTML:
 \end{verbatim}
 
 While this is useful, we often want to slightly modify the presentation.
-. For example, we might not want to include the password field or use a
+For example, we might not want to include the password field or use a
 textarea instead of a regular textfield. As far as we know, all frameworks for
 web programming require you to write custom HTML at this point. However, we
 would like to keep generating the HTML instead of writing it by hand.
@@ -511,32 +592,52 @@ whether we can apply more techniques from database programming.
 
 \subsection{Control flow: a library for workflow control-flows}
 
+1. What are workflows and control-flows?
+2. What is the issue with HTTP?
+3. How can it be solved?
+4. What is our solution?
+
+
+In any complex system, the workflow needs to be encoded. Most of the time
+this is done implicitly. iTasks \cite{iTasks} is a library that provides
+first-class combinators for definining the workflow of a web-application. We
+believe we can use a similar set of combinators for defining workflows for all
+platforms supported by our framework.
+
+However, there are some caveats when writing a control flow library.
+Specifically, when using web-based applications, all clients are stateless. This
+is something that has been studied extensively by others (TODO: citations). By
+working with continuations, we can 
+
+As stated
+before, the abstractions have great implications on the expressiveness of 
+
 Write about the control flow library. Using right abstraction (arrows). Explain
 why we're not using Monads. Talk about Hughes's paper. Serializing state.
 Transform control flow structure into 
 
 \subsection{Porting an existing application}
 
+
 By porting an existing application written in PHP to our framework we want to
-compare both approaches on software quality metrics as described in The Art Of
-Software Architecture \cite{taosa}:
+compare both approaches on a number of metrics. We are interesting in finding
+out how the two applications compare on the following properties:
 
 \begin{itemize}
-\item Functionality
-\item Performance (efficiency)
+\item Code size
+\item Execution time
+\item Expresiveness
 \item Modifiability
 \item Reliability
-\item Usability
 \item Portability
 \end{itemize}
 
 We expect to end up with an application with the same functionality, much better
 performance (PHP is an interpreted language). Also, because Haskell allows for
 more abstraction, we expect to end up with a lot less code, which is good for
-modifiability. Because of the typechecker we expect that our program is more
-reliable and will have less bugs. The usability should be the same, but because
-of our declaritive way of building applications we expect that we can very
-easily port it to other architectures.
+modifiability. The typechecker will give more guarantees about our program and
+thus is good for reliability.  Because of our declarative way of building
+applications we expect that we can very easily port it to other architectures.
 
 
 % TODO:
@@ -665,7 +766,35 @@ easily port it to other architectures.
 
 \section{Planning}
 
-TODO
+We have made a timetable of the project , starting from the point where
+the proposal is ready. During the research, we want to alternate between writing
+and doing the research.
+
+\begin{tabular}{l l}
+Week  & Action \\
+40    & Proposal ready \\
+41    & Research: Identify common elements in database-driven applications \\
+42    & Research: Identify generic functions to be written \\
+43    & Research: Research power of lenses (also: compared to tools like
+Interface Builder) \\
+44    & Research: Writeup \\
+45    & Research: Database layer (CRUD functions) \\
+46 - 47  & Research: Database relations (one-to-many, etc.) \\
+48 - 49   & Research: View abstractions (patterns recurring in the view layer)
+\\
+50    & Research: Business-logic abstractions (common patterns in the controller
+layer) \\
+51    &  \\
+52 - 1 & Holiday \\
+1     & Research: Business-logic abstractions \\
+2 - 3 & Research: Workflow combinators \\
+3 - 5 & Writeup \\
+6 - 10 & Implementation: porting an existing application \\
+10 - 15 & Writing \\
+15    & Thesis ready for review \\
+17    & Thesis defense \\
+18    & Final corrections \\
+\end{tabular}
 
 \bibliographystyle{plain}
 \bibliography{bibliography}
