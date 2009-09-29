@@ -30,10 +30,27 @@
 % Conclusions
 % Bibliography
 
+\section{Personal motivation}
 
-\section*{Introduction}
+This is the proposal for the research done as my Master's graduation project.
+Before I started the Software Technology Master I did a lot of web programming.
+I had seen a couple of frameworks, and while quite powerful, I always felt that
+they weren't really beautiful. Something didn't feel right.
 
-A lot of database-driven applications contain a large amount of code that is
+During the courses of my Master's I got taught more and more techniques. With
+almost everything that I learned I thought: how can I apply this to make web
+programming better or easier? In my research I will try to apply the
+techniques I learned, such as generic programming, lazyness, strong typing and
+lenses, to web programming.
+
+Another thing I've learned from the environment I was in during my Master's:
+start out with a beautiful model that's mathematically correct and then see how
+you can implement it. It might take some time, but a good implementation will
+almost always follow. I will try to do this during my research as well.
+
+\section{Introduction}
+
+Most database-driven applications contain a large amount of code that is
 directly based on the underlying ER-model. Typically, the code is
 platform-specific and partly generated. Sometimes the generated code is edited
 by hand to achieve customization.
@@ -52,31 +69,32 @@ of platforms using the same techniques. Our architecture will be based on the
 model-view-controller pattern: we believe this gives a good separation of
 concerns.
 
-By using updateable views (also called lenses) on our ER-model we want to keep the
+By using updateable views (also called lenses) on the ER-model we want to keep the
 platform-specific code to a
 minimum. Instead of giving the implementation of the user interface we will give
 an abstract description of the GUI and then generate the interface. This has the
-advantage that no manual GUI code needs to be written. Because our application
-is written down as a functional specification instead of as a direct implementation,
-we can easily generate applications for multiple platforms.
+advantage that no manual GUI code needs to be written. Because applications
+are written down as a functional specification instead of as a direct implementation,
+we can easily target multiple platforms.
 
-For the controller part we will try to find the right abstractions. 
-There are already extensive studies done on this subject, in libraries such as iTasks \cite{iTasks} and
-programming languages such as Orc \cite{orc}.  . We will try to
-identify other recurring patterns in existing applications and base our work on
-that.  When designing the control flow library, we can use abstractions
-such as Monads or Arrows. Choosing the right abstraction is important for both
-expresiveness and ease of use. 
+The controller part ties the model and the views together, and defines the
+control flow of the applications.
+There are already extensive studies done on this subject, yielding libraries
+such as iTasks \cite{iTasks} and programming languages such as Orc \cite{orc}.
+We will try to identify recurring patterns in existing applications and base our
+work on that.  When designing the control-flow part, we can use abstractions
+such as monads or arrows: as we will see later, choosing the right abstraction
+is important for both expresiveness and ease of use.
 
 In order to describe our ER-model we will analyze existing models and see how
-we can represent those in Haskell. We believe it should be really easy to change
-the model without having to change a lot of the code. By writing code based on
-the structure of the model we can keep our model flexible. We will expand upon
-this in a later chapter.
+we can represent those in Haskell. We believe it should be easy for the
+programmer to change the model without having to change a lot of the code. We
+want to achieve this by writing code based on the structure of the model using a
+technique called generic programming.
 
 Our work will be implemented in Haskell.  In order to do that, we will build a
 number of libraries. Some of the libraries will be in the form of an embedded
-domain specific language. Using these libraries we will finally port an existing
+domain specific language. Using these libraries we will port an existing
 application to see how good our libraries work for real work.
 
 In the next chapter we will introduce some of the necessary vocabulary and
@@ -91,14 +109,10 @@ planning.
 
 The ER model describes the entities and relations in a problem domain. In
 model driven development, the model is kept close to concepts in the problem
-domain.  This opens up possibilities for non-technical people to understand part
-of the application development.
-
-As new insights arrive from communicating with the stakeholders in the
-application development process, the model changes. From our experience,
-we know that it takes a couple of iterations before the domain model arrives at
-its final state. Therefore, we believe that it is vital to keep the domain model
-as flexible as possible.
+domain (as opposed to algorithmic concepts). The models are iteratively designed
+through communication with all stakeholders. We believe it is vital to keep the
+domain model as flexible as possible: a new iteration of the model should not
+mean that a large amount of code has to be rewritten.
 
 \subsection{Generic Programming}
 
@@ -107,15 +121,15 @@ structure of data.  In a language with a nominative type system, generic
 programming often does not come for free. A value first needs to be converted
 into a structural view before it can be processed by generic functions.
 Afterwards, it can be converted back. An \emph{embedding projection pair} is the
-pair of functions that does these conversions.
+pair of functions that does the conversion to and from a structural view.
 
 Generic programming can be used to keep the domain model flexible. If we specify
 our domain model as nominative types and derive the embedding projection pair,
-we can do generic programming on the domain model. We can build a lot of useful
-generic functions: a generic database interface, generic forms and XML generation,
-to name a few. 
+we can do generic programming on the domain model. We can already envision a lot
+of useful generic functions: a generic database interface, generic forms and XML
+generation, to name a few. 
 
-We are not the first to envision this. In recent research, iData has done this
+We are not the first to think of this. In recent research, iData has done this
 in the Clean programming language. iData is a library of generic functions that
 generates forms and offers serialization (in files or a database) of values.
 However, it is not clear if it is easy to write custom functions in iData.
@@ -127,16 +141,16 @@ However, it is not clear if it is easy to write custom functions in iData.
 \subsection{Domain specific languages}
 
 A \emph{domain specific language} (DSL) is a language designed to express
-solutions in a specific domain. It is the opposite of a general-purpose
+solutions in a specific domain. In some ways, it is the opposite of a general-purpose
 programming language. A DSL can be designed to help model a certain class of
 problems more directly. At the very minimum, a DSL consists of a set of
 \emph{symbols} and a set of rules (syntax) that describe how to combine these
 symbols into well-formed expressions.
 
-Symbols in a DSL can take many forms. For example, the syntax might closely
-resemble a programming language. Alternatively, in workflow languages, the
-modeling of the workflow is often done graphically.  The symbols are the
-elements used to draw a workflow graph.
+Symbols in a DSL can take many forms. For example, the DSL might closely
+resemble a programming language. Alternatively, in control-flow languages, the
+modeling of the control-flow is often done graphically.  The symbols are the
+elements used to draw a control-flow graph.
 
 A problem solution expressed using a DSL can be used for several purposes. Often, it
 is given a semantics by interpreting it or compiling it into executable code.
@@ -151,24 +165,24 @@ domain specific language} or EDSL. Here, the symbols of the DSL are also symbols
 \emph{host language}. By embedding the DSL into another language, the DSL will
 inherit all kinds of properties of that language. 
 
-Using all the features of the host languages gives a DSL a great amount of
+Being embedded in a host languages gives a DSL a great amount of
 interoperability with other libraries. Also, by using the type system of the
-host language (when applicable), some properties can be stated about programs
+host language, some properties can be stated about programs
 written in the EDSL.  We will elaborate on this in later sections.
 
 As an example, in the Haskell programming language, there are several libraries
 for describing parsers. These libraries provide a number of symbols that can be
 combined to write parsers. They use Haskell's type system to describe what the
-result of parsing might be.
+result of parsing will be.
 
 \subsection{Writing libraries as EDSLs in Haskell}
 
 When implementing embedded domain specific languages there are a lot of design
-choices to be made. In the rest of this proposal, we use Haskell as our host
+choices to be made. In the rest of this proposal, we will use Haskell as our host
 language. This gives us a lot of things for free, such as automatic sharing of
 values and a type system. We will discuss the problems that arise when using
-sharing and how we can use Haskell's type system to our advantage. Finally, we
-will discuss abstractions for stateful computations.
+sharing and see how we can use Haskell's type system to our advantage. Finally,
+we will discuss abstractions for stateful computations.
 
 \subsubsection{Observable Sharing}
 
@@ -204,14 +218,14 @@ references. However, writing down graphs in this way is error-prone and a lot
 more verbose. For example, it is possible to construct a Graph expression that
 refers to a non-existing node.
 
-Ideally, we want to specify our graphs using ordinary recursion, as in the
-first example, but we would like to be able to convert them into the second
-representation, where recursion and sharing is made explicit. By using
-techniques for observable sharing we can achieve this. It has first been
-introduced to the Haskell community by Claessen and Sands \cite{sharing} and has
-been refined over the years. The solution proposed by Gill \cite{reify} has
-virtually no impact on the user of the DSL. A user writes down the graph in a
-style natural to Haskell.
+Ideally, we want to specify our graphs (such as control-flow descriptions) using
+ordinary recursion, as in the first example, but we would like to be able to
+convert them into the second representation, where recursion and sharing is made
+explicit. By using techniques for observable sharing we can achieve this. It has
+first been introduced to the Haskell community by Claessen and Sands
+\cite{sharing} and has been refined over the years. The solution proposed by
+Gill \cite{reify} has virtually no impact on the user of the DSL. A user writes
+down the graph in a style natural to Haskell.
 
 \subsubsection{Lifting on Haskell's type system}
 
@@ -225,7 +239,7 @@ data Exp = Num Int | Boolean Bool | If Exp Exp Exp | Add Exp Exp
 \end{code}
 
 However, using this datatype, it is possible to construct an expression that
-adds two Boolean expressions. In general, this is not desirable. We would like
+adds two Boolean expressions. Generally this is not desirable. We would like
 to prove statically that every expression is well-typed. By using GADTs
 \cite{gadts}, we can restrict the expressions to be well-typed:
 
@@ -324,7 +338,13 @@ pair. Now consider the function $fst^{-1} : A \times (A \times B) \to A \times
 B$ that updates the first element in the pair. The combination of $fst$ and
 $fst^{-1}$ is called a \emph{lens} (TODO cite) and makes $A$ an updatable
 view of $C$. The $fst$ is called the \emph{get} function and the $fst^{-1}$ is called
-the \emph{putback} function. (TODO: this is just a sketch, citations needed and talk about rdbm systems).
+the \emph{putback} function.
+
+This concept looks quite theoretical, but fits very well with model-driven
+development. We can present a projection of our original model to our user,
+where meta-information and sensitive information is removed. The user can then
+edit that projection and the original model gets updated. This is indeed very
+much like views in a relational database.
 
 \section{Our research}
 
@@ -399,7 +419,14 @@ from the generic programming library to build forms, views and other GUI
 elements. The resulting screens are then composed using the control flow
 library. This \emph{application description} can then be compiled for specific
 platforms. Figure \ref{overallarch} depicts the architecture of such an
-application.
+application. On top is the library code. Inside the green box is the actual
+application specification which consist (at the very least) of an ER-model with accompanying
+functions and the application flow. The application flow uses the control flow
+library and other libraries. The ER-model uses the generic programming library
+for ER-models to define itself and to get useful functions.
+
+From the application specification we can generate products such as a mobile
+application, a web application or a desktop application.
 
 \begin{figure}
 \includegraphics{architecture/overall}
@@ -592,22 +619,24 @@ whether we can apply more techniques from database programming.
 
 \subsection{Control flow: a library for workflow control-flows}
 
+
+
 1. What are workflows and control-flows?
-2. What is the issue with HTTP?
-3. How can it be solved?
-4. What is our solution?
-
-
 In any complex system, the workflow needs to be encoded. Most of the time
 this is done implicitly. iTasks \cite{iTasks} is a library that provides
 first-class combinators for definining the workflow of a web-application. We
 believe we can use a similar set of combinators for defining workflows for all
 platforms supported by our framework.
 
+2. What is the issue with HTTP?
 However, there are some caveats when writing a control flow library.
 Specifically, when using web-based applications, all clients are stateless. This
 is something that has been studied extensively by others (TODO: citations). By
 working with continuations, we can 
+
+3. How can it be solved?
+
+4. What is our solution?
 
 As stated
 before, the abstractions have great implications on the expressiveness of 
