@@ -358,9 +358,9 @@ Most of these applications can be modeled using the model-view-controller
 paradigm. The model is in this case the ER-model, the view is the presentation
 layer (e.g. the GUI or the API) and the controller is the glue code between the
 model and the presentation. In each of these three layers we want to identify
-common patterns. By starting out with analyzing the functionality and GUI in the
-applications, we want to get a top-down analysis of common patterns. By
-researching existing applications, we want to answer the following questions:
+common patterns. By starting out with analyzing the functionality and GUIs in
+existing applications, we will get a list of common patterns. By looking at
+these applications, we want to answer the following questions:
 
 \begin{itemize}
 \item What are commonly used interface elements?
@@ -401,7 +401,7 @@ application:
 \begin{itemize}
  \item How can we use our framework for modeling an existing application?
  \item What are the limits of our framework compared to hand-written code?
- \item How does our framework compare in code size and speed?
+ \item How do the resulting applications compare on things like code size and speed?
 \end{itemize}
 
 \subsection{Our approach}
@@ -420,9 +420,9 @@ elements. The resulting screens are then composed using the control flow
 library. This \emph{application description} can then be compiled for specific
 platforms. Figure \ref{overallarch} depicts the architecture of such an
 application. On top is the library code. Inside the green box is the actual
-application specification which consist (at the very least) of an ER-model with accompanying
+application specification which consists (at the very least) of an ER-model with accompanying
 functions and the application flow. The application flow uses the control flow
-library and other libraries. The ER-model uses the generic programming library
+library (and possibly other libraries). The ER-model uses the generic programming library
 for ER-models to define itself and to get useful functions.
 
 From the application specification we can generate products such as a mobile
@@ -596,9 +596,8 @@ of type |a|. We can now generate forms for, for example, a User.
 
 However, if we want to apply the same trick and use a view similar to
 |UserView|, we have a problem. We can generate the formlet, but the resulting
-value is a |UserView|. Instead of just a function with type |User -> UserView|
-we will also need a function that takes the original |User| and updates the new
-values from |UserView|. This is where we can use updatable views. We have built
+value is a |UserView|. When the form is filled out, we want to update the
+original |User| model.  This is where we can use updatable views. We have built
 a prototype library for this, and in our research we want to see how we can
 use this to generate abstract user interfaces. We want to investigate how we can
 also customize layout while keeping our library abstract.
@@ -806,7 +805,7 @@ Week  & Action \\
 42    & Research: Identify generic functions to be written \\
 43    & Research: Research power of lenses (also: compared to tools like
 Interface Builder) \\
-44    & Research: Writeup \\
+44    & Writeup \\
 45    & Research: Database layer (CRUD functions) \\
 46 - 47  & Research: Database relations (one-to-many, etc.) \\
 48 - 49   & Research: View abstractions (patterns recurring in the view layer)
