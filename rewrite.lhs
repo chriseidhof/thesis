@@ -1,7 +1,9 @@
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %format :-> = "\mapsto"
-%format +++ = "\oplus"
+%format +++ = "+\!\!\!+\!\!\!+"
+%format << = "<\!\!<"
+%format >>> = ">\!\!>\!\!>"
 % vim:spell
 \usepackage{a4wide}
 \usepackage{times}
@@ -618,31 +620,75 @@ whether we can apply more techniques from database programming.
 
 \subsection{Control flow: a library for workflow control-flows}
 
-
-
-1. What are workflows and control-flows?
 In any complex system, the workflow needs to be encoded. Most of the time
 this is done implicitly. iTasks \cite{iTasks} is a library that provides
 first-class combinators for definining the workflow of a web-application. We
 believe we can use a similar set of combinators for defining workflows for all
 platforms supported by our framework.
 
-2. What is the issue with HTTP?
-However, there are some caveats when writing a control flow library.
-Specifically, when using web-based applications, all clients are stateless. This
-is something that has been studied extensively by others (TODO: citations). By
-working with continuations, we can 
+If we look at the sample workflow in figure \ref{workflow} we can see what a
+workflow looks like. First, the user is presented with a form for registration.
+Then the data from that form is passed to a function that checks the database
+whether there already is a user with that username. If this is the case, it
+displays a message and goes back to the beginning. If the username is not yet
+taken, it registers the user in the database.
 
-3. How can it be solved?
+\begin{figure}
+\includegraphics{architecture/sampleflow}
+\caption{A user registration workflow}
+\label{workflow}
+\end{figure}
 
-4. What is our solution?
+We can easily express this workflow in monadic style:
 
-As stated
-before, the abstractions have great implications on the expressiveness of 
+\begin{code}
+registration =  registerForm                         >>= \user    ->
+                findUser (username' == (name user))  >>= \userId  ->
+                case userId of
+                  Just _   ->  displayMessage "This username is already taken." >>
+                               registration
+                  Nothing  ->  dbSaveUser user
+\end{code}
 
-Write about the control flow library. Using right abstraction (arrows). Explain
-why we're not using Monads. Talk about Hughes's paper. Serializing state.
-Transform control flow structure into 
+We have implemented a prototype of this and everything works just like expected.
+Our implementations stores the continuations on the server. We keep the
+continuations in memory.  For example, when executing the workflow above, after
+displaying the form, we store the right-hand side of the bind as our
+continuation.
+
+This is something that has been done before in other languages as well
+(citations). However, using Haskell gives us an additional challenge. Suppose we
+stop the server and then restart it. We would like to restore the continuations,
+but in order to do this, we first need to serialize them when the server stops.
+To our knowledge, it is impossible to serialize arbitrary Haskell functions.
+
+Luckily, others have solved this problem before. In his paper on arrows, Hughes
+\cite{Hughes98generalisingmonads} shows how we can circumvent this by using
+arrows instead of monads as our control abstraction. Our idea is as following:
+instead of serializing an arbitrary function, we define our workflow graph using
+arrows. In our first implementation, we built a trace of the steps the user took
+in a workflow. For example, suppose we have the following workflow:
+
+\begin{code}
+(>>>)  :: Workflow a b -> Workflow b c -> Workflow a c
+step1  :: Workflow Int   Char
+step2  :: Workflow Char  [Char]
+
+flow :: Workflow Int [Char]
+flow = step1 >>> step2
+\end{code}
+
+After taking |step1|, we emit a trace step, and as our continuation we store the
+output of |step1| and the function |step2|. Now, if we want to serialize this
+continuation, we have to change our function |(>>>)| slightly:
+
+\begin{code}
+(>>>) :: Serialize b => Workflow a b -> Workflow b c -> Workflow a c
+\end{code}
+
+Now we can serialize at any point in our workflow. After taking a step (i.e.
+executing the first argument of |>>>|) we can store the result |b| together with
+the next function of type |Workflow b c|.
 
 \subsection{Porting an existing application}
 
@@ -666,131 +712,6 @@ more abstraction, we expect to end up with a lot less code, which is good for
 modifiability. The typechecker will give more guarantees about our program and
 thus is good for reliability.  Because of our declarative way of building
 applications we expect that we can very easily port it to other architectures.
-
-
-% TODO:
-% research statement?
-% 
-
-%----------------------------------------
-
-% To give a concrete example, a workflow might look like this (written down in Haskell):
-% 
-% 
-% \begin{code}
-% \end{code}
-% 
-% This workflow presents the user with a task to enter her name, then a task to
-% find the correspond e-mail address. Next it displays the address and it will
-% return the name. These tasks are sequenced, and not every line requires user
-% interaction. This is a typical interleaving of human tasks and computer tasks as
-% can be found in workflows.
-% 
-% Building executable specifications is what workflow modeling tools are all
-% about. However, execution should not be limited to just one platform, such as the web
-% .  We envision a system where a workflow is an abstract description of a
-% business process, and not mixed with implementation-specific code such as HTML
-% fragments. For example, as mobile phones get more advanced, it would make a lot
-% of sense to have a mobile version of a workflow application next to a web
-% application. In other words, the workflow specification has to be
-% \emph{platform-agnostic}.
-% 
-% When designing an application that contains the workflow of an organization,
-% there are multiple stakeholders. Not all of these people might know how to read
-% a specification in the form of a computer program. On the other hand, the
-% implementor might have to deal with unclear or incomplete requirements. From our
-% own experience, we know that a lot of misunderstanding can be prevented by
-% integrating all stakeholders in the development process. In a
-% workflow system, workflows can be modelled as graphs and thus have a direct
-% visual representation. By drawing this graph automatically from the
-% specification there is always an up-to-date and understandable representation of
-% the system that can be communicated to non-technical users.
-% 
-% From a technical perspective, we believe that strong typing at every level is
-% essential for building reliable software.  When implementing and analyzing
-% transformation functions on the workflows, we would like the compiler to check
-% that everything stays type-correct. By using a type system that is powerful
-% enough to support features like GADTs, we can do typed transformations on the
-% core datatypes.
-% 
-% Workflows are very much about the processes, i.e. the flow of the language.
-% Another important part when modeling applications is the domain model. For
-% rapid development and maintenance, it is important to keep the domain model
-% flexible. This means that the domain-specific code should be kept to a minimum.
-% Generic programming is a technique that can facilitate this. For example, using
-% generic programming, we can automatically generate forms, overview pages,
-% database interfaces and API interfaces. 
-% 
-% \subsection{Related work}
-% 
-% Orc \cite{orc} is a recent research language that is designed for asynchronous
-% and concurrent applications, such as workflow modeling. Orc is an untyped
-% language, and is run on the JVM. It is not meant as a general purpose
-% language. We think that by embedding its functionality within a general purpose
-% language like Haskell, it will be much easier to construct applications that use
-% other libraries. Orc currently has no facility for generic programming.
-% 
-% iTasks \cite{iTasks} is a system built in Clean, a language quite similar to
-% Haskell. It provided the main inspiration for this research proposal. However,
-% iTasks is untyped at its very core. This makes it hard to reason about the
-% correctness and reliability. Also, the sole product of a workflow description in
-% iTasks is a web application. HTML is integrated in the process of describing
-% workflows, which makes it very platform-specific.
-% 
-% There exist a number of commercial workflow modeling tools. Almost all of these
-% provide just a visual interface for describing the workflows. We believe that a
-% textual specification can be much more powerful, and that a visual graph should
-% be the end-product of a workflow, not the way to design it.
-% 
-%\section{Research question}
-%
-%This thesis project will investigate what is needed to have a workflow modeling tool
-%where the implementor can build workflows in a composable way using the language
-%Haskell. We want to know: 
-%
-%\begin{itemize}
-%\item How can we design a workflow modeling tool where a workflow specification is platform-agnostic?  
-%\item How can we design that system in such a way that it has a type-safe core language?  
-%\item How can we minimize application-specific code by using generic programming?
-%\end{itemize}
-%
-%\subsection{Contribution}
-%
-%Compared to other approaches, we will deliver a solution that is strongly typed
-%at the highest and lowest level. By using modern techniques like GADTs and
-%type-level programming we can build libraries that are fully type-checked using
-%the compiler. Also, we will build a number of libraries that can be used for
-%building workflow applications.
-%
-%\section{Approach}
-%
-%We propose to build a workflow modeling tool in Haskell that provides the user
-%with a way to express workflows in an implementation-agnostic way. We will port an
-%existing workflow application that is written in PHP to show how our system
-%compares against a manual implementation of a workflow application. 
-%
-%Using this application as a starting point, we will try to keep the
-%application-specific code to a minimum by generalizing as much code as possible
-%into libraries. 
-%
-%\subsection{The workflow library}
-%\subsection{Generic Programming library}
-%\subsection{Other libraries}
-%
-%\section{Expected results}
-%
-%We expect to end up with at least one application and two libraries. The first
-%library will be for building interactive workflows. The other library will
-%be for the generic programming on the domain model. It will provide facilities
-%for writing your own generic function as well as a number of default functions.
-%
-%We suspect that the ported application will have less than half the LOC compared
-%to the original version. PHP provides not nearly as much mechanisms for
-%abstraction as Haskell. Also, we will end up with a fully type-checked version
-%of the application. Security is no longer an issue if we take the right
-%precautions at the type-level. Also, we expect the application to run much
-%faster than its PHP variant because we will compile it using an optimizing
-%compiler, whereas the PHP variant is interpreted.
 
 \section{Planning}
 
