@@ -36,14 +36,14 @@
 
 This is the proposal for the research done as my Master's graduation project.
 Before I started the Software Technology Master I did a lot of web programming.
-I had seen a couple of frameworks, and while quite powerful, I always felt that
-they weren't really beautiful. Something didn't feel right.
+I had used a number of different frameworks, and while quite powerful, I always
+felt that they weren't really beautiful. Something didn't feel right.
 
 During the courses of my Master's I got taught more and more techniques. With
 almost everything that I learned I thought: how can I apply this to make web
-programming better or easier? In my research I will try to apply the
-techniques I learned, such as generic programming, lazyness, strong typing and
-lenses, to web programming.
+programming better or easier? In my research I will try to apply some of the
+techniques I learned to web programming: generic programming, lazyness, strong
+typing and lenses.
 
 Another thing I've learned from the environment I was in during my Master's:
 start out with a beautiful model that's mathematically correct and then see how
@@ -97,10 +97,10 @@ technique called generic programming.
 Our work will be implemented in Haskell.  In order to do that, we will build a
 number of libraries. Some of the libraries will be in the form of an embedded
 domain specific language. Using these libraries we will port an existing
-application to see how good our libraries work for real work.
+application to see useable our libraries are for real work.
 
 In the next chapter we will introduce some of the necessary vocabulary and
-background for our work. In the second chapter we will state our research
+background for our work. In the third chapter we will state our research
 question and our approach. We will conclude with the expected results and a
 planning.
 
@@ -346,7 +346,7 @@ This concept looks quite theoretical, but fits very well with model-driven
 development. We can present a projection of our original model to our user,
 where meta-information and sensitive information is removed. The user can then
 edit that projection and the original model gets updated. This is indeed very
-much like views in a relational database.
+much like updateable views in a relational database.
 
 \section{Our research}
 
@@ -465,7 +465,7 @@ data User       = User     {  name :: String, password :: String, age :: Int}
 \end{code}
 
 An entity description (such as |Post|) contains both properties (simple values)
-and relations (|BelongsTo User|, |HasMany Comment|).
+and relations such as |BelongsTo User| and |HasMany Comment|.
 
 We have annotated the relationships using special types such as
 |BelongsTo| and |HasMany|. These are used to encode the kind of relationship
@@ -627,7 +627,7 @@ believe we can use a similar set of combinators for defining workflows for all
 platforms supported by our framework.
 
 If we look at the sample workflow in figure \ref{workflow} we can see what a
-workflow looks like. First, the user is presented with a form for registration.
+workflow might look like. First, the user is presented with a form for registration.
 Then the data from that form is passed to a function that checks the database
 whether there already is a user with that username. If this is the case, it
 displays a message and goes back to the beginning. If the username is not yet
@@ -651,10 +651,9 @@ registration =  registerForm                         >>= \user    ->
 \end{code}
 
 We have implemented a prototype of this and everything works just like expected.
-Our implementations stores the continuations on the server. We keep the
-continuations in memory.  For example, when executing the workflow above, after
-displaying the form, we store the right-hand side of the bind as our
-continuation.
+Our implementations keeps the continuations on the server, in memory.  For
+example, when executing the workflow above, after displaying the form, we store
+the right-hand side of the bind as our continuation.
 
 This is something that has been done before in other languages as well
 (citations). However, using Haskell gives us an additional challenge. Suppose we
@@ -721,19 +720,19 @@ and doing the research.
 
 \begin{tabular}{l l}
 Week  & Action \\
-40    & Proposal ready \\
-41    & Research: Identify common elements in database-driven applications \\
-42    & Research: Identify generic functions to be written \\
-43    & Research: Research power of lenses (also: compared to tools like
+41    & Proposal ready \\
+42    & Research: Identify common elements in database-driven applications \\
+43    & Research: Identify generic functions to be written \\
+44    & Research: Research power of lenses (also: compared to tools like
 Interface Builder) \\
-44    & Writeup \\
-45    & Research: Database layer (CRUD functions) \\
-46 - 47  & Research: Database relations (one-to-many, etc.) \\
-48 - 49   & Research: View abstractions (patterns recurring in the view layer)
+45    & Writeup \\
+46    & Research: Database layer (CRUD functions) \\
+47 - 48  & Research: Database relations (one-to-many, etc.) \\
+49 - 50   & Research: View abstractions (patterns recurring in the view layer)
 \\
-50    & Research: Business-logic abstractions (common patterns in the controller
+51    & Research: Business-logic abstractions (common patterns in the controller
 layer) \\
-51    &  \\
+
 52 - 1 & Holiday \\
 1     & Research: Business-logic abstractions \\
 2 - 3 & Research: Workflow combinators \\
