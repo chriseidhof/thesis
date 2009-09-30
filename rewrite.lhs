@@ -131,7 +131,7 @@ we can do generic programming on the domain model. We can already envision a lot
 of useful generic functions: a generic database interface, generic forms and XML
 generation, to name a few. 
 
-We are not the first to think of this. In recent research, iData has done this
+We are not the first to think of this. In recent research, iData \cite{iData} has done this
 in the Clean programming language. iData is a library of generic functions that
 generates forms and offers serialization (in files or a database) of values.
 However, it is not clear if it is easy to write custom functions in iData.
@@ -338,7 +338,7 @@ has type $f^{-1} : A \times C \to C$. As an example, consider the function $fst$
 on pairs: $fst : A \times B \to A$. We say that $A$ is a view of the original
 pair. Now consider the function $fst^{-1} : A \times (A \times B) \to A \times
 B$ that updates the first element in the pair. The combination of $fst$ and
-$fst^{-1}$ is called a \emph{lens} (TODO cite) and makes $A$ an updatable
+$fst^{-1}$ is called a \emph{lens} \cite{lenses} and makes $A$ an updatable
 view of $C$. The $fst$ is called the \emph{get} function and the $fst^{-1}$ is called
 the \emph{putback} function.
 
@@ -479,9 +479,9 @@ representations (using a basic set of codes) and embedding projection pairs. The
 combination of these codes and conversion functions is called a \emph{universe}.
 
 Every generic programming library has different features and requirements. We
-have used the comparison from Rodriguez et al. (todo cite) to evaluate a number of
+have used the comparison from Rodriguez et al. \cite{compgen} to evaluate a number of
 libraries. We built a prototype generic programming library that was based on
-\emph{EMGM} (todo cite).  We have also built a prototype of our library based on
+\emph{EMGM} \cite{emgm}.  We have also built a prototype of our library based on
 regular.
 
 \subsubsection{Generic views and forms}
@@ -583,9 +583,9 @@ writing HTML and we have a very abstract description of the GUI. In fact, it is
 not tied to HTML at all: we could just as well generate a GUI for a desktop
 application.
 
-Using the formlets library (TODO cite) we can also generate forms in a generic
-way, much in the same way as we generate the HTML. A formlet generates two
-functions:
+By building on top the formlets library \cite{formlets} we can also generate
+type-safe forms in a generic way, much in the same way as we generate the HTML.
+Running a formlet gives us two functions:
 
 \begin{code}
 runFormlet :: Formlet a -> (Maybe a -> X.Html, FormParser a)
@@ -656,17 +656,19 @@ example, when executing the workflow above, after displaying the form, we store
 the right-hand side of the bind as our continuation.
 
 This is something that has been done before in other languages as well
-(citations). However, using Haskell gives us an additional challenge. Suppose we
-stop the server and then restart it. We would like to restore the continuations,
-but in order to do this, we first need to serialize them when the server stops.
-To our knowledge, it is impossible to serialize arbitrary Haskell functions.
+\cite{programmingtheweb, webInteractions, iTasks}. However, using Haskell gives
+us an additional challenge. Suppose we stop the server and then restart it. We
+would like to restore the continuations, but in order to do this, we first need
+to serialize them when the server stops.  To our knowledge, it is impossible to
+serialize arbitrary Haskell functions.
 
 Luckily, others have solved this problem before. In his paper on arrows, Hughes
 \cite{Hughes98generalisingmonads} shows how we can circumvent this by using
 arrows instead of monads as our control abstraction. Our idea is as following:
 instead of serializing an arbitrary function, we define our workflow graph using
 arrows. In our first implementation, we built a trace of the steps the user took
-in a workflow. For example, suppose we have the following workflow:
+in a workflow. From the trace we can later reconstruct the "program counter". 
+For example, suppose we have the following workflow:
 
 \begin{code}
 (>>>)  :: Workflow a b -> Workflow b c -> Workflow a c
@@ -678,16 +680,25 @@ flow = step1 >>> step2
 \end{code}
 
 After taking |step1|, we emit a trace step, and as our continuation we store the
-output of |step1| and the function |step2|. Now, if we want to serialize this
-continuation, we have to change our function |(>>>)| slightly:
+output of |step1| and the function |step2|. From this trace we can always
+reconstruct the place where the workflow halted. However, for serialization we
+will also need the complete environment. Now we can see how arrows will help us:
+the complete environment is always in the type. If we change our function
+|(>>>)| slightly, we can store that environment at every step taken:
 
 \begin{code}
 (>>>) :: Serialize b => Workflow a b -> Workflow b c -> Workflow a c
 \end{code}
 
 Now we can serialize at any point in our workflow. After taking a step (i.e.
-executing the first argument of |>>>|) we can store the result |b| together with
-the next function of type |Workflow b c|.
+executing the first argument of |>>>|) we can store the intermediate result |b|
+together with the next function of type |Workflow b c| and a trace. When
+serializing, we remove only store |b| and the trace, and from that trace and the
+result |b| we can reconstruct the continuation.
+
+This is just one way of doing serializable continuations in Haskell. Using
+arrows puts a bit of burden on the user, so in our research we will see if we
+can find other ways to do this.
 
 \subsection{Porting an existing application}
 
@@ -711,6 +722,40 @@ more abstraction, we expect to end up with a lot less code, which is good for
 modifiability. The typechecker will give more guarantees about our program and
 thus is good for reliability.  Because of our declarative way of building
 applications we expect that we can very easily port it to other architectures.
+
+\section{Related work}
+
+Building a system for building web applications has been done before. There is
+iTasks \cite{iTasks}, whose focus is on building workflows. Much of the functionality in iTasks
+works on a core datatype that is untyped, whereas our prototype controller
+library is typed even at the lowest level, using GADTs. This is especially
+important when doing transformations on the workflows.
+
+Also, there is Orc, which is a language meant for building concurrent and
+distributed application. Orc is a new language which requires a programmer to
+learn new syntax. Orc is untyped, which makes it harder to reason about the
+code.
+
+Lenses have been used before for a number of purposes, such as updatable views
+in databases and bi-directional programming languages. However, we are not aware
+of research that uses lenses for abstracting over graphical user interfaces.
+Also, we believe it is very powerful to use lenses in combination with generic
+programming, and to our knowledge, this has not yet been done before.
+
+There are a number of attempts to do web programming in Haskell. There is WASH
+\cite{wash}, which is currently suffers from bitrot. Also, WASH doesn't release
+the programmer of the burden that is manual HTML programming. Similarly, there
+is WebFunctions \cite{webfunctions}, which is another abstraction. However,
+neither WASH nor WebFunctions does anything with lenses or generic programming.
+in WebObjects, the model is based on HaskellDB (and thus tied to HaskellDB). We
+propose a solution where the database layer is just one instance of generic
+programming on the model.
+
+There are a staggering amount of frameworks in other languages. Almost all of
+these are dynamically typed and do manual HTML generation. One of our
+contributions is to show how we can do typed web programming. Another
+contribution is that we show how to do all this in Haskell, so that Haskell
+programmers can do web programming as well.
 
 \section{Planning}
 
