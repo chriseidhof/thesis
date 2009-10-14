@@ -376,6 +376,12 @@ can write an editor for virtually every structured datatype. Our approach is
 less powerful and more lightweight, which makes it suitable for writing web
 applications.
 
+Also, recent work by Nakano et al. \cite{websiteupdate} applies
+updatable views to web sites, similar to our technique  in section
+\ref{sec:viewsandforms}. However, their technology is based on a separate
+XML-based transformation language that is untyped. We will present a
+combinator-based approach that is built on top of the Haskell language.
+
 \section{Our research}
 
 \subsection{Research Question}
@@ -522,8 +528,10 @@ built on top of the \emph{regular} library \cite{regular}.
 \subsubsection{Generic views and forms}
 \label{sec:viewsandforms}
 
-Using the regular library we can derive the structure of a datatype. For
-example, the |User|-datatype described above looks like this:
+We will now present some example code to explain the use of views, generic
+programming and the need for updateable views. Using the regular library we can
+derive the structure of a datatype. For example, the |User|-datatype described
+above looks like this:
 
 \begin{code}
 data User       = User    {name :: String, password :: String, age :: Int}
@@ -661,7 +669,12 @@ In any complex system, the workflow needs to be encoded. Most of the time
 this is done implicitly. iTasks \cite{iTasks} is a library that provides
 first-class combinators for definining the workflow of a web-application. We
 believe we can use a similar set of combinators for defining workflows for all
-platforms supported by our framework.
+platforms supported by our framework. 
+
+The style of programming for web-based workflow applications is very similar to 
+continuation-based web-programming \cite{graunke2001automatically, webInteractions, continuations}.
+Everytime the user requests a page, a continuation is executed on the server. A
+continuation consists of a function and an environment.
 
 If we look at the sample workflow in figure \ref{workflow} we can see what a
 workflow might look like. First, the user is presented with a form for registration.
@@ -688,16 +701,18 @@ registration =  registerForm                         >>= \user    ->
 \end{code}
 
 We have implemented a prototype of this and everything works just like expected.
-Our implementations keeps the continuations on the server, in memory.  For
-example, when executing the workflow above, after displaying the form, we store
-the right-hand side of the bind as our continuation.
+Our prototype implementations keeps the continuations on the server, in memory.
+For example, when executing the workflow above, after displaying the form, we
+store the right-hand side of the bind as our continuation. Using monadic style,
+we store the remaining code to be executed (the expression on the right-hand
+side of the bind) and the environment (the lambda-bound variables).
 
 This is something that has been done before in other languages as well
-\cite{programmingtheweb, webInteractions, iTasks}. However, using Haskell gives
+\cite{programmingtheweb, iTasks}. However, using Haskell gives
 us an additional challenge. Suppose we stop the server and then restart it. We
 would like to restore the continuations, but in order to do this, we first need
 to serialize them when the server stops.  To our knowledge, it is impossible to
-serialize arbitrary Haskell functions.
+serialize arbitrary Haskell thunks.
 
 Luckily, others have solved this problem before. In his paper on arrows, Hughes
 \cite{Hughes98generalisingmonads} shows how we can circumvent the problem by using
@@ -760,6 +775,14 @@ more abstraction, we expect to end up with a lot less code, which is good for
 modifiability. The typechecker will give more guarantees about our program and
 thus is good for reliability.  Because of our declarative way of building
 applications we expect that we can very easily port it to other architectures.
+
+The PHP application we will port is a commercial closed-source application that
+was developed for a client. Its ER-model consist of 19 different entity
+descriptions with a number of properties per type and some complex relations. It
+is built using the CakePHP framework and makes heavy use of the
+model-view-controller pattern. CakePHP supports a very limited amount of
+structural programming, has no form abstractions and doesn't have techniques
+similar to lenses.
 
 \section{Related work}
 
