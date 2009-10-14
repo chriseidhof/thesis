@@ -12,6 +12,7 @@
 \usepackage{enumerate}
 \usepackage{palatino}
 \usepackage{rotating}
+\usepackage{hyperref}
 
 \begin{document}
 \author{Chris Eidhof}
@@ -34,7 +35,7 @@
 
 \section{Personal motivation}
 
-This is the proposal for the research done as my Master's graduation project.
+This is the proposal for the research to be done as my Master's graduation project.
 Before I started the Software Technology Master I did a lot of web programming.
 I had used a number of different frameworks, and while quite powerful, I always
 felt that they weren't really beautiful. Something didn't feel right.
@@ -45,10 +46,10 @@ programming better or easier? In my research I will try to apply some of the
 techniques I learned to web programming: generic programming, lazyness, strong
 typing and lenses.
 
-Another thing I've learned from the environment I was in during my Master's:
-start out with a beautiful model that's mathematically correct and then see how
-you can implement it. It might take some time, but a good implementation will
-almost always follow. I will try to do this during my research as well.
+Another thing I've learned from the environment I was in: start out with a
+beautiful model that's mathematically correct and then see how you can implement
+it. It might take some time, but a good implementation will almost always
+follow. I will try to do this during my research as well.
 
 \section{Introduction}
 
@@ -59,19 +60,19 @@ by hand to achieve customization.
 
 We propose a system for building database-driven applications that is completely
 declarative: we want to achieve a level of abstraction that is
-platform-independent. From a single description, it should be easy to generate
+platform-independent. For instance, from a single description, it should be easy to generate
 both a web application as well as an application for mobile phones.  The
 programmer doesn't have to know about the underlying implementation but builds
 graphical user interfaces and defines control flow using a high level of abstraction.
 
 Our work is inspired by contemporary web application frameworks such as Ruby on
 Rails and iTasks. These frameworks are written for a specific platform: the web.
-We want to abstract away from that platform and write applications for a number
-of platforms using the same techniques. Our architecture will be based on the
-model-view-controller pattern: we believe this gives a good separation of
-concerns.
+We want to abstract away from specific implementation techniques such as HTML or
+GTK and write applications for a number of platforms using the same
+techniques. Our architecture will be based on the model-view-controller pattern:
+we believe this pattern results in a good separation of concerns. 
 
-By using updateable views (also called lenses) on the ER-model we want to keep the
+By using updateable views (also called lenses \cite{lenses}) on the ER-model we want to keep the
 platform-specific code to a
 minimum. Instead of giving the implementation of the user interface we will give
 an abstract description of the GUI and then generate the interface. This has the
@@ -81,26 +82,30 @@ we can easily target multiple platforms.
 
 The controller part ties the model and the views together, and defines the
 control flow of the applications.
-There are already extensive studies done on this subject, yielding libraries
+Extensive studies have already been conducted on this subject, yielding libraries
 such as iTasks \cite{iTasks} and programming languages such as Orc \cite{orc}.
 We will try to identify recurring patterns in existing applications and base our
 work on that.  When designing the control-flow part, we can use abstractions
-such as monads or arrows: as we will see later, choosing the right abstraction
+such as monads or arrows: as we will see in section \ref{sec:controlflow}, choosing the right abstraction
 is important for both expresiveness and ease of use.
 
-In order to describe our ER-model we will analyze existing models and see how
+In order to describe our ER-model we will analyze existing models and afa
+ee how
 we can represent those in Haskell. We believe it should be easy for the
 programmer to change the model without having to change a lot of the code. We
 want to achieve this by writing code based on the structure of the model using a
-technique called generic programming.
+technique called generic programming, described in section \ref{sec:gp}.
 
 Our work will be implemented in Haskell.  In order to do that, we will build a
-number of libraries. Some of the libraries will be in the form of an embedded
-domain specific language. Using these libraries we will port an existing
-application to see useable our libraries are for real work.
+number of libraries, some of these libraries will be in the form of an embedded
+domain specific language.  We will first analyze existing applications, identify
+common patterns and implement these for each of the model, view and controller
+parts, yielding three libraries.  Using these libraries we will port an existing
+application to see how useable our libraries are for real work. Finally, we will
+compare this application to an application written in PHP.
 
 In the next chapter we will introduce some of the necessary vocabulary and
-background for our work. In the third chapter we will state our research
+background for our work. In the fourth chapter we will state our research
 question and our approach. We will conclude with the expected results and a
 planning.
 
@@ -117,8 +122,9 @@ domain model as flexible as possible: a new iteration of the model should not
 mean that a large amount of code has to be rewritten.
 
 \subsection{Generic Programming}
+\label{sec:gp}
 
-Using datatype-generic programming we can write functions that operate on the
+Using datatype-generic programming \cite{gpintro} we can write functions that operate on the
 structure of data.  In a language with a nominative type system, generic
 programming often does not come for free. A value first needs to be converted
 into a structural view before it can be processed by generic functions.
@@ -131,10 +137,21 @@ we can do generic programming on the domain model. We can already envision a lot
 of useful generic functions: a generic database interface, generic forms and XML
 generation, to name a few. 
 
-We are not the first to think of this. In recent research, iData \cite{iData} has done this
-in the Clean programming language. iData is a library of generic functions that
-generates forms and offers serialization (in files or a database) of values.
-However, it is not clear if it is easy to write custom functions in iData.
+We are not the first to apply generic programming on domain models. In recent
+research, iData \cite{iData} has done this in the Clean programming language.
+iData is a library of generic functions that generates forms and offers
+serialization (in files or a database) of values.  However, it is not clear if
+it is easy to write custom functions in iData.
+
+A lot of existing frameworks, like Ruby on Rails \cite{rails}, have a lot of \emph{magic} in
+them. This magic is often code that generates other code based on the structure
+of the data. It is called magic because it is hard to write and to understand
+and often uses techniques like meta-programming or introspection. We believe
+generic programming offers a way to achieve the same results but still is easy
+to understand and based on mathematical foundations, as opposed to
+meta-programming \cite{metaprog} and introspection \cite{introspection}, which
+have a very ad-hoc feel to them. Also, generic code can be fully typechecked by
+the compiler.
 
 
 % implementation approaches
@@ -173,7 +190,7 @@ host language, some properties can be stated about programs
 written in the EDSL.  We will elaborate on this in later sections.
 
 As an example, in the Haskell programming language, there are several libraries
-for describing parsers. These libraries provide a number of symbols that can be
+for describing parsers \cite{parsec}\cite{parsercomb}. These libraries provide a number of symbols that can be
 combined to write parsers. They use Haskell's type system to describe what the
 result of parsing will be.
 
@@ -186,55 +203,55 @@ values and a type system. We will discuss the problems that arise when using
 sharing and see how we can use Haskell's type system to our advantage. Finally,
 we will discuss abstractions for stateful computations.
 
-\subsubsection{Observable Sharing}
-
-Due to the laziness of Haskell it is possible to construct values that can be
-infinitely unfolded. For example, consider the following Haskell expression
-which is visualized in Figure \ref{graphfig}:
-
-\begin{code}
-data Graph = Branch Graph Graph | Leaf Int
-infiniteGraph = Branch (Leaf 1) infiniteGraph
-\end{code}
-
-\begin{figure}
-\includegraphics[width=2.5cm]{reify}
-\caption{A visual representation of the graph}
-\label{graphfig}
-\end{figure}
-
-The expression |infiniteGraph| is a finite representation of an infinite value.
-When analyzing the value, we can endlessly keep unfolding the recursive call to
-itself. An alternative way of representing this graph is as following:
-
-\begin{code}
-newtype Ref    =  Ref Int -- A reference to a graph expression
-data Graph     =  Branch Ref Ref | Leaf Int
-infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
-                  ,(Ref 2, Leaf 1)
-                  ]
-\end{code}
-
-Here, we have made sharing explicit by replacing all recursive positions with
-references. However, writing down graphs in this way is error-prone and a lot
-more verbose. For example, it is possible to construct a Graph expression that
-refers to a non-existing node.
-
-Ideally, we want to specify our graphs (such as control-flow descriptions) using
-ordinary recursion, as in the first example, but we would like to be able to
-convert them into the second representation, where recursion and sharing is made
-explicit. By using techniques for observable sharing we can achieve this. It has
-first been introduced to the Haskell community by Claessen and Sands
-\cite{sharing} and has been refined over the years. The solution proposed by
-Gill \cite{reify} has virtually no impact on the user of the DSL. A user writes
-down the graph in a style natural to Haskell.
+% \subsubsection{Observable Sharing}
+% 
+% Due to the laziness of Haskell it is possible to construct values that can be
+% infinitely unfolded. For example, consider the following Haskell expression
+% which is visualized in Figure \ref{graphfig}:
+% 
+% \begin{code}
+% data Graph = Branch Graph Graph | Leaf Int
+% infiniteGraph = Branch (Leaf 1) infiniteGraph
+% \end{code}
+% 
+% \begin{figure}
+% \includegraphics[width=2.5cm]{reify}
+% \caption{A visual representation of the graph}
+% \label{graphfig}
+% \end{figure}
+% 
+% The expression |infiniteGraph| is a finite representation of an infinite value.
+% When analyzing the value, we can endlessly keep unfolding the recursive call to
+% itself. An alternative way of representing this graph is as following:
+% 
+% \begin{code}
+% newtype Ref    =  Ref Int -- A reference to a graph expression
+% data Graph     =  Branch Ref Ref | Leaf Int
+% infiniteGraph  =  [(Ref 1, Branch (Ref 2) (Ref 1))
+%                   ,(Ref 2, Leaf 1)
+%                   ]
+% \end{code}
+% 
+% Here, we have made sharing explicit by replacing all recursive positions with
+% references. However, writing down graphs in this way is error-prone and a lot
+% more verbose. For example, it is possible to construct a Graph expression that
+% refers to a non-existing node.
+% 
+% Ideally, we want to specify our graphs (such as control-flow descriptions) using
+% ordinary recursion, as in the first example, but we would like to be able to
+% convert them into the second representation, where recursion and sharing is made
+% explicit. By using techniques for observable sharing we can achieve this. It has
+% first been introduced to the Haskell community by Claessen and Sands
+% \cite{sharing} and has been refined over the years. The solution proposed by
+% Gill \cite{reify} has virtually no impact on the user of the DSL. A user writes
+% down the graph in a style natural to Haskell.
 
 \subsubsection{Lifting on Haskell's type system}
 
 In this paragraph we will show how advanced features of Haskell's type system
 can be used to make stronger guarantees about the correctness of our programs.
 For example, when designing an embedded expression language, we could use the
-following approach:
+following representation:
 
 \begin{code}
 data Exp = Num Int | Boolean Bool | If Exp Exp Exp | Add Exp Exp
@@ -253,32 +270,33 @@ data Exp a where
   Add      :: Exp Int   -> Exp Int  -> Exp Int
 \end{code}
 
-This datatype gives a lot more guarantees about the well-typedness of its
-expressions. GADTs can help both the designer and user of an EDSL to guarantee
-correctness of the EDSL and the programs written with it. In our thesis, we want
-to make use of the type system in such a way that it prevents us from writing
-faulty expressions.
+This datatype gives stronger guarantees about the well-typedness of its
+expressions: it is impossible to construct ill-typed expressions. GADTs can help
+both the designer and user of an EDSL to guarantee correctness of the EDSL and
+the programs written with it. In our thesis, we want to make use of the type
+system in such a way that it prevents us from writing faulty expressions.
 
 \subsection{Workflows}
 
-Workflow systems describe how humans and computers interact. A \emph{workflow process
-definition} describes which activities are needed to complete a certain business
-process. These activities can be either human (for example, filling in a form,
-confirming a message) or done by the computer (storing a record to the database,
-calculating a result). A workflow process definition not only specifies the
-activities, but also in what order they need to be executed.
+Workflow systems \cite{workflowpatterns, advancewfp} describe how humans and
+computers interact. A \emph{workflow process definition} describes which
+activities are needed to complete a certain business process. These activities
+can be either human (for example, filling in a form, confirming a message) or
+done by the computer (storing a record to the database, calculating a result). A
+workflow process definition not only specifies the activities, but also in what
+order they need to be executed.
 
 A workflow management system is a tool to build executable specifications of
 workflows. It is often a standalone product, and sometimes integrated into a
 programming language. This distinction can make a large difference in the
 \emph{expressive power} of a workflow management system.
 
-The Workflow Patterns initiative has built a set of commonly recurring patterns
-for workflow processes. They are similar to design patterns used in software
-development. Not all workflow management systems supports all patterns but
-sometimes, depending on the expressive power of such a system, it can be
-extended to support additional patterns. The number of patterns supported is
-another good indication of the expressive power.
+The Workflow Patterns Initiative \cite{wfpinitiative} has built a set of
+commonly recurring patterns for workflow processes. They are similar to design
+patterns used in software development. Not all workflow management systems
+supports all patterns but sometimes, depending on the expressive power of such a
+system, it can be extended to support additional patterns. The number of
+patterns supported is another good indication of the expressive power.
 
 Sometimes, when designing workflow applications, the workflow is implemented
 without a workflow management system. For example, it can be implemented in an
@@ -287,6 +305,7 @@ additional platforms, such as mobile devices. By using the right workflow
 management system an implementor can abstract over platforms.
 
 \subsection{Control abstraction}
+\label{sec:controlflow}
 
 When describing stateful computations in Haskell there are a number of
 abstraction mechanisms available. The most commonly used abstractions are
@@ -331,30 +350,40 @@ will see in the next paragraph.
 
 \subsection{Updatable views}
 
-Updatable views are a problem that has been studied extensively in both
-literature and practice. When we have a function $f$ that is a view on arguments
-of type $C$: $f : C \to A$. An updatable view also has a function $f^{-1}$ that
-has type $f^{-1} : A \times C \to C$. As an example, consider the function $fst$
+Updatable views \cite{updatableviews, lenses, updatablexml} have been studied extensively in both
+literature and practice. Assume a function $f$ that is a view on arguments
+of type $C$: $f : C \to A$. A view is just a function from one type to the
+other.  An updatable view also has a function $f^{-1}$ that
+has type $f^{-1} : A \times C \to C$ that updates the second argument with the
+values in the first argument. As an example, consider the function $fst$
 on pairs: $fst : A \times B \to A$. We say that $A$ is a view of the original
 pair. Now consider the function $fst^{-1} : A \times (A \times B) \to A \times
 B$ that updates the first element in the pair. The combination of $fst$ and
-$fst^{-1}$ is called a \emph{lens} \cite{lenses} and makes $A$ an updatable
-view of $C$. The $fst$ is called the \emph{get} function and the $fst^{-1}$ is called
-the \emph{putback} function.
+$fst^{-1}$ is called a \emph{lens} \cite{lenses} or \emph{updatable view}.
+The $fst$ is called the \emph{get} function and the $fst^{-1}$ is called the
+\emph{putback} function.
 
-This concept looks quite theoretical, but fits very well with model-driven
-development. We can present a projection of our original model to our user,
-where meta-information and sensitive information is removed. The user can then
-edit that projection and the original model gets updated. This is indeed very
-much like updateable views in a relational database.
+This concept looks quite formal, but fits very well with model-driven
+development. As we will see in section \ref{sec:viewsandforms}, we can present
+a projection of our original model to our user, where meta-information and
+sensitive information is removed. The user can then edit that projection and the
+original model gets updated. This is indeed very much like updatable views in a
+relational database.
+
+One very interesting application using updatable views is Proxima
+\cite{proxima}, which is an editor for structured documents. Using Proxima you
+can write an editor for virtually every structured datatype. Our approach is
+less powerful and more lightweight, which makes it suitable for writing web
+applications.
 
 \section{Our research}
 
 \subsection{Research Question}
 
-When we started out, our original question was: \emph{How can we build
-database-driven applications more easily?} In order to answer this, we will analyze existing
-database-driven applications to identify recurring patterns.
+When we started out thinking about this subject, our original question was:
+\emph{How can we build database-driven applications more easily?} In order to
+answer this, we will analyze existing database-driven applications to identify
+recurring patterns.
 
 Most of these applications can be modeled using the model-view-controller
 paradigm. The model is in this case the ER-model, the view is the presentation
@@ -379,21 +408,21 @@ questions:
 \item What are the right abstractions for views?
   \begin{itemize}
   \item How do they relate to the model?
-  \item How can we automatically derive (updateable) views from the model?
+  \item How can we automatically derive (updatable) views from the model?
   \item How can we specialize these views?
   \item How can we model views in an implementation-independent way?
-  \end{itemize}
-\item What are the right abstractions for control flow and business logic?
-  \begin{itemize}
-  \item How can we use Haskell's control flow abstractions to our advantage?
-  \item Can we reuse existing libraries for control flow?
-  \item What are the consequences of using combinators like iTasks or Orc?
   \end{itemize}
 \item What are the right abstractions for the model?
   \begin{itemize}
   \item How can we persist the model using a database?
   \item What types of relations can we model?
   \item How does this relate to existing theory?
+  \end{itemize}
+\item What are the right abstractions for control flow and business logic?
+  \begin{itemize}
+  \item How can we use Haskell's control flow abstractions to our advantage?
+  \item Can we reuse existing libraries for control flow?
+  \item What are the consequences of using combinators like iTasks or Orc?
   \end{itemize}
 \end{itemize}
 
@@ -411,7 +440,7 @@ application:
 
 We are going to build two orthogonal embedded domain specific languages in the
 Haskell programming language. The first EDSL will focus on the combination of
-datatype-generic programming and updateable views for web development. The
+datatype-generic programming and updatable views for web development. The
 second EDSL will be a way of declaring control flow for application programming.
 To make sure our libraries are powerful enough for expressing real world
 problems we will port an existing PHP application.
@@ -458,19 +487,25 @@ programming is by using a generic programming library.
 In Haskell, we could define our domain model for a weblog like this:
 
 \begin{code}
-data Post       = Post     {  title :: String, body :: String
-                           ,  author :: BelongsTo User, comments :: HasMany Comment}
+data Post       = Post     {  title :: String
+                           ,  body :: String
+                           ,  author :: BelongsTo User
+                           ,  comments :: HasMany Comment}
 data Comment    = Comment  {  text :: String, date :: DateTime, author :: BelongsTo User}
 data User       = User     {  name :: String, password :: String, age :: Int}
 \end{code}
 
+This is very similar to regular datatype definitions. Every entity description
+(in the domain model) is encoded as a single-constructor datatype using record
+syntax. Correspondingly, an entity will be encoded as a value of that datatype.
 An entity description (such as |Post|) contains both properties (simple values)
-and relations such as |BelongsTo User| and |HasMany Comment|.
+and relations such as |BelongsTo User| and |HasMany Comment|. 
 
 We have annotated the relationships using special types such as
 |BelongsTo| and |HasMany|. These are used to encode the kind of relationship
 (one-to-one, one-to-many, etc.). They will also serve as an indicator for the
-database layer about where to store the foreign keys.
+database layer about where to store the foreign keys. The datatype thus contains
+more structural information than normal Haskell datatypes.
 
 \subsubsection{Structural representation}
 
@@ -481,10 +516,11 @@ combination of these codes and conversion functions is called a \emph{universe}.
 Every generic programming library has different features and requirements. We
 have used the comparison from Rodriguez et al. \cite{compgen} to evaluate a number of
 libraries. We built a prototype generic programming library that was based on
-\emph{EMGM} \cite{emgm}.  We have also built a prototype of our library based on
-regular.
+\emph{EMGM} \cite{emgm} and currently are working on a prototype of our library
+built on top of the \emph{regular} library \cite{regular}.
 
 \subsubsection{Generic views and forms}
+\label{sec:viewsandforms}
 
 Using the regular library we can derive the structure of a datatype. For
 example, the |User|-datatype described above looks like this:
@@ -501,8 +537,8 @@ representation:
 from :: User -> PF User User
 \end{code}
 
-When we expand the type on the right-hand side of the arrow, we get a type that
-looks like this:
+When we expand the |PF| type-family on the right-hand side of the arrow, we get
+a type that looks like this:
 
 \begin{code}
 from :: User 
@@ -619,6 +655,7 @@ exactly this. In our research we want to explore this area further and see
 whether we can apply more techniques from database programming.
 
 \subsection{Control flow: a library for workflow control-flows}
+\label{controlflow}
 
 In any complex system, the workflow needs to be encoded. Most of the time
 this is done implicitly. iTasks \cite{iTasks} is a library that provides
@@ -663,7 +700,7 @@ to serialize them when the server stops.  To our knowledge, it is impossible to
 serialize arbitrary Haskell functions.
 
 Luckily, others have solved this problem before. In his paper on arrows, Hughes
-\cite{Hughes98generalisingmonads} shows how we can circumvent this by using
+\cite{Hughes98generalisingmonads} shows how we can circumvent the problem by using
 arrows instead of monads as our control abstraction. Our idea is as following:
 instead of serializing an arbitrary function, we define our workflow graph using
 arrows. In our first implementation, we built a trace of the steps the user took
@@ -694,7 +731,8 @@ Now we can serialize at any point in our workflow. After taking a step (i.e.
 executing the first argument of |>>>|) we can store the intermediate result |b|
 together with the next function of type |Workflow b c| and a trace. When
 serializing, we remove only store |b| and the trace, and from that trace and the
-result |b| we can reconstruct the continuation.
+result |b| we can reconstruct the continuation. This works because, with arrows, we
+can only use the results from the previous step, as described in section \ref{sec:controlflow}.
 
 This is just one way of doing serializable continuations in Haskell. Using
 arrows puts a bit of burden on the user, so in our research we will see if we
@@ -740,7 +778,13 @@ Lenses have been used before for a number of purposes, such as updatable views
 in databases and bi-directional programming languages. However, we are not aware
 of research that uses lenses for abstracting over graphical user interfaces.
 Also, we believe it is very powerful to use lenses in combination with generic
-programming, and to our knowledge, this has not yet been done before.
+programming, and to our knowledge, this has not yet been done before. While
+there is Proxima \cite{proxima}, a structured editor, we focus on a lightweight
+editor. Because of the constraints of the web (limited availability, possibly
+high communication costs) we can't use an editor like Proxima: it is much too
+heavy for our purposes. We can, however, use the ideas in Proxima, and this is
+exactly what we'll do. Similar foundations for our work have been laid by
+Meertens et al.  \cite{Meertens92theergonomics} when describing GUI systems.
 
 There are a number of attempts to do web programming in Haskell. There is WASH
 \cite{wash}, which is currently suffers from bitrot. Also, WASH doesn't release
@@ -757,11 +801,17 @@ contributions is to show how we can do typed web programming. Another
 contribution is that we show how to do all this in Haskell, so that Haskell
 programmers can do web programming as well.
 
+
 \section{Planning}
+
 
 We have made a timetable of the project , starting from the point where
 the proposal is ready. During the research, we want to alternate between writing
-and doing the research.
+and doing the research. We have ordered our research by importance: firstly, we
+will identify a lot of common elements, but we believe the unique work we do
+lies in the use of lenses combined with generic programming. We want to
+sacrifice other research areas if it turns out we will need more time to
+research lenses and generic programming.
 
 \begin{tabular}{l l}
 Week  & Action \\
@@ -788,6 +838,19 @@ layer) \\
 17    & Thesis defense \\
 18    & Final corrections \\
 \end{tabular}
+
+\subsection{Work done so far}
+
+We have already built a couple of prototypes to
+test some of our theses. We have a working prototype implementation of a
+workflow-library based on monads and one based on arrows. We also have a working
+prototype for describing our domain model generically, one based on a variant of
+\emph{EMGM} and one based on \emph{regular}. We have written functions that serialize our
+model to the database and functions that show HTML and generate forms. We have a
+prototype library that uses the \emph{fclabels} package to build generic
+database applications using lenses. Most of this code is merely a proof of
+concept and needs to be extended, tested, polished, integrated, documented and
+packaged in order to be useful.
 
 \bibliographystyle{plain}
 \bibliography{bibliography}
