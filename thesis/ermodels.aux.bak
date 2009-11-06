@@ -1,0 +1,27 @@
+\relax 
+\ifx\hyper@anchor\@undefined
+\global \let \oldcontentsline\contentsline
+\gdef \contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global \let \oldnewlabel\newlabel
+\gdef \newlabel#1#2{\newlabelxx{#1}#2}
+\gdef \newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\let \contentsline\oldcontentsline
+\let \newlabel\oldnewlabel}
+\else
+\global \let \hyper@last\relax 
+\fi
+
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}ER models}{1}{section.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The Compiler entity set}}{2}{figure.1}}
+\newlabel{fig:compilers}{{1}{2}{ER models\relax }{figure.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The \emph  {contributes} relationship set}}{2}{figure.2}}
+\newlabel{fig:contributes}{{2}{2}{ER models\relax }{figure.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Encoding an ER model in Haskell}{2}{section.3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces An ER diagram about Haskell compilers}}{3}{figure.3}}
+\newlabel{fig:ermodel}{{3}{3}{ER models\relax }{figure.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Building an in-memory database in Haskell}{5}{section.4}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Saving the in-memory database to a relational database}{8}{section.5}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Implementation}{8}{section.6}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Future work}{8}{section.7}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{8}{section.8}}

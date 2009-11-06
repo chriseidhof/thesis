@@ -1,0 +1,25 @@
+graph ER {
+	node [shape=box]; compiler; person; release;
+	node [shape=ellipse]; name; homepage; firstName; lastName; email; title; date; notes;
+	node [shape=diamond,style=filled,color=lightgrey]; "contributes"; "releases";
+
+  name -- compiler [len=1.00];
+  homepage -- compiler [len=1.00];
+
+  firstName -- person [len=1.00];
+  lastName -- person [len=1.00];
+  email -- person [len=1.00];
+
+  title -- release [len=1.00];
+  date -- release [len=1.00];
+  notes -- release [len=1.00];
+
+
+	compiler -- "contributes" [label="*",len=1.00];
+  "contributes" -- person [label="*",len=1.00];
+
+	compiler -- "releases" [label="1",len=1.00];
+  "releases" -- release [label="*",len=1.00];
+
+	fontsize=20;
+}

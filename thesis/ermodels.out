@@ -1,0 +1,8 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}
+\BOOKMARK [1][-]{section.2}{ER models}{}
+\BOOKMARK [1][-]{section.3}{Encoding an ER model in Haskell}{}
+\BOOKMARK [1][-]{section.4}{Building an in-memory database in Haskell}{}
+\BOOKMARK [1][-]{section.5}{Saving the in-memory database to a relational database}{}
+\BOOKMARK [1][-]{section.6}{Implementation}{}
+\BOOKMARK [1][-]{section.7}{Future work}{}
+\BOOKMARK [1][-]{section.8}{Conclusion}{}
