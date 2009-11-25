@@ -6,3 +6,8 @@ all: ermodels.pdf
 
 %.pdf: %.tex
 	latexmk -pdf $<
+
+ermodels.lhs: ../packages/Basil/src/Basil/Relations/*.lhs
+
+
+.PHONY: %.lhs
