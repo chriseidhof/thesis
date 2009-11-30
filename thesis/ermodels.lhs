@@ -8,6 +8,10 @@
 %format phi = "\phi"
 %format ~= = "\leadsto"
 %format T_1
+%format c1
+%format c2
+%format t1
+%format t2
 % vim:spell
 \usepackage{a4wide}
 \usepackage{times}
@@ -21,6 +25,9 @@
 \newcommand{\entset}[1]{\emph{#1}}
 \newcommand{\attrib}[1]{\emph{#1}}
 \newcommand{\relationship}[1]{\emph{#1}}
+\newcommand{\todo}{{\tiny TODO}}
+
+\hypersetup{colorlinks=true}
 
 \begin{document}
 \author{Chris Eidhof}
@@ -28,10 +35,18 @@
 
 \maketitle
 
+\section{TODOs}
+
+\begin{itemize}
+\item What about deletion of entities and relationship soundness? 
+\item How to update relationships while keeping them sound?
+\item How to delete relationships?
+\end{itemize}
+
 
 \section{Introduction}
 
-Entity-relationship modeling (TODO: cite chen) is a tool to design data models.
+Entity-relationship modeling \cite{ermodeling} is a tool to design data models.
 An entity-relationship (ER) model is a declarative specification of a data
 model, and can be used for deriving database schemas. An ER model describes
 entities and their relationships. In this chapter, we will see how we can encode
@@ -49,8 +64,9 @@ In fact, ER models are not tied to relation databases at all.
 
 In the next section we give a definition of an ER model and introduce the
 vocabulary for ER modeling. In section \ref{sec:encoding}, we show how to
-encode an ER model in Haskell.  Next, we build an in-memory database and an
-interface to a relational database.
+encode an ER model in Haskell.  In section \ref{sec:inmem}, we build an
+in-memory database and in section \ref{sec:rdb} we build interface to a
+relational database.
 
 \section{ER models}
 
@@ -115,11 +131,14 @@ model that represents information about Haskell compilers.
 
 \section{Encoding an ER model in Haskell}
 
+\label{sec:encoding}
+
 From now on, we will use a simplified version of the ER model. We only consider
 relationships between exactly two types. There are no attributes on
 relationships.  Instead of letting the library user define a key to identify an
 entity, we automatically add an integer attribute \attrib{id} for every entity
-set.
+set. While these constrains might look tight, in practice they often work very
+well.
 
 To encode an ER model in Haskell, we start with
 the entity sets. We can encode an entity set $E_1$ as a Haskell type |T_1|. For
@@ -139,15 +158,15 @@ An entity in the Haskell Compiler set is encoded as a Haskell value of type
 > uhc :: Compiler
 > uhc = Compiler "UHC" (URL "http://www.cs.uu.nl/wiki/UHC")
 
-Now we shall show how to encode relationship sets. As stated, we limit
+Now we show how to encode relationship sets. As stated, we limit
 ourselves to relationships between exactly two entities and without attributes.
 A relationship can be one-to-one, one-to-many or many-to-many.
 
 As an example, take the \relationship{contributes} in Figure \ref{fig:contributes}.
 Ultimately, when interfacing to a database, we might want to query the database
-for the contributors of a compiler entity.  In our library, we want to make sure that we get
+for the contributors of a compiler entity.  We then want to make sure that we get
 a collection of contributors, not just one contributor. Also, we want to make sure that
-every element in the collection is of the Person entity datatype.
+every element in the collection is of the \entset{Person} entity datatype.
 This can be achieved by storing the entitity types and the cardinality of the
 relationship set on the type level. For example, we could encode the
 \relationship{contributes} relationship set like this:
@@ -158,16 +177,16 @@ relationship set on the type level. For example, we could encode the
 > contributes :: Rel Many Compiler Many Person
 > contributes = Rel
 
-At this point, we can define entities, entity sets, relationships and
+At this point, we can define entities, entity sets and
 relationship sets. In order to define an ER model, we have to link the entity
 sets and relationship sets together. However, before we can do that, we have to alter our type |Rel| to be
-more restricted. When encoding an ER model, we want to make sure that we 
+more restricted: we want to make sure that we 
 only encode relationships between entities in the same ER model. Therefore, we
 define a GADT |phi| that contains a constructor for every entity type. This
 is similar to the technique used in the generic programming library multirec
-(TODO cite). For our sample model, |phi| looks like this:
+\cite{multirec}. For our sample model, |phi| looks like this:
 
-> data Entities where
+> data Entities e where
 >   PrCompiler  :: Entities Compiler
 >   PrPerson    :: Entities Person
 >   PrRelease   :: Entities Release
@@ -214,15 +233,30 @@ the entity sets:
 >   relations = (contributes, (releases, ()))
 
 We now achieved the goal stated in in the introduction: the ER
-model from the previous section is encoded in Haskell.
+model from the previous section is encoded in Haskell. In the next section,
+we will build a simple in-memory database from the ground up. If you are
+interested in the implementation, continue reading. If you are just interested
+in using it, skip to section \ref{sec:inmeminterface} on page
+\pageref{sec:inmeminterface} for a description of the interface.
+
 
 \section{Building an in-memory database in Haskell}
+\label{sec:inmem}
 
 From the ER model we can build an in-memory database in Haskell. We want
-operations to create, read, update and delete an entity. We want to do the same
+operations to create, read, update and delete an entity. We want to have the same
 operations on relationships. Additionally, we want to keep relationships sound. For
 example, consider the \relationship{contributes} relationship: we want to make sure that every
-release belongs to exactly one compiler.
+\entset{Release} belongs to exactly one \entset{Compiler}. In section \ref{sec:entities} we will
+see how we can store entities and in section \ref{sec:inmemrels} we will see how
+we can store relationships. Finally, in section \ref{sec:inmeminterface} we will
+build the interface for a library by combining the relationship storage and
+entity storage.
+
+
+\subsection{Storing entities}
+
+\label{sec:entities}
 
 To store entities, we use a |Map| for each entity datatype. The |Map| uses integers
 (the primary keys) as keys, and the entities as values. When we create an
@@ -243,7 +277,7 @@ list of entity datatypes in our ER model:
 
 > type EntityEnum = (Compiler, (Person, (Release, ())))
 
-Using a type level function (TODO reference), we now easily determine what
+Using a type level function, we can now easily determine what
 our final structure for storing entities is:
 
 > type family TList (f :: * -> *)  (phi :: * -> *) enum :: *
@@ -334,9 +368,9 @@ And we are now ready to update our storage:
 >                        ref    = Ref el ident
 >                   in (ls', ref)
 
-The fresh variable is now a constant function, but by putting the
-|EntityStorage| and a fresh variable counter into a |State| monad, we can get
-fresh variables.
+The fresh variable is now a constant function, but in section
+\ref{sec:inmeminterface}, we will put the |EntityStorage| and a fresh variable
+counter into a |State| monad, so we can get real fresh variables.
 
 For looking up an entity given a reference, we first need a lookup function
 on the |EntityStorage|. Again, we can build a general function for |TList| that
@@ -353,27 +387,33 @@ does just this:
 Saving and deleting are implemented in the same straightforward way.
 
 \subsection{Saving relationships}
+\label{sec:inmemrels}
 
 %include ../packages/Basil/src/Basil/Relations/Base.lhs
 
 \subsubsection{Initial Values}
 
-As we have seen, storing relationships is quite straightforward. However, it is
-not convenient for the end user. We will now add another layer that, given an
-entity type, computes the initial relationships for such an entity type.
+\label{sec:initialvalues}
 
 When we create a new entity, we want to be sure that all the corresponding
 relationships are initialized. For example, in our compilers ER model, whenever
 we create a new |Release| entity, we want to be sure that a relationship between
-|Compiler| and |Release| is added. The relationship set \relationship{releases}
-describes that every |Release| should be related to exactly one |Compiler|.
+|Compiler| and |Release| is added, because the relationship set
+\relationship{releases} describes that every |Release| should be related to
+exactly one |Compiler|.
 
 %include ../packages/Basil/src/Basil/Relations/InitialValues.lhs
 
-TODO: ready to define the actual interface
+We are now ready to combine the storing of values and the initial values into a
+convenient interface.
 
 %include ../packages/Basil/src/Basil/Relations/Interface.lhs
 
+\subsection{The library interface}
+
+%include ../packages/Basil/src/Basil/Interface.lhs
+
+\label{sec:inmeminterface}
 
 
 % The approach we take is changing the type of |newEntity| to include all
@@ -397,13 +437,63 @@ TODO: ready to define the actual interface
 % 
 % The |FilteredEntities| can be implemented using type-functions.
 
+\section{Interfacing with a relational database}
+
+In this section, we build an interface with a relational database based on our
+ER model. In section \ref{sec:rdbschema} we derive a schema from an ER model. In
+section \ref{sec:rdbentities} we implement the standard operations such as
+|create|, |read|, |update| and |delete| on entities and in section
+\ref{sec:rdbrels} we implement the same operations on relationships. Section
+\ref{sec:rdbinterface} finally combines the operations on entities and the
+operations on the relationships to build a easy to use interface.
+
+\subsection{Deriving the schema}
+\label{sec:rdbschema}
+
+Mechanical mapping from er-model to schema. First process entities, then add
+columns for relationships to yield the final model.
+
+\subsection{Operations on entities}
+\label{sec:rdbentities}
+
+Create, read, update, delete.
+
+\subsection{Operations on relationships}
+
+Create, read, update, delete. Use initialvalues.
+
+\label{sec:rdbrels}
+\subsection{Building an interface}
+
+Most importantly: new entities.
+
+\label{sec:rdbinterface}
+
 \section{Saving the in-memory database to a relational database}
+
+\label{sec:rdb}
+
+When building a text-editor, the workflow of an end-user is often like this: they
+load a document, make some changes and once they are happy with their changes,
+they store the document. On the implementation level, the text file is first
+read into memory, that memory is altered, and finally the memory is written back
+to the hard disk.
+
+For more complicated documents, instead of a text-file, we might use a database.
+The user will expect the same behavior: they load a file, make some changes, and
+the changes are only persisted when they press \emph{save}. By combining our
+libraries for the relational database and the in-memory database we can achieve
+exactly this: the document is read from the database, changes are stored in the
+in-memory database and the in-memory database is finally stored to the
+relational database.
 
 \section{Future work}
 
-%   - Extend relationships to have attributes, too.
-%   - Extend relationships to be about more than two entities.
-%   - More support for (primary) keys.
+\begin{itemize}
+\item Extend relationships to have attributes, too.
+\item Extend relationships to be about more than two entities.
+\item More support for (primary) keys.
+\end{itemize}
 
 \section{Conclusion}
 
