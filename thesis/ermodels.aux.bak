@@ -12,38 +12,39 @@
 \fi
 
 \citation{ermodeling}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}}
-\@writefile{toc}{\contentsline {section}{\numberline {2}ER models}{1}{section.2}}
+\@writefile{toc}{\contentsline {section}{\numberline {1}TODOs}{1}{section.1}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Introduction}{1}{section.2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}ER models}{1}{section.3}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The Compiler entity set}}{2}{figure.1}}
 \newlabel{fig:compilers}{{1}{2}{ER models\relax }{figure.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The \emph  {contributes} relationship set}}{2}{figure.2}}
 \newlabel{fig:contributes}{{2}{2}{ER models\relax }{figure.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}Encoding an ER model in Haskell}{2}{section.3}}
-\newlabel{sec:encoding}{{3}{2}{Encoding an ER model in Haskell\relax }{section.3}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces An ER model of Haskell compilers}}{3}{figure.3}}
 \newlabel{fig:ermodel}{{3}{3}{ER models\relax }{figure.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Encoding an ER model in Haskell}{3}{section.4}}
+\newlabel{sec:encoding}{{4}{3}{Encoding an ER model in Haskell\relax }{section.4}{}}
 \citation{multirec}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Building an in-memory database in Haskell}{5}{section.4}}
-\newlabel{sec:inmem}{{4}{5}{Building an in-memory database in Haskell\relax }{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Storing entities}{5}{subsection.4.1}}
-\newlabel{sec:entities}{{4.1}{5}{Storing entities\relax }{subsection.4.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Saving relationships}{8}{subsection.4.2}}
-\newlabel{sec:inmemrels}{{4.2}{8}{Saving relationships\relax }{subsection.4.2}{}}
-\newlabel{tfun:RelationStorage}{{4.2}{8}{Saving relationships\relax }{subsection.4.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.1}Initial Values}{11}{subsubsection.4.2.1}}
-\newlabel{sec:initialvalues}{{4.2.1}{11}{Initial Values\relax }{subsubsection.4.2.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}The library interface}{14}{subsection.4.3}}
-\newlabel{sec:inmeminterface}{{4.3}{15}{The library interface\relax }{subsection.4.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Interfacing with a relational database}{15}{section.5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Deriving the schema}{16}{subsection.5.1}}
-\newlabel{sec:rdbschema}{{5.1}{16}{Deriving the schema\relax }{subsection.5.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Operations on entities}{16}{subsection.5.2}}
-\newlabel{sec:rdbentities}{{5.2}{16}{Operations on entities\relax }{subsection.5.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Operations on relationships}{16}{subsection.5.3}}
-\newlabel{sec:rdbrels}{{5.3}{16}{Operations on relationships\relax }{subsection.5.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Building an interface}{16}{subsection.5.4}}
-\newlabel{sec:rdbinterface}{{5.4}{16}{Building an interface\relax }{subsection.5.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Saving the in-memory database to a relational database}{16}{section.6}}
-\newlabel{sec:rdb}{{6}{16}{Saving the in-memory database to a relational database\relax }{section.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Future work}{16}{section.7}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{16}{section.8}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Building an in-memory database in Haskell}{5}{section.5}}
+\newlabel{sec:inmem}{{5}{5}{Building an in-memory database in Haskell\relax }{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Storing entities}{5}{subsection.5.1}}
+\newlabel{sec:entities}{{5.1}{5}{Storing entities\relax }{subsection.5.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Saving relationships}{8}{subsection.5.2}}
+\newlabel{sec:inmemrels}{{5.2}{8}{Saving relationships\relax }{subsection.5.2}{}}
+\newlabel{tfun:RelationStorage}{{5.2}{8}{Saving relationships\relax }{subsection.5.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {5.2.1}Initial Values}{11}{subsubsection.5.2.1}}
+\newlabel{sec:initialvalues}{{5.2.1}{11}{Initial Values\relax }{subsubsection.5.2.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}The library interface}{14}{subsection.5.3}}
+\newlabel{sec:inmeminterface}{{5.3}{15}{The library interface\relax }{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Interfacing with a relational database}{15}{section.6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Modeling a relational database}{15}{subsection.6.1}}
+\newlabel{sec:rdbschema}{{6.1}{15}{Modeling a relational database\relax }{subsection.6.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Converting entities}{17}{subsection.6.2}}
+\newlabel{sec:rdbentities}{{6.2}{17}{Converting entities\relax }{subsection.6.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Operations on relationships}{17}{subsection.6.3}}
+\newlabel{sec:rdbrels}{{6.3}{17}{Operations on relationships\relax }{subsection.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Building an interface}{17}{subsection.6.4}}
+\newlabel{sec:rdbinterface}{{6.4}{17}{Building an interface\relax }{subsection.6.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Saving the in-memory database to a relational database}{17}{section.7}}
+\newlabel{sec:rdb}{{7}{17}{Saving the in-memory database to a relational database\relax }{section.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Future work}{17}{section.8}}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{17}{section.9}}

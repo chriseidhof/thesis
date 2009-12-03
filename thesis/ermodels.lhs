@@ -55,18 +55,18 @@ relational database from such an ER model.
 
 % TODO: move to section on the end?
 Building an interface to database management systems in Haskell is not a new
-idea. In 1999, Leijen (TODO cite) described HaskellDB, a Haskell interface to relational
+idea. Leijen (TODO cite) described HaskellDB, a typed interface to relational
 databases. Using HaskellDB, the programmer can model relational database schemas
-and query the database in a type-safe way. Our approach is based on ER models,
-which are more abstract than relational databases. A relation database schema
-is also called a logical data model, whereas an ER model is a conceptual model.
-In fact, ER models are not tied to relation databases at all.
+and query the database in a strongly typed way. Our approach is based on ER models,
+which work on a higher level than relational databases. A relational database schema
+is called a logical data model, whereas an ER model is a conceptual model.
 
 In the next section we give a definition of an ER model and introduce the
 vocabulary for ER modeling. In section \ref{sec:encoding}, we show how to
 encode an ER model in Haskell.  In section \ref{sec:inmem}, we build an
-in-memory database and in section \ref{sec:rdb} we build interface to a
-relational database.
+in-memory database and in section \ref{sec:rdb} we interface to a
+relational database. In every section we will build part of a library for
+constructing and working with ER models.
 
 \section{ER models}
 
@@ -79,10 +79,11 @@ collection of people working on Haskell.
 An entity is described using attributes, which map from an entity to a value. Attributes of a
 Haskell compiler might be \attrib{name} and \attrib{homepage}. All
 entities in an entity set have the same attributes. Every attribute has a
-domain, for example: the domain of a compiler's name might be the set of all
-strings, the domain of release date might be all dates.  For each entity set,
-there is a \emph{primary key}, which uniquely identifies an entity. In Figure
-\ref{fig:compilers}, we see an example of the Haskell Compiler entity set.
+domain, for example: the domain of a compiler's \attrib{name} is the set of all
+strings, the domain of a \attrib{release date} is the set of all dates.  For
+each entity set, there is a \emph{primary key}, which uniquely identifies an
+entity. In Figure \ref{fig:compilers}, we see an example of the Haskell Compiler
+entity set.
 
 \begin{figure}
 \includegraphics[width=5cm]{ermodels/compiler}
@@ -95,7 +96,7 @@ contributer to the UHC Haskell compiler.
 A relationship can also have attributes, for example, it might be that the
 relationship \relationship{contributes} has an attribute \attrib{since} that
 records when the author started working on a compiler. A relationship can be
-modeled as a tuple, containing a component for every entity, and a component for
+modeled as a tuple, containing an element for every entity and an element for
 every attribute.
 
 Like entities, relationships can be
@@ -110,12 +111,12 @@ attributes. Figure \ref{fig:contributes} shows an example of the
 \label{fig:contributes}
 \end{figure}
 
-A relationship can be one-to-one, one-to-many or many-to many. For example, an
-person might contribute to many compilers, and a compiler might have many
-contributors. This is an example of a many-to-many relationship. On the other
-hand, a compiler might have multiple releases, but every release belongs to
-exactly one compiler. This is an example of a one-to-many relationship. From now
-on, we will call this property the cardinality of the relationship.
+A relationship between two items can be one-to-one, one-to-many or many-to many.
+For example, a person might contribute to many compilers, and a compiler might
+have many such contributors. This is an example of a many-to-many relationship. On
+the other hand, a compiler might have multiple releases, but every release
+belongs to exactly one compiler. This is an example of a one-to-many
+relationship. We call this property the \emph{cardinality} of the relationship.
 
 \begin{figure}
 \includegraphics[width=16cm]{ermodels/erdiagram}
@@ -125,8 +126,7 @@ on, we will call this property the cardinality of the relationship.
 
 
 ER modeling is done graphically, and describes the entity sets, their
-attributes and the relationship sets. An instance of a specific ER model
-contains the entities and relationships. Figure \ref{fig:ermodel} is a sample ER
+attributes and the relationship sets.  Figure \ref{fig:ermodel} is a sample ER
 model that represents information about Haskell compilers. 
 
 \section{Encoding an ER model in Haskell}
@@ -138,15 +138,15 @@ relationships between exactly two types. There are no attributes on
 relationships.  Instead of letting the library user define a key to identify an
 entity, we automatically add an integer attribute \attrib{id} for every entity
 set. While these constrains might look tight, in practice they often work very
-well.
+well. We have not yet looked at supporting full ER models.
 
 To encode an ER model in Haskell, we start with
-the entity sets. We can encode an entity set $E_1$ as a Haskell type |T_1|. For
+encoding the entity sets. We can encode an entity set $E_1$ as a Haskell type |T_1|. For
 example, the entity set Haskell Compilers might be encoded as the datatype
 |Compiler|. We call such a datatype an \emph{entity datatype}. Every entity
-datatype has a single constructor, which is defined using record syntax,
-containing a field for every attribute. As an example, we have encoded the
-entity sets figure \ref{fig:ermodel} with their attributes:
+datatype has a single constructor containing a field for every attribute. As an
+example, we have encoded the entity sets from figure \ref{fig:ermodel}:
+
 
 > data Compiler  = Compiler  {name :: String, homepage :: URL}
 > data Person    = Person    {firstName :: String, lastName :: String, email :: Email}
@@ -158,18 +158,15 @@ An entity in the Haskell Compiler set is encoded as a Haskell value of type
 > uhc :: Compiler
 > uhc = Compiler "UHC" (URL "http://www.cs.uu.nl/wiki/UHC")
 
-Now we show how to encode relationship sets. As stated, we limit
-ourselves to relationships between exactly two entities and without attributes.
-A relationship can be one-to-one, one-to-many or many-to-many.
-
-As an example, take the \relationship{contributes} in Figure \ref{fig:contributes}.
+Before we show how to encode relationship sets, consider the \relationship{contributes} in Figure \ref{fig:contributes}.
 Ultimately, when interfacing to a database, we might want to query the database
 for the contributors of a compiler entity.  We then want to make sure that we get
 a collection of contributors, not just one contributor. Also, we want to make sure that
 every element in the collection is of the \entset{Person} entity datatype.
-This can be achieved by storing the entitity types and the cardinality of the
+This can be achieved by storing both the entitity types and the cardinality of the
 relationship set on the type level. For example, we could encode the
-\relationship{contributes} relationship set like this:
+\relationship{contributes} relationship set by constructing a value of the
+datatype |Rel|:
 
 > data Rel cardL entityL cardR entityR where
 >   Rel :: Rel cardL entitityL cardR entityR
@@ -178,9 +175,10 @@ relationship set on the type level. For example, we could encode the
 > contributes = Rel
 
 At this point, we can define entities, entity sets and
-relationship sets. In order to define an ER model, we have to link the entity
-sets and relationship sets together. However, before we can do that, we have to alter our type |Rel| to be
-more restricted: we want to make sure that we 
+relationship sets (note that \relationship{contributes} is a relationship set,
+not a relation). In order to define an ER model, we have to combine the entity
+sets and the relationship sets. Before we can do that, we change the type |Rel| to be
+more restricted: we make sure that we 
 only encode relationships between entities in the same ER model. Therefore, we
 define a GADT |phi| that contains a constructor for every entity type. This
 is similar to the technique used in the generic programming library multirec
@@ -192,21 +190,14 @@ is similar to the technique used in the generic programming library multirec
 >   PrRelease   :: Entities Release
 
 A value of the |Entities| datatype serves as a proof that a type belongs to our
-ER model.  For example, the value |PrCompiler| is a proof that |Compiler| is in
-our ER model.  Now we are ready to add an additional type-parameter to |Rel|,
-and two parameters to its constructor, so that we can ensure the entities are in
-the same ER Model:
+ER model. Such a value is also called a \emph{code}.  For example, the code
+|PrCompiler| is a proof that |Compiler| is in our ER model.  We
+add an additional type-parameter to |Rel|, and two parameters to its
+constructor, so that we can ensure the entities are in the same ER Model:
 
 > data Rel (phi :: * -> *) cardL entityL cardR entityR where
 >   Rel :: phi entityL -> phi entityR -> Rel phi cardL entitityL cardR entityR
 
-We also define a typeclass |El| that is instantiated for every element in
-the GADT:
-
-> class     El  phi       a         where  el  ::  phi a
-> instance  El  Entities  Compiler  where  el  =   PrCompiler
-> instance  El  Entities  Person    where  el  =   PrPerson
-> instance  El  Entities  Release   where  el  =   PrRelease
 
 Our |contributes| relationship type has to change appropriately. We also define
 the \relationship{releases} relationship.
@@ -217,7 +208,7 @@ the \relationship{releases} relationship.
 > releases     = Rel  PrCompiler  PrRelease
 
 Now we can finally link the relationship sets and the entity sets to each other.
-We enumerate the relationships in a nested tuple:
+All relationship sets are enumerated in a nested tuple:
 
 > type Relations =  (     Rel Entities  Many  Compiler  Many  Person
 >                   ,  (  Rel Entities  One   Compiler  Many  Release, ())
@@ -309,6 +300,14 @@ model we can make a list of all the proofs.
 
 > witnesses :: Witnesses Entities EntityEnum 
 > witnesses = WCons (WCons (WCons WNil))
+
+The typeclass |El| is instantiated for every element in |phi| and lets the
+compiler infer the right code:
+
+> class     El  phi       a         where  el  ::  phi a
+> instance  El  Entities  Compiler  where  el  =   PrCompiler
+> instance  El  Entities  Person    where  el  =   PrPerson
+> instance  El  Entities  Release   where  el  =   PrRelease
 
 We now are finally ready to construct our datastructure, containing a |Map| for
 every entity datatype.
@@ -439,34 +438,36 @@ convenient interface.
 
 \section{Interfacing with a relational database}
 
-In this section, we build an interface with a relational database based on our
-ER model. In section \ref{sec:rdbschema} we derive a schema from an ER model. In
-section \ref{sec:rdbentities} we implement the standard operations such as
-|create|, |read|, |update| and |delete| on entities and in section
-\ref{sec:rdbrels} we implement the same operations on relationships. Section
-\ref{sec:rdbinterface} finally combines the operations on entities and the
-operations on the relationships to build a easy to use interface.
+In this section, we build an interface with a relational database.
+. In section \ref{sec:rdbschema} we show how we can model a relational database
+in Haskell. In
+section \ref{sec:rdbentities} we show how we can store entities in a relational
+database. Finally, in section \ref{sec:rdbrels} how we can store relationships.
+We will end with an easy to use interface for the user in section
+\ref{sec:rdbinterface}
 
-\subsection{Deriving the schema}
+\subsection{Modeling a relational database}
 \label{sec:rdbschema}
 
-Mechanical mapping from er-model to schema. First process entities, then add
-columns for relationships to yield the final model.
+A relational database management system (RDBMS) is a widely used database
+system. In an RDBMS, data is stored in tables. Every table has a schema, which
+describes what kind of data is stored. Such a schema is a list of attributes
+and an attribute consist of a name and a type. A table consists of rows. A row
+is a tuple with an element for every attribute.
 
-\subsection{Operations on entities}
+%include ../packages/Basil/src/Basil/Database/Relational/Core.lhs
+%include ../packages/Basil/src/Basil/Database/Relational/Operations.lhs
+
+\subsection{Converting entities}
 \label{sec:rdbentities}
 
-Create, read, update, delete.
+%include ../packages/Basil/src/Basil/Database/Relational/Entities.lhs
+
 
 \subsection{Operations on relationships}
-
-Create, read, update, delete. Use initialvalues.
-
 \label{sec:rdbrels}
+
 \subsection{Building an interface}
-
-Most importantly: new entities.
-
 \label{sec:rdbinterface}
 
 \section{Saving the in-memory database to a relational database}
