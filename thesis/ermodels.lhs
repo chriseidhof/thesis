@@ -5,6 +5,7 @@
 %format +++ = "+\!\!\!+\!\!\!+"
 %format << = "<\!\!<"
 %format >>> = ">\!\!>\!\!>"
+%format <$> = "<\!\!\$\!\!>"
 %format phi = "\phi"
 %format ~= = "\leadsto"
 %format T_1
@@ -390,7 +391,7 @@ Saving and deleting are implemented in the same straightforward way.
 \subsection{Saving relationships}
 \label{sec:inmemrels}
 
-%include ../packages/Basil/src/Basil/Relations/Base.lhs
+%include ../packages/Basil/src/Basil/InMemory/Relations/Storage.lhs
 
 \subsubsection{Initial Values}
 
@@ -408,11 +409,11 @@ exactly one |Compiler|.
 We are now ready to combine the storing of values and the initial values into a
 convenient interface.
 
-%include ../packages/Basil/src/Basil/Relations/Interface.lhs
+%include ../packages/Basil/src/Basil/InMemory/Relations.lhs
 
 \subsection{The library interface}
 
-%include ../packages/Basil/src/Basil/Interface.lhs
+%include ../packages/Basil/src/Basil/InMemory/Interface.lhs
 
 \label{sec:inmeminterface}
 
@@ -474,6 +475,8 @@ is a tuple with an element for every attribute.
 \subsection{Building an interface}
 \label{sec:rdbinterface}
 
+TODO: show how we can have the same interface for relational databases.
+
 \section{Saving the in-memory database to a relational database}
 
 \label{sec:rdb}
@@ -490,7 +493,19 @@ the changes are only persisted when they press \emph{save}. By combining our
 libraries for the relational database and the in-memory database we can achieve
 exactly this: the document is read from the database, changes are stored in the
 in-memory database and the in-memory database is finally stored to the
-relational database.
+relational database. CoreData \todo{cite} is a proprietary technology by Apple
+that, among other things, implements this behavior.
+
+There are two approaches to achieve this using the libraries we have at our
+disposal. The first approach would involve extending the in-memory database to
+include hooks. For example, there might be a hook that is called whenever an
+item is not found (in which case we will try to find the item in a relational
+database). However, we propose an approach that is simpler: we build a couple of
+top-level functions that can combine two persistance implementations. 
+
+We can define a common interface for persistance layer, which is implemented by
+both the in-memory database and the 
+
 
 \section{Future work}
 
