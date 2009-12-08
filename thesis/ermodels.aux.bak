@@ -15,6 +15,7 @@
 \@writefile{toc}{\contentsline {section}{\numberline {1}TODOs}{1}{section.1}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Introduction}{1}{section.2}}
 \@writefile{toc}{\contentsline {section}{\numberline {3}ER models}{1}{section.3}}
+\newlabel{sec:ermodels}{{3}{1}{ER models\relax }{section.3}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The Compiler entity set}}{2}{figure.1}}
 \newlabel{fig:compilers}{{1}{2}{ER models\relax }{figure.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The \emph  {contributes} relationship set}}{2}{figure.2}}
@@ -47,4 +48,4 @@
 \@writefile{toc}{\contentsline {section}{\numberline {7}Saving the in-memory database to a relational database}{17}{section.7}}
 \newlabel{sec:rdb}{{7}{17}{Saving the in-memory database to a relational database\relax }{section.7}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {8}Future work}{17}{section.8}}
-\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{17}{section.9}}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{18}{section.9}}

@@ -24,6 +24,7 @@
 
 \newcommand{\entset}[1]{\emph{#1}}
 \newcommand{\attrib}[1]{\emph{#1}}
+\newcommand{\dbtable}[1]{\emph{#1}}
 \newcommand{\relationship}[1]{\emph{#1}}
 \newcommand{\todo}{{\tiny TODO}}
 
@@ -69,6 +70,7 @@ relational database. In every section we will build part of a library for
 constructing and working with ER models.
 
 \section{ER models}
+\label{sec:ermodels}
 
 An entity is an object in a specific problem domain. Examples of an entity are:
 the UHC Haskell compiler, the Haskell website or the manager of the Haskell
@@ -466,6 +468,8 @@ is a tuple with an element for every attribute.
 
 \subsection{Operations on relationships}
 \label{sec:rdbrels}
+
+%include ../packages/Basil/src/Basil/Database/Relational/Relationships.lhs
 
 \subsection{Building an interface}
 \label{sec:rdbinterface}
