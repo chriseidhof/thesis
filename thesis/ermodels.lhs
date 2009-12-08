@@ -503,9 +503,15 @@ item is not found (in which case we will try to find the item in a relational
 database). However, we propose an approach that is simpler: we build a couple of
 top-level functions that can combine two persistance implementations. 
 
-We can define a common interface for persistance layer, which is implemented by
-both the in-memory database and the 
+\subsection{A common interface for persistence}
 
+\todo{create abstract "persistance" typeclass with instances for in-memory and
+database}
+
+\subsection{Combining the in-memory database and the relational database}
+
+\todo{show how we can combine two arbitrary instances of persistance typeclass
+to provide core-data behavior}
 
 \section{Future work}
 

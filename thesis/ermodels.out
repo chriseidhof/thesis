@@ -13,5 +13,7 @@
 \BOOKMARK [2][-]{subsection.6.3}{Operations on relationships}{section.6}
 \BOOKMARK [2][-]{subsection.6.4}{Building an interface}{section.6}
 \BOOKMARK [1][-]{section.7}{Saving the in-memory database to a relational database}{}
+\BOOKMARK [2][-]{subsection.7.1}{A common interface for persistence}{section.7}
+\BOOKMARK [2][-]{subsection.7.2}{Combining the in-memory database and the relational database}{section.7}
 \BOOKMARK [1][-]{section.8}{Future work}{}
 \BOOKMARK [1][-]{section.9}{Conclusion}{}
