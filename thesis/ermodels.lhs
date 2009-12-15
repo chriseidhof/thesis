@@ -5,7 +5,10 @@
 %format +++ = "+\!\!\!+\!\!\!+"
 %format << = "<\!\!<"
 %format >>> = ">\!\!>\!\!>"
-%format <$> = "<\!\!\$\!\!>"
+%format <$> = "<\!\$\!>"
+%format .==. = ".\!\equiv\!.\ "
+%format .&&. = "\ .\!\land\!.\ "
+%format .<. = "\ .\!<\!.\ "
 %format phi = "\phi"
 %format ~= = "\leadsto"
 %format T_1
@@ -13,6 +16,8 @@
 %format c2
 %format t1
 %format t2
+%format <*> = "\circledast "
+%format <$> = "\mathop{<\!\!\!\$\!\!\!>}"
 % vim:spell
 \usepackage{a4wide}
 \usepackage{times}
@@ -28,6 +33,7 @@
 \newcommand{\dbtable}[1]{\emph{#1}}
 \newcommand{\relationship}[1]{\emph{#1}}
 \newcommand{\todo}{{\tiny TODO}}
+\newcommand{\change}[2]{{\tiny #1} #2}
 
 \hypersetup{colorlinks=true}
 
@@ -36,6 +42,10 @@
 \title{Describing ER models in Haskell}
 
 \maketitle
+
+\section*{Changelog}
+\change{december 15}{Started on section about queries}
+
 
 \section{TODOs}
 
@@ -66,9 +76,12 @@ is called a logical data model, whereas an ER model is a conceptual model.
 In the next section we give a definition of an ER model and introduce the
 vocabulary for ER modeling. In section \ref{sec:encoding}, we show how to
 encode an ER model in Haskell.  In section \ref{sec:inmem}, we build an
-in-memory database and in section \ref{sec:rdb} we interface to a
-relational database. In every section we will build part of a library for
-constructing and working with ER models.
+in-memory database and in section \ref{sec:rdbschema} we interface to a
+relational database. Section \ref{sec:rdb} shows how we can combine the
+in-memory database and the relational database, where the in-memory database
+acts as a \emph{scratch pad} before data is stored. Section \ref{sec:query}
+describes a query language for ER models and how that is translated into
+Haskell.
 
 \section{ER models}
 \label{sec:ermodels}
@@ -198,9 +211,10 @@ ER model. Such a value is also called a \emph{code}.  For example, the code
 add an additional type-parameter to |Rel|, and two parameters to its
 constructor, so that we can ensure the entities are in the same ER Model:
 
+\todo{|phi entityL| could probably be done as an implicit parameter}
+
 > data Rel (phi :: * -> *) cardL entityL cardR entityR where
 >   Rel :: phi entityL -> phi entityR -> Rel phi cardL entitityL cardR entityR
-
 
 Our |contributes| relationship type has to change appropriately. We also define
 the \relationship{releases} relationship.
@@ -409,10 +423,13 @@ exactly one |Compiler|.
 We are now ready to combine the storing of values and the initial values into a
 convenient interface.
 
+%include ../packages/Basil/src/Basil/Relations/PList.lhs
+
 %include ../packages/Basil/src/Basil/InMemory/Relations.lhs
 
 \subsection{The library interface}
 
+%let query = False
 %include ../packages/Basil/src/Basil/InMemory/Interface.lhs
 
 \label{sec:inmeminterface}
@@ -475,7 +492,7 @@ is a tuple with an element for every attribute.
 \subsection{Building an interface}
 \label{sec:rdbinterface}
 
-TODO: show how we can have the same interface for relational databases.
+TODO: show how we can have almost the same interface for relational databases.
 
 \section{Saving the in-memory database to a relational database}
 
@@ -501,17 +518,56 @@ disposal. The first approach would involve extending the in-memory database to
 include hooks. For example, there might be a hook that is called whenever an
 item is not found (in which case we will try to find the item in a relational
 database). However, we propose an approach that is simpler: we build a couple of
-top-level functions that can combine two persistance implementations. 
+top-level functions that can combine two persistence implementations. 
 
 \subsection{A common interface for persistence}
 
-\todo{create abstract "persistance" typeclass with instances for in-memory and
-database}
+The in-memory database shares almost the same interface with the relational
+database. We can build a typeclass that abstracts over both interfaces. This
+will be very handy when combining the two interfaces in the next section. 
+
+Recall the type for the |new| and |find| operation on the in-memory database:
+
+> find :: (El phi entity) => Ref phi entity -> Basil phi env rels (Maybe entity)
+> new  ::  (El phi entity) 
+>      =>  entity 
+>      ->  PList phi entity (InitialValues phi entity rels rels) rels 
+>      ->  Basil phi env rels (Ref phi entity)
+
+%include ../packages/Basil/src/Basil/Interface.lhs
 
 \subsection{Combining the in-memory database and the relational database}
 
-\todo{show how we can combine two arbitrary instances of persistance typeclass
+\todo{show how we can combine two arbitrary instances of persistence typeclass
 to provide core-data behavior}
+
+\section{Querying the database}
+\label{sec:query}
+
+In the previous sections, we saw how we can find all entities in an entity set
+or a single entity, by its |id|. In this section we will implement
+\emph{selection}, which gives us more advanced ways of finding entities. For
+example, we might want to find all |Person| entities with the name |"chris"|, or
+all compilers with a version larger than one. In this section, we will show how
+we can construct such queries in a typed way, and perform them on both the
+in-memory database and the relational database. We think querying databases is a
+a separate aspect: not every storage engine might support it. For example, we
+could use ER models for modeling a webservice, but most webservices don't
+support any queries at all.
+
+\subsection{Representing queries}
+
+%include ../packages/Basil/src/Basil/Query.lhs
+%include ../packages/Basil/src/Basil/QueryExample.lhs
+
+\subsection{Querying the in-memory database}
+
+%let query = True
+%include ../packages/Basil/src/Basil/InMemory/Interface.lhs
+
+\subsection{Querying the relational database}
+
+TODO: compile query into sql using |toSql|.
 
 \section{Future work}
 
@@ -519,6 +575,8 @@ to provide core-data behavior}
 \item Extend relationships to have attributes, too.
 \item Extend relationships to be about more than two entities.
 \item More support for (primary) keys.
+\item Undo/redo support built on top of the in-mem/rdbms combination
+\item Interface/generate webservice based on ER model
 \end{itemize}
 
 \section{Conclusion}
