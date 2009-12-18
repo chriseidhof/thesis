@@ -30,8 +30,8 @@
 
 \section{Customization}
 
-Idea: transform entity into another nominal value, generate HTML for that.
-Newtypes generate custom HTML components.
+Idea: transform entity into another nominal value, generically generate HTML for that.
+Newtypes generate custom HTML components. Use fclabels for lens-like behavior.
 
 %if not thesis
 \end{document}
