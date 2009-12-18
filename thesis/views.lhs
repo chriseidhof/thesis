@@ -26,7 +26,12 @@
 
 %endif
 
+\section{Simple generic views}
 
+\section{Customization}
+
+Idea: transform entity into another nominal value, generate HTML for that.
+Newtypes generate custom HTML components.
 
 %if not thesis
 \end{document}
