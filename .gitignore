@@ -5,3 +5,7 @@ Generics/
 *.out
 *.aux
 *.toc
+workspace/
+packages/
+continuations/sample.sqlite3
+continuations/dist
