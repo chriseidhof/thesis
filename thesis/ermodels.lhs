@@ -1,3 +1,4 @@
+%if not thesis
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %include forall.fmt 
@@ -12,14 +13,7 @@
 \usepackage{rotating}
 \usepackage{hyperref}
 
-\newcommand{\entset}[1]{\emph{#1}}
-\newcommand{\attrib}[1]{\emph{#1}}
-\newcommand{\dbtable}[1]{\emph{#1}}
-\newcommand{\relationship}[1]{\emph{#1}}
-\newcommand{\todo}{{\tiny TODO}}
-\newcommand{\change}[2]{\item {\tiny #1} #2}
-
-\hypersetup{colorlinks=true}
+%include formatting.lhs
 
 \begin{document}
 \author{Chris Eidhof}
@@ -27,14 +21,9 @@
 
 \maketitle
 
-\section*{Changelog}
-\begin{itemize}
-\change{december 16}{Edited page 1-10, mostly inconsistencies}
-\change{december 15}{Started on section about queries: \ref{sec:query}}
-\end{itemize}
-
 \tableofcontents
 
+%endif
 
 \section*{TODOs}
 
@@ -43,6 +32,7 @@
 \item How to update relationships while keeping them sound?
 \item How to delete relationships?
 \end{itemize}
+
 
 
 \section{Introduction}
@@ -581,4 +571,8 @@ can be modeled using only binary relationships)
 
 \section{Conclusion}
 
+%if not thesis
+
 \end{document}
+
+%endif

@@ -1,4 +1,4 @@
-all: ermodels.pdf
+all: thesis.pdf
 	open $<
 
 %.tex: %.lhs

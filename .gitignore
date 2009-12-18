@@ -1,3 +1,7 @@
 testing/
 *.pdf
 Generics/
+*.bak
+*.out
+*.aux
+*.toc

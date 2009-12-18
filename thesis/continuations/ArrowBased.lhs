@@ -5,6 +5,8 @@
 
 %endif
 
+\todo{Is Thread necessary? Should it be First?}
+
 As we have seen in the previous section, web continuations can be expressed as
 monads. The main idea of this section is to represent a web continuation as a
 directed graph.  We do allow cycles, but because our program is finite, our
@@ -28,7 +30,8 @@ functions into a value of |Page|:
 >   Display  :: (a -> String) -> Page a ()
 
 Web interactions can then be defined as single pages or two pages chained to
-each other. Notice that there are no functions with hidden state:
+each other. Notice that there are no functions with hidden state. The |Thread|
+constructor threads the result of the first value through.
 
 > data Web i o where
 >   Single  :: Page i o -> Web i o
@@ -43,12 +46,16 @@ page with a continuation.
 >   Done  :: o -> Result o
 >   Step  :: String -> i -> Web i o -> Result o
 
-We can run a single page and 
+We can run a single page and get a result:
 
 > runPage :: Page i o -> i -> Result o
 > runPage (Fun f)        = Done . f
 > runPage (Form s f)     = const (Step s   () (Req >>> arr f))
 > runPage (Display msg)  = \i -> Step (msg i) () (arr (const ()))
+
+There are two combinators for sequencing, the |>>>| combinator just sequences
+two interactions, and the |>&>| combinator also remembers the result from the
+first interaction.
 
 > (>>>) :: Web a b -> Web b c -> Web a c
 > (>>>) = Seq
@@ -57,8 +64,12 @@ We can run a single page and
 > (>&>) :: Web a b -> Web b c -> Web a (b,c)
 > (>&>) = Thread
 
+The |arr| combinator lifts a pure function into the |Web| type:
+
 > arr :: (a -> b) -> Web a b
 > arr = Single . Fun
+
+Handling a request is simple:
 
 > handleRequest :: Web i o -> i -> Request -> Result o
 > handleRequest (Single page) inp req = runPage page inp
@@ -70,20 +81,28 @@ We can run a single page and
 >                                         Done res -> handleRequest (r >>> arr ((,) res)) res req
 >                                         Step page i cont -> Step page i (Thread cont r)
 
+Before we define an example, we first provide some smart constructors:
+
 > fun :: (i -> o) -> Web i o
 > fun      = Single . Fun
-
+>
 > form :: String -> (String -> o) -> Web i o
 > form x   = Single . Form x
-
+>
 > display :: (i -> String) -> Web i ()
 > display  = Single . Display
 
+Now we can define our example. After the first form the |>&>| combinator is
+used, to pass sure the value to the final |display| page.
 
 > example  =    form "Hi, what's your name?" id
 >          >&>  form "Enter two numbers:" (map (read :: String -> Int) . words)
->          >>>  display (\(name, [x,y]) -> "Hi " ++ name ++ ", the sum is: " ++ show (sum x y))
->  where sum = (+) :: Int -> Int -> Int
+>          >>>  display finalPage
+>  where  sum        = (+) :: Int -> Int -> Int
+>         finalPage name [x,y] = "Hi " ++ name ++ ", the sum is: " ++ show (sum x y)
+
+We can build an interactive evaluator in the console that reads out requests and
+runs a |Web| computation:
 
 > runConsole :: a -> Web a () -> IO ()
 > runConsole a w = do putStr "Request> "
@@ -92,3 +111,6 @@ We can run a single page and
 >                       Done ()       -> putStrLn "Done"
 >                       Step msg i w' -> do putStrLn msg
 >                                           runConsole i w'
+
+TODO: show how we can build finite representation of a graph using data-reify
+and convert the arrow-structure into a FSM.

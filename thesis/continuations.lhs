@@ -1,3 +1,4 @@
+%if not thesis
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %include forall.fmt 
@@ -12,20 +13,18 @@
 \usepackage{rotating}
 \usepackage{hyperref}
 
-\newcommand{\entset}[1]{\emph{#1}}
-\newcommand{\attrib}[1]{\emph{#1}}
-\newcommand{\dbtable}[1]{\emph{#1}}
-\newcommand{\relationship}[1]{\emph{#1}}
-\newcommand{\todo}{{\tiny TODO}}
-\newcommand{\change}[2]{\item {\tiny #1} #2}
-
-\hypersetup{colorlinks=true}
+%include formatting.lhs
 
 \begin{document}
+
+
 \author{Chris Eidhof}
 \title{Continuation-based web programming}
 
 \maketitle
+
+%endif
+
 \section{Introduction}
 What is continuation-based web-programming?
   - how does normal web-programming work?
@@ -56,4 +55,7 @@ As a first approach, we will build a monadic library.
 \section{Conclusion}
 Extension: role-based actions
 The conclusion
+
+%if not thesis
 \end{document}
+%endif
