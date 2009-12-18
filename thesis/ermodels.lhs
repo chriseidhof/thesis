@@ -1,23 +1,7 @@
 \documentclass[a4wide,12pt]{article}
 %include polycode.fmt 
 %include forall.fmt 
-%format :-> = "\mapsto"
-%format +++ = "+\!\!\!+\!\!\!+"
-%format << = "<\!\!<"
-%format >>> = ">\!\!>\!\!>"
-%format <$> = "<\!\$\!>"
-%format .==. = ".\!\equiv\!.\ "
-%format .&&. = "\ .\!\land\!.\ "
-%format .<. = "\ .\!<\!.\ "
-%format phi = "\phi"
-%format ~= = "\leadsto"
-%format T_1
-%format c1
-%format c2
-%format t1
-%format t2
-%format <*> = "\circledast "
-%format <$> = "\mathop{<\!\!\!\$\!\!\!>}"
+%include chris.fmt 
 % vim:spell
 \usepackage{a4wide}
 \usepackage{times}
@@ -33,7 +17,7 @@
 \newcommand{\dbtable}[1]{\emph{#1}}
 \newcommand{\relationship}[1]{\emph{#1}}
 \newcommand{\todo}{{\tiny TODO}}
-\newcommand{\change}[2]{{\tiny #1} #2}
+\newcommand{\change}[2]{\item {\tiny #1} #2}
 
 \hypersetup{colorlinks=true}
 
@@ -44,10 +28,15 @@
 \maketitle
 
 \section*{Changelog}
-\change{december 15}{Started on section about queries}
+\begin{itemize}
+\change{december 16}{Edited page 1-10, mostly inconsistencies}
+\change{december 15}{Started on section about queries: \ref{sec:query}}
+\end{itemize}
+
+\tableofcontents
 
 
-\section{TODOs}
+\section*{TODOs}
 
 \begin{itemize}
 \item What about deletion of entities and relationship soundness? 
@@ -174,7 +163,8 @@ An entity in the Haskell Compiler set is encoded as a Haskell value of type
 > uhc :: Compiler
 > uhc = Compiler "UHC" (URL "http://www.cs.uu.nl/wiki/UHC")
 
-Before we show how to encode relationship sets, consider the \relationship{contributes} in Figure \ref{fig:contributes}.
+Before we show how to encode relationship sets, consider the
+\relationship{contributes} relationship set in Figure \ref{fig:contributes}.
 Ultimately, when interfacing to a database, we might want to query the database
 for the contributors of a compiler entity.  We then want to make sure that we get
 a collection of contributors, not just one contributor. Also, we want to make sure that
@@ -197,17 +187,27 @@ sets and the relationship sets. Before we can do that, we change the type |Rel| 
 more restricted: we make sure that we 
 only encode relationships between entities in the same ER model. Therefore, we
 define a GADT |phi| that contains a constructor for every entity type. This
-is similar to the technique used in the generic programming library multirec
-\cite{multirec}. For our sample model, |phi| looks like this:
+is similar to the technique used in multirec \cite{multirec}, a generic
+programming library for mutual datatypes. For our sample model, |phi| looks like this:
 
-> data Entities e where
->   PrCompiler  :: Entities Compiler
->   PrPerson    :: Entities Person
->   PrRelease   :: Entities Release
+> data CompilerModel e where
+>   PrCompiler  :: CompilerModel Compiler
+>   PrPerson    :: CompilerModel Person
+>   PrRelease   :: CompilerModel Release
 
-A value of the |Entities| datatype serves as a proof that a type belongs to our
+A value of the |CompilerModel| datatype serves as a proof that a type belongs to our
 ER model. Such a value is also called a \emph{code}.  For example, the code
-|PrCompiler| is a proof that |Compiler| is in our ER model.  We
+|PrCompiler| is a proof that |Compiler| is in our ER model.
+
+The typeclass |El| is instantiated for every element in |phi| and lets the
+compiler infer the right code:
+
+> class     El  phi       a         where  el  ::  phi a
+> instance  El  CompilerModel  Compiler  where  el  =   PrCompiler
+> instance  El  CompilerModel  Person    where  el  =   PrPerson
+> instance  El  CompilerModel  Release   where  el  =   PrRelease
+
+We now
 add an additional type-parameter to |Rel|, and two parameters to its
 constructor, so that we can ensure the entities are in the same ER Model:
 
@@ -216,20 +216,24 @@ constructor, so that we can ensure the entities are in the same ER Model:
 > data Rel (phi :: * -> *) cardL entityL cardR entityR where
 >   Rel :: phi entityL -> phi entityR -> Rel phi cardL entitityL cardR entityR
 
+We could have changed the |Rel| constructor to have type-class constraints
+instead, but having the parameters explicit will be handy for pattern-matching,
+as we will see later on.
+
 Our |contributes| relationship type has to change appropriately. We also define
 the \relationship{releases} relationship.
 
-> contributes ::  Rel  Entities  Many  Compiler  Many  Person
+> contributes ::  Rel  CompilerModel  Many  Compiler  Many  Person
 > contributes  = Rel  PrCompiler  PrPerson
-> releases    ::  Rel  Entities  One   Compiler  Many  Release
+> releases    ::  Rel  CompilerModel  One   Compiler  Many  Release
 > releases     = Rel  PrCompiler  PrRelease
 
 Now we can finally link the relationship sets and the entity sets to each other.
 All relationship sets are enumerated in a nested tuple:
 
-> type Relations =  (     Rel Entities  Many  Compiler  Many  Person
->                   ,  (  Rel Entities  One   Compiler  Many  Release, ())
->                   )
+> type CompilerRelations =  (  Rel CompilerModel  Many  Compiler  Many  Person
+>                        ,  (  Rel CompilerModel  One   Compiler  Many  Release, ())
+>                        )
 
 We define a typeclass with a functional dependency that links the relationships to
 the entity sets:
@@ -237,7 +241,7 @@ the entity sets:
 > class ERModel phi rels | phi -> rels, rels -> phi where
 >   relations :: rels
 >
-> instance ERModel Entities Relations where
+> instance ERModel CompilerModel CompilerRelations where
 >   relations = (contributes, (releases, ()))
 
 We now achieved the goal stated in in the introduction: the ER
@@ -261,7 +265,6 @@ we can store relationships. Finally, in section \ref{sec:inmeminterface} we will
 build the interface for a library by combining the relationship storage and
 entity storage.
 
-
 \subsection{Storing entities}
 
 \label{sec:entities}
@@ -271,7 +274,7 @@ To store entities, we use a |Map| for each entity datatype. The |Map| uses integ
 entity, the integer key is returned as a reference to that entity. However,
 returning just an integer value is a bit too untyped: we also want to encode the
 type that we are dealing with. Therefore, we create the a datatype for
-references. It is indexed by both the ER model and the entity datatype:
+references. It is indexed, on the type level, by both the ER model and the entity datatype:
 
 > data Ref phi a where
 >   Ref :: phi a -> Int -> Ref phi a
@@ -281,7 +284,8 @@ For a given entity datatype |e| we can create a map:
 > type EntityMap e = M.Map Int e
 
 We need an |EntityMap| for every entity datatype in our model. Consider the
-list of entity datatypes in our ER model:
+list of entity datatypes in our ER model (which is mechanically derived from the
+|CompilerEntities| datatype):
 
 > type EntityEnum = (Compiler, (Person, (Release, ())))
 
@@ -294,14 +298,14 @@ our final structure for storing entities is:
 > 
 > type EntityStorage phi enum = TList EntityMap phi enum
 
-As an example, we can manually derive the |EntityStorage| for |Entities| and |EntityEnum|:
+As an example, we can manually derive the |EntityStorage| for |CompilerModel| and |EntityEnum|:
 
->     EntityStorage Entities EntityEnum  
-> ~=  TList EntityMap Entities EntityEnum
-> ~=  TList EntityMap Entities (Compiler, (Person, (Release, ())))
-> ~=  (EntityMap Compiler, TList EntityMap Entities (Person, (Release, ())))
-> ~=  (EntityMap Compiler, (EntityMap Person, TList EntityMap Entities (Release, ())))
-> ~=  (EntityMap Compiler, (EntityMap Person, (EntityMap Release, TList EntityMap Entities ())))
+>     EntityStorage CompilerModel EntityEnum  
+> ~=  TList EntityMap CompilerModel EntityEnum
+> ~=  TList EntityMap CompilerModel (Compiler, (Person, (Release, ())))
+> ~=  (EntityMap Compiler, TList EntityMap CompilerModel (Person, (Release, ())))
+> ~=  (EntityMap Compiler, (EntityMap Person, TList EntityMap CompilerModel (Release, ())))
+> ~=  (EntityMap Compiler, (EntityMap Person, (EntityMap Release, TList EntityMap CompilerModel ())))
 > ~=  (EntityMap Compiler, (EntityMap Person, (EntityMap Release, ())))
 
 Before we can build the initial datastructure, we need something on the
@@ -313,18 +317,12 @@ datatype as well:
 >   WCons  :: El phi ix => Witnesses phi env -> Witnesses phi (ix, env)
 
 By constructing a value of |Witnesses| with a |WCons| for every type in our ER
-model we can make a list of all the proofs.
+model we can make a list of all the proofs. This value is also mechanically
+derived from the |CompilerEntities| datatype:
 
-> witnesses :: Witnesses Entities EntityEnum 
+> witnesses :: Witnesses CompilerModel EntityEnum 
 > witnesses = WCons (WCons (WCons WNil))
 
-The typeclass |El| is instantiated for every element in |phi| and lets the
-compiler infer the right code:
-
-> class     El  phi       a         where  el  ::  phi a
-> instance  El  Entities  Compiler  where  el  =   PrCompiler
-> instance  El  Entities  Person    where  el  =   PrPerson
-> instance  El  Entities  Release   where  el  =   PrRelease
 
 We now are finally ready to construct our datastructure, containing a |Map| for
 every entity datatype.
@@ -341,7 +339,7 @@ function:
 
 In order for this to work, we need to find the |Map| for the datatype
 |ent|. We know that |ent| is in |phi|, because of the typeclass constraint.
-However, we don't know at what position in our |EntityStorage| the |Map| for |ent| is. In order to do that, we 
+However, we do not know at what position in our |EntityStorage| the |Map| for |ent| is. In order to do that, we 
 introduce another typeclass that captures the relationship between |phi| and
 |enum|. It has an |allTypes| function that builds the |Witnesses|, and a
 function that, given a proof that |ix| is in |phi|, gives an index into the
@@ -360,16 +358,16 @@ as Baars (TODO cite) uses:
 
 An as an example, here is an instance for the ER model from the previous section:
 
-> instance EnumTypes Entities EntityEnum where
->   allTypes        = WCons (WCons (WCons (WCons WNil)))
+> instance EnumTypes CompilerModel EntityEnum where
+>   allTypes        = WCons (WCons (WCons WNil))
 >   index Compiler  = Zero
 >   index Person    = Suc Zero
 >   index Release   = Suc (Suc Zero)
 
 Using a |TIndex|, we can write an update function that changes the map for a
-given index:
+given entity type:
 
-> modTList  :: (f ix -> f ix) -> TIndex phi ix env -> TList f phi env -> TList f phi env
+> modTList  :: (f ent -> f ent) -> TIndex phi ent env -> TList f phi env -> TList f phi env
 > modTList f Zero     (a,b) = (f a,  b)
 > modTList f (Suc x)  (a,b) = (a, modTList f x b)
 
@@ -388,7 +386,7 @@ The fresh variable is now a constant function, but in section
 \ref{sec:inmeminterface}, we will put the |EntityStorage| and a fresh variable
 counter into a |State| monad, so we can get real fresh variables.
 
-For looking up an entity given a reference, we first need a lookup function
+To look up an entity given a reference, we first need a lookup function
 on the |EntityStorage|. Again, we can build a general function for |TList| that
 does just this:
 
@@ -548,12 +546,12 @@ In the previous sections, we saw how we can find all entities in an entity set
 or a single entity, by its |id|. In this section we will implement
 \emph{selection}, which gives us more advanced ways of finding entities. For
 example, we might want to find all |Person| entities with the name |"chris"|, or
-all compilers with a version larger than one. In this section, we will show how
+all compilers with a version larger than |1|. In this section, we will show how
 we can construct such queries in a typed way, and perform them on both the
-in-memory database and the relational database. We think querying databases is a
+in-memory database and the relational database. We see querying databases as a
 a separate aspect: not every storage engine might support it. For example, we
 could use ER models for modeling a webservice, but most webservices don't
-support any queries at all.
+support any queries at all. This code is inspired by HaskellDB \todo{cite}
 
 \subsection{Representing queries}
 
@@ -573,10 +571,12 @@ TODO: compile query into sql using |toSql|.
 
 \begin{itemize}
 \item Extend relationships to have attributes, too.
-\item Extend relationships to be about more than two entities.
+\item Extend relationships to be about more than two entities (or show how those
+can be modeled using only binary relationships)
 \item More support for (primary) keys.
 \item Undo/redo support built on top of the in-mem/rdbms combination
 \item Interface/generate webservice based on ER model
+\item Composing of relations? Just like function composition
 \end{itemize}
 
 \section{Conclusion}

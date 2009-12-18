@@ -1,23 +1,22 @@
-\BOOKMARK [1][-]{section.1}{TODOs}{}
-\BOOKMARK [1][-]{section.2}{Introduction}{}
-\BOOKMARK [1][-]{section.3}{ER models}{}
-\BOOKMARK [1][-]{section.4}{Encoding an ER model in Haskell}{}
-\BOOKMARK [1][-]{section.5}{Building an in-memory database in Haskell}{}
-\BOOKMARK [2][-]{subsection.5.1}{Storing entities}{section.5}
-\BOOKMARK [2][-]{subsection.5.2}{Saving relationships}{section.5}
-\BOOKMARK [3][-]{subsubsection.5.2.1}{Initial Values}{subsection.5.2}
-\BOOKMARK [2][-]{subsection.5.3}{The library interface}{section.5}
-\BOOKMARK [1][-]{section.6}{Interfacing with a relational database}{}
-\BOOKMARK [2][-]{subsection.6.1}{Modeling a relational database}{section.6}
-\BOOKMARK [2][-]{subsection.6.2}{Converting entities}{section.6}
-\BOOKMARK [2][-]{subsection.6.3}{Operations on relationships}{section.6}
-\BOOKMARK [2][-]{subsection.6.4}{Building an interface}{section.6}
-\BOOKMARK [1][-]{section.7}{Saving the in-memory database to a relational database}{}
-\BOOKMARK [2][-]{subsection.7.1}{A common interface for persistence}{section.7}
-\BOOKMARK [2][-]{subsection.7.2}{Combining the in-memory database and the relational database}{section.7}
-\BOOKMARK [1][-]{section.8}{Querying the database}{}
-\BOOKMARK [2][-]{subsection.8.1}{Representing queries}{section.8}
-\BOOKMARK [2][-]{subsection.8.2}{Querying the in-memory database}{section.8}
-\BOOKMARK [2][-]{subsection.8.3}{Querying the relational database}{section.8}
-\BOOKMARK [1][-]{section.9}{Future work}{}
-\BOOKMARK [1][-]{section.10}{Conclusion}{}
+\BOOKMARK [1][-]{section.1}{Introduction}{}
+\BOOKMARK [1][-]{section.2}{ER models}{}
+\BOOKMARK [1][-]{section.3}{Encoding an ER model in Haskell}{}
+\BOOKMARK [1][-]{section.4}{Building an in-memory database in Haskell}{}
+\BOOKMARK [2][-]{subsection.4.1}{Storing entities}{section.4}
+\BOOKMARK [2][-]{subsection.4.2}{Saving relationships}{section.4}
+\BOOKMARK [3][-]{subsubsection.4.2.1}{Initial Values}{subsection.4.2}
+\BOOKMARK [2][-]{subsection.4.3}{The library interface}{section.4}
+\BOOKMARK [1][-]{section.5}{Interfacing with a relational database}{}
+\BOOKMARK [2][-]{subsection.5.1}{Modeling a relational database}{section.5}
+\BOOKMARK [2][-]{subsection.5.2}{Converting entities}{section.5}
+\BOOKMARK [2][-]{subsection.5.3}{Operations on relationships}{section.5}
+\BOOKMARK [2][-]{subsection.5.4}{Building an interface}{section.5}
+\BOOKMARK [1][-]{section.6}{Saving the in-memory database to a relational database}{}
+\BOOKMARK [2][-]{subsection.6.1}{A common interface for persistence}{section.6}
+\BOOKMARK [2][-]{subsection.6.2}{Combining the in-memory database and the relational database}{section.6}
+\BOOKMARK [1][-]{section.7}{Querying the database}{}
+\BOOKMARK [2][-]{subsection.7.1}{Representing queries}{section.7}
+\BOOKMARK [2][-]{subsection.7.2}{Querying the in-memory database}{section.7}
+\BOOKMARK [2][-]{subsection.7.3}{Querying the relational database}{section.7}
+\BOOKMARK [1][-]{section.8}{Future work}{}
+\BOOKMARK [1][-]{section.9}{Conclusion}{}
