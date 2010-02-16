@@ -49,8 +49,13 @@ As a first approach, we will build a monadic library.
 \section{Conclusion}
 
 We have investigated a monadic approach, an arrow-based approach and
-defunctionalization. We think that defunctionalization is the way forward,
-however, the best way to do this would be by transforming a type-annotated 
+defunctionalization. The monadic approach has the simplest interface and is the
+easiest to use. However, it lacks serialization of values. The arrow-based
+interface is easier to serialize, but does not provide a nice interface.
+Defunctionalization is a promising technique, but Haskell is unfortunately not
+yet equipped with the right tools to do defunctionalization as a library or
+using a preprocessor. For now, we will use the monadic library, because it has
+the cleanest interface.
 
 %if not thesis
 \end{document}

@@ -112,7 +112,7 @@ runs a |Web| computation:
 
 \subsection{Tracing}
 
-Everytime we come across a bind, we can emit a trace step. From a full list of trace steps we can recover a program point.
+Everytime we come across a bind, we can emit a trace step. From a full list of trace steps we can recover a program point. However, the trace steps will keep growing for every step the user takes. If we consider recursive programs, the trace steps may grow infinitely. This is the approach that WASH takes. In the next section, we will look at a way to prevent these infinite traces.
 
 \subsection{Observable sharing}
 
@@ -156,6 +156,10 @@ let [(1,ConsF 'a' 2),(2,ConsF 'b' 1)] in 1
 The result is a \emph{finite} list of key/value pairs, where each key represents
 a node in the graph. The recursive positions have been replaced by a reference
 to such a key.  Because our program is always finite, it should always be
-possible to build such a graph.
+possible to build such a graph. 
 
+If we explicitly encode the structure of an arrow-based computation, we can build a finite representation of our program using this technique. We can number all the nodes and use them as code pointers. Because the environment is always explicitly passed on between every bind, we can restore a continuation from disk, given an input for an arrow and a code pointer.
 
+\subsection{Conclusion}
+
+We have extend our examples to be a little more complex, such as using dynamic choice. Without arrow-notation, this quickly becomes very inconvenient. Using arrow-notation, the examples look a bit simpler but are still a lot more complex than the monadic notation. It is a matter of taste, but arrow notation is awkward and not a good match for web programming.
