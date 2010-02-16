@@ -26,6 +26,9 @@
 
 \section*{Changelog}
 \begin{itemize}
+\change{january 12}{Reading/writing about defunctionalization}
+\change{january 7}{Researched monadic continuations with Ref}
+\change{january 5}{Wrote more about arrow-based continuations}
 \change{december 17-18}{Started chapter about continuations}
 \change{december 16}{Edited page 1-10, mostly inconsistencies}
 \change{december 15}{Started on section about queries: \ref{sec:query}}
@@ -38,6 +41,10 @@
 %include continuations.lhs
 \chapter{Generic views}
 %include views.lhs
+
+\chapter{An example application}
+
+Show an application that uses the ER-model library for the data model, the continuation-based library for the controller and the views library for the views.
 
 \chapter{Conclusion}
 

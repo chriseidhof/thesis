@@ -30,15 +30,9 @@ What is continuation-based web-programming?
   - how does normal web-programming work?
   - what is a continuation
   - related work (wash, iTasks, other languages)
-\subsection{Serialization}
-When we run our program as a process, we can keep the continuations in-memory.
-However, web applications are sometimes forced to run in CGI mode, which means
-that the entire program is run every request, and all state has to be saved
-to disk. Also, it could be the case that the web application is run on a number
-of servers, which typically means memory is not shared. However, continuations
-should be shared across all the machines, for which serialization is necessary.
 
 \section{A monadic approach}
+\label{sec:monadic}
 
 As a first approach, we will build a monadic library.
 
@@ -48,13 +42,15 @@ As a first approach, we will build a monadic library.
 
 %include continuations/ArrowBased.lhs
 
-\section{Building an AST}
+\section{Defunctionalization}
 
-%include continuations/AST.lhs
+%include continuations/Defunctionalization.lhs
 
 \section{Conclusion}
-Extension: role-based actions
-The conclusion
+
+We have investigated a monadic approach, an arrow-based approach and
+defunctionalization. We think that defunctionalization is the way forward,
+however, the best way to do this would be by transforming a type-annotated 
 
 %if not thesis
 \end{document}

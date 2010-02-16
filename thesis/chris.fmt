@@ -16,3 +16,6 @@
 %format t2
 %format <*> = "\circledast "
 %format <$> = "\mathop{<\!\!\!\$\!\!\!>}"
+%format fv1
+%format fv2
+%format fv3

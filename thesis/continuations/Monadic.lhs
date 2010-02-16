@@ -1,7 +1,7 @@
 %if False
 
 > {-# LANGUAGE GADTs #-}
-> module Example where
+> module Monadic where
 > import qualified Data.Map as M
 
 %endif
@@ -90,3 +90,19 @@ is very simple, a function with type |Request -> Result ()|, it still is a
 function type. Even if we wrap it in other types, there will be a function type
 somewhere. In Haskell, it is impossible to serialize function types. Therefore,
 we will look at an alternative approach in the next section.
+
+\subsection{Serialization}
+
+When we run our program as a process on the webserver, we can keep the continuations in-memory.
+However, when our web application has to scale up to multiple servers,
+continuations need to be shared across those servers. Therefore, we need to be
+able to serialize continuations. Even if te program is not meant to be run on
+multiple servers, it might still have to stop (e.g. because a reboot) and start
+again. In this case, the continuations also have to be saved to disk.
+
+Because our continuation type |Request -> Result ()| contains a function type,
+it is impossible to serialize it. No implementation of Haskell does support the serialization of
+arbitrary functions. The |Result| datatype might contain a |Web| datatype, which
+in turn is a function again. While our representation is conceptually elegant,
+it is quite impractical. In the next section, we will build an arrow-based
+approach to work around this problem.

@@ -5,8 +5,6 @@
 
 %endif
 
-\todo{Is Thread necessary? Should it be First?}
-
 As we have seen in the previous section, web continuations can be expressed as
 monads. The main idea of this section is to represent a web continuation as a
 directed graph.  We do allow cycles, but because our program is finite, our
@@ -72,14 +70,14 @@ The |arr| combinator lifts a pure function into the |Web| type:
 Handling a request is simple:
 
 > handleRequest :: Web i o -> i -> Request -> Result o
-> handleRequest (Single page) inp req = runPage page inp
-> handleRequest (Req)         inp req = Done req
-> handleRequest (Seq    l r)  inp req = case handleRequest l inp req of
->                                         Done res         -> handleRequest r res req
->                                         Step page i cont -> Step page i (cont >>> r)
-> handleRequest (Thread l r)  inp req = case handleRequest l inp req of
->                                         Done res -> handleRequest (r >>> arr ((,) res)) res req
->                                         Step page i cont -> Step page i (Thread cont r)
+> handleRequest (Single page)  inp req = runPage page inp
+> handleRequest (Req)          inp req = Done req
+> handleRequest (Seq    l r)   inp req = case handleRequest l inp req of
+>                                          Done res          -> handleRequest r res req
+>                                          Step page i cont  -> Step page i (cont >>> r)
+> handleRequest (Thread l r)   inp req = case handleRequest l inp req of
+>                                          Done res -> handleRequest (r >>> arr ((,) res)) res req
+>                                          Step page i cont -> Step page i (Thread cont r)
 
 Before we define an example, we first provide some smart constructors:
 
@@ -112,5 +110,52 @@ runs a |Web| computation:
 >                       Step msg i w' -> do putStrLn msg
 >                                           runConsole i w'
 
-TODO: show how we can build finite representation of a graph using data-reify
-and convert the arrow-structure into a FSM.
+\subsection{Tracing}
+
+Everytime we come across a bind, we can emit a trace step. From a full list of trace steps we can recover a program point.
+
+\subsection{Observable sharing}
+
+We now proceed to the serialization of a |Web| value. In order to do that,
+we will first convert a recursive |Web| value into an explicit graph with
+observable sharing. This is done using the \library{data-reify} library (TODO cite) 
+from Gill (TODO cite). To see how this works, we can
+take a look at a simple example for lists. Consider the following two mutually
+recursive expressions:
+
+\begin{spec}
+data List a = Nil | Cons a (List a)
+x = Cons 'a' y
+y = Cons 'b' x
+\end{spec}
+
+If we try to inspect the structure of this expression, we get an infinite value.
+In order to work with \library{data-reify}, we first change our data-structure
+to its \emph{pattern-functor} (TODO cite multirec):
+
+\begin{spec}
+newtype Fix a     = In {out :: a (Fix a)}
+data PF_List a r  = NilF | ConsF a r deriving Show
+type List' a      = Fix (PF_List a)
+\end{spec}
+
+Now we can redefine |x| and |y| using our new datatype:
+
+\begin{spec}
+x' = In (ConsF 'a' y')
+y' = In (ConsF 'b' x')
+\end{spec}
+
+If we make the type |PF_List| an instance of |Traversable|, we can reify the
+recursive value |x'|, yielding the following result:
+
+\begin{spec}
+let [(1,ConsF 'a' 2),(2,ConsF 'b' 1)] in 1
+\end{spec}
+
+The result is a \emph{finite} list of key/value pairs, where each key represents
+a node in the graph. The recursive positions have been replaced by a reference
+to such a key.  Because our program is always finite, it should always be
+possible to build such a graph.
+
+
