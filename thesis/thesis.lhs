@@ -48,4 +48,9 @@ Show an application that uses the ER-model library for the data model, the conti
 
 \chapter{Conclusion}
 
+\section{Writing DSLs in Haskell}
+- write about the deficiencies: binding, type-level programming, observable sharing, etc.
+
+\section{Web-programming in Haskell}
+
 \end{document}

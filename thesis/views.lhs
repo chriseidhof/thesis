@@ -63,7 +63,7 @@ typeclass. The type |PFPerson|, which is called the \emph{pattern functor},
 describes the structure of the |Person| type in
 terms of basic combinators such as the product and sum datatype.
 
-We can now write a function that operates on any structural view:
+We can write a function that operates on any structural view:
 
 \begin{spec}
 ghtml :: (Regular a, GHtml (PF a)) => a -> X.Html

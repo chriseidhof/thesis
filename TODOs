@@ -1,0 +1,17 @@
+Thesis
+ - Write chapter on generic programming / views.
+APLWACA paper
+ - write conclusion
+ - rewrite
+ICFP paper
+ - write outline
+Libraries
+  - Basil
+    - Rewrite to use HList instead of type families and universes
+    - Implement SQL(ite?) backend
+    - write blogpost
+  - regular-web
+    - finish example.
+    - write blogpost
+  - continuations
+    - give outline of library
