@@ -1,14 +1,17 @@
 Thesis
  - Write chapter on generic programming / views.
+ - Write introduction
+ - Write conclusion
+ - Reread everything, improve it.
 APLWACA paper
+ - get comments from doaitse/andres
  - write conclusion
+ - find references
  - rewrite
-ICFP paper
- - write outline
 Libraries
   - Basil
-    - Rewrite to use HList instead of type families and universes
     - Implement SQL(ite?) backend
+    - Clean up the code
     - write blogpost
   - regular-web
     - finish example.

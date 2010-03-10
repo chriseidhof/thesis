@@ -18,7 +18,7 @@
 
 \begin{document}
 \author{Chris Eidhof}
-\title{Describing ER models in Haskell}
+\title{Web programming in Haskell}
 
 \maketitle
 \setcounter{tocdepth}{1}

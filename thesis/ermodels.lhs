@@ -255,6 +255,16 @@ we can store relationships. Finally, in section \ref{sec:inmeminterface} we will
 build the interface for a library by combining the relationship storage and
 entity storage.
 
+\subsection{Using type-level programming libraries}
+
+We have experimented with using the |HList| library for this module, but that
+turns out to be quite inconvenient. It is especially different to compose
+functions such as |hMap| and |hLookupByHNat|. From talking to other people that use
+type-level programming libraries, it turns out that almost everybody uses their
+own type-level programming library. Often, the more generic the library, the
+more difficult it is to work with. In a dependently typed programming language
+this would probably be a lot easier.
+
 \subsection{Storing entities}
 
 \label{sec:entities}
