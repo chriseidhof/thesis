@@ -246,6 +246,10 @@ we need them.
 \subsection{Saving relationships}
 \label{sec:inmemrels}
 
+In this section, we will store relationships in our in-memory database. 
+To do this, we have to compute the right data-structure based on the
+relationship type.
+
 %include ../packages/Basil/src/Basil/InMemory/Relations/Storage.lhs
 
 \subsubsection{Initial Values}
@@ -269,12 +273,16 @@ convenient interface.
 %include ../packages/Basil/src/Basil/InMemory/Relations.lhs
 
 \subsection{The library interface}
+\label{sec:inmeminterface}
 
 %let query = False
 %include ../packages/Basil/src/Basil/InMemory/Interface.lhs
 
-\label{sec:inmeminterface}
 
+\subsection{In-memory example}
+\label{sec:inmemexample}
+
+%include ermodels/example.lhs
 
 % The approach we take is changing the type of |newEntity| to include all
 % neccessary relationships. In our |ERModel| typeclass we have listed all the
