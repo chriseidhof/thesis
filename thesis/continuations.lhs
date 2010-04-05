@@ -57,6 +57,8 @@ yet equipped with the right tools to do defunctionalization as a library or
 using a preprocessor. For now, we will use the monadic library, because it has
 the cleanest interface.
 
+TODO: indexed monad with access control etc.
+
 %if not thesis
 \end{document}
 %endif

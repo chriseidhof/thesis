@@ -4,9 +4,11 @@ Thesis
  - Write conclusion
  - Reread everything, improve it.
 APLWACA paper
- - get comments from doaitse/andres
- - write conclusion
+ x get comments from doaitse/andres
  - find references
+   - for every argument of dynamic languages
+ - implement comments from notes
+ - implement doaitse's commets
  - rewrite
 Libraries
   - Basil
@@ -18,3 +20,12 @@ Libraries
     - write blogpost
   - continuations
     - give outline of library
+
+
+Deliverables:
+
+Thesis.pdf
+Paper.pdf (APLWACA)
+regular-web package, haddock documentation
+Basil package, haddoc documentation
+tutorial on using regular-web and Basil.

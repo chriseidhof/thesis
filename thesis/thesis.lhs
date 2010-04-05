@@ -35,6 +35,7 @@
 \end{itemize}
 
 \chapter{Introduction}
+%include introduction.lhs
 \chapter{Entity Relationship Models}
 %include ermodels.lhs
 \chapter{Continuation-based web programming}
@@ -42,11 +43,9 @@
 \chapter{Generic views}
 %include views.lhs
 
-\chapter{An example application}
-
-Show an application that uses the ER-model library for the data model, the continuation-based library for the controller and the views library for the views.
-
 \chapter{Conclusion}
+
+\section{Future work}
 
 \section{Writing DSLs in Haskell}
 - write about the deficiencies: binding, type-level programming, observable sharing, etc.

@@ -1,0 +1,43 @@
+Hoi Doaitse, Andres,
+
+Ik heb eens aan m'n planning gezeten, dit is het plan:
+
+
+6  april:    chapter 2 (ER models)       ready for review
+9  april:    chapter 3 (continuations)   ready for review
+13 april:    chapter 4 (GP and fclabels) ready for review
+
+Dan ga ik aan de conclusion + intro werken.
+
+19 april:    stuur "release candidate" version op
+26 april:    commentaar van Doaitse/Andres
+26-28 april: commentaar in thesis verwerken
+29 april:    thesis defense
+
+-chris
+
+DETAILED PLANNING 
+
+5-9 april
+    5: work on chapter 2
+    6: chapter 2 done (ready for review)
+    7: work on chapter 3
+    8: work on chapter 3
+    9: chapter 3 done (ready for review)
+12-16 april
+    12: work on chapter 4
+    13: chapter 4 done (ready for review)
+    14: write conclusion
+    15: write conclusion
+    16: write introduction
+19-23 april
+    19: write introduction, (thesis ready for review)
+    20: work on presentation
+    21: work on presentation
+    22: work on presentation
+    23: work on presentation
+26-29 april
+    26: correct comments
+    27: correct comments
+    28: correct comments / prepare thesis defense
+    29: thesis defense
