@@ -1,10 +1,10 @@
-all: thesis.pdf
+all: ermodels.pdf
 	open $<
 
 %.tex: %.lhs
 	lhs2Tex -o $@ $<
 
-%.pdf: %.tex
+%.pdf: %.tex bibliography.bib
 	latexmk -pdf $<
 
 ermodels.lhs: ../packages/Basil/src/Basil/Relations/*.lhs

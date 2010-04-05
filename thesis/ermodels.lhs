@@ -12,6 +12,7 @@
 \usepackage{palatino}
 \usepackage{rotating}
 \usepackage{hyperref}
+\usepackage{todonotes}
 
 %include formatting.lhs
 
@@ -37,41 +38,93 @@
 
 \section{Introduction}
 
-Entity-relationship modeling \cite{ermodeling} is a tool to design data models.
+Entity-relationship modeling \cite{chen1976entity} is a tool to design data models.
 An entity-relationship (ER) model is a declarative specification of a data
 model, and can be used for deriving database schemas. An ER model describes
-entities and their relationships. In this chapter, we will see how we can encode
-ER models in Haskell. We will derive an in-memory database and a schema for a
-relational database from such an ER model.
+entities and their relationships. In this chapter, we show how we to encode
+ER models in Haskell in a type-safe way.
+We will derive an in-memory database and a schema for a relational database from
+such an ER model.
 
 % TODO: move to section on the end?
 Building an interface to database management systems in Haskell is not a new
-idea. Leijen (TODO cite) described HaskellDB, a typed interface to relational
-databases. Using HaskellDB, the programmer can model relational database schemas
-and query the database in a strongly typed way. Our approach is based on ER models,
-which work on a higher level than relational databases. A relational database schema
-is called a logical data model, whereas an ER model is a conceptual model.
+idea.
+HaskellDB is a typed interface to relational
+databases \cite{bringert2004student, leijen2000domain}.
+Using HaskellDB, the programmer can model relational database schemas
+and query the database in a strongly typed way.
+Our approach is based on ER models and operates on a different level than
+HaskellDB. More specifically, data models can be divided into three categories \cite{chen1976entity}:
 
-In the next section we give a definition of an ER model and introduce the
-vocabulary for ER modeling. In section \ref{sec:encoding}, we show how to
-encode an ER model in Haskell.  In section \ref{sec:inmem}, we build an
-in-memory database and in section \ref{sec:rdbschema} we interface to a
-relational database. Section \ref{sec:rdb} shows how we can combine the
+\begin{itemize}
+\item \emph{Conceptual models}, where entities and their relationships are
+described on a conceptual level. For example, an ER model.
+\item \emph{Logical models}, which are expressed in terms of the database
+management system. For example, relationships are expressed using foreign keys
+or join tables.
+\item \emph{Physical models}, which describe how logical models are stored on
+disk or in memory.
+Sometimes this is presented to the user.
+For example, a schema designer might add indexes on keys, which directly
+corresponds to changes in the physical layer.
+\end{itemize}
+
+ER-models fall into the category of \emph{conceptual models}, whereas HaskellDB
+falls into the category of \emph{logical models}.
+Recent work by Visser \cite{sebasmscthesis}
+operates on the physical model.
+
+In section \ref{sec:ermodels}, we give a definition of an ER model and introduce the
+vocabulary for ER modeling. We give an ER model that we will use as our running
+example.
+
+In section \ref{sec:encoding}, we show how to encode an ER model in Haskell. 
+We do this in a type-safe way. Entities can only have relationships with
+entities in the same ER model, and relationships can only relate between two
+entities in the ER model. This section encodes a \emph{conceptual model}.
+
+In section \ref{sec:inmem}, we build an in-memory database. Because different
+relationships (one to many, many to many), have different ways of handling them,
+we make heavy use of type-level programming to keep our code correct. 
+This section encodes a \emph{logical model}, and a translation from the
+conceptual model to the logic model.
+
+In section \ref{sec:rdbschema} we sketch the outline of an interface to a
+relational database. Not all code has been written yet.
+
+Section \ref{sec:rdb} shows how we can combine the
 in-memory database and the relational database, where the in-memory database
-acts as a \emph{scratch pad} before data is stored. Section \ref{sec:query}
-describes a query language for ER models and how that is translated into
-Haskell.
+acts as a \emph{scratch pad} before data is stored.
+
+Section \ref{sec:query}
+describes a query language for ER models and how that is translated into queries
+for the in-memory database and SQL queries for the relational database.
+
+Finally, in section \ref{sec:erconclusion} we look at how our library works in
+practice and discuss future work.
+
+This chapter provides the following contributions:
+
+\begin{itemize}
+\item We give an encoding of ER models in Haskell.
+\item We translate ER models into an in-memory database.
+\item We outline how to translate an ER model into a relational databes.
+\item We show how we can layer different logical models on top of each other.
+\item We define a query language that works on conceptual models and translates
+to logical models.
+\item Finally, we provide a large example of type-level programming.
+\end{itemize}
 
 \section{ER models}
 \label{sec:ermodels}
 
-An entity is an object in a specific problem domain. Examples of an entity are:
+An \emph{entity} is an object in a specific problem domain. Examples of an entity are:
 the UHC Haskell compiler, the Haskell website or the manager of the Haskell
-website. Similar entities are grouped into entity sets. Example entity sets
+website. Similar entities are grouped into \emph{entity sets}. Example entity sets
 include: the collection of Haskell compilers, the collection of websites and the
 collection of people working on Haskell.
 
-An entity is described using attributes, which map from an entity to a value. Attributes of a
+An entity is described using \emph{attributes}, which map from an entity to a value. Attributes of a
 Haskell compiler might be \attrib{name} and \attrib{homepage}. All
 entities in an entity set have the same attributes. Every attribute has a
 domain, for example: the domain of a compiler's \attrib{name} is the set of all
@@ -126,121 +179,7 @@ model that represents information about Haskell compilers.
 
 \section{Encoding an ER model in Haskell}
 
-\label{sec:encoding}
-
-From now on, we will use a simplified version of the ER model. We only consider
-relationships between exactly two types. There are no attributes on
-relationships.  Instead of letting the library user define a key to identify an
-entity, we automatically add an integer attribute \attrib{id} for every entity
-set. While these constrains might look tight, in practice they often work very
-well. We have not yet looked at supporting full ER models.
-
-To encode an ER model in Haskell, we start with
-encoding the entity sets. We can encode an entity set $E_1$ as a Haskell type |T_1|. For
-example, the entity set Haskell Compilers might be encoded as the datatype
-|Compiler|. We call such a datatype an \emph{entity datatype}. Every entity
-datatype has a single constructor containing a field for every attribute. As an
-example, we have encoded the entity sets from figure \ref{fig:ermodel}:
-
-
-> data Compiler  = Compiler  {name :: String, homepage :: URL}
-> data Person    = Person    {firstName :: String, lastName :: String, email :: Email}
-> data Release   = Release   {title :: String, date :: Date, notes :: String}
-
-An entity in the Haskell Compiler set is encoded as a Haskell value of type
-|Compiler|. For example, the UHC compiler might be encoded as:
-
-> uhc :: Compiler
-> uhc = Compiler "UHC" (URL "http://www.cs.uu.nl/wiki/UHC")
-
-Before we show how to encode relationship sets, consider the
-\relationship{contributes} relationship set in Figure \ref{fig:contributes}.
-Ultimately, when interfacing to a database, we might want to query the database
-for the contributors of a compiler entity.  We then want to make sure that we get
-a collection of contributors, not just one contributor. Also, we want to make sure that
-every element in the collection is of the \entset{Person} entity datatype.
-This can be achieved by storing both the entitity types and the cardinality of the
-relationship set on the type level. For example, we could encode the
-\relationship{contributes} relationship set by constructing a value of the
-datatype |Rel|:
-
-> data Rel cardL entityL cardR entityR where
->   Rel :: Rel cardL entitityL cardR entityR
->
-> contributes :: Rel Many Compiler Many Person
-> contributes = Rel
-
-At this point, we can define entities, entity sets and
-relationship sets (note that \relationship{contributes} is a relationship set,
-not a relation). In order to define an ER model, we have to combine the entity
-sets and the relationship sets. Before we can do that, we change the type |Rel| to be
-more restricted: we make sure that we 
-only encode relationships between entities in the same ER model. Therefore, we
-define a GADT |phi| that contains a constructor for every entity type. This
-is similar to the technique used in multirec \cite{multirec}, a generic
-programming library for mutual datatypes. For our sample model, |phi| looks like this:
-
-> data CompilerModel e where
->   PrCompiler  :: CompilerModel Compiler
->   PrPerson    :: CompilerModel Person
->   PrRelease   :: CompilerModel Release
-
-A value of the |CompilerModel| datatype serves as a proof that a type belongs to our
-ER model. Such a value is also called a \emph{code}.  For example, the code
-|PrCompiler| is a proof that |Compiler| is in our ER model.
-
-The typeclass |El| is instantiated for every element in |phi| and lets the
-compiler infer the right code:
-
-> class     El  phi       a         where  el  ::  phi a
-> instance  El  CompilerModel  Compiler  where  el  =   PrCompiler
-> instance  El  CompilerModel  Person    where  el  =   PrPerson
-> instance  El  CompilerModel  Release   where  el  =   PrRelease
-
-We now
-add an additional type-parameter to |Rel|, and two parameters to its
-constructor, so that we can ensure the entities are in the same ER Model:
-
-\todo{|phi entityL| could probably be done as an implicit parameter}
-
-> data Rel (phi :: * -> *) cardL entityL cardR entityR where
->   Rel :: phi entityL -> phi entityR -> Rel phi cardL entitityL cardR entityR
-
-We could have changed the |Rel| constructor to have type-class constraints
-instead, but having the parameters explicit will be handy for pattern-matching,
-as we will see later on.
-
-Our |contributes| relationship type has to change appropriately. We also define
-the \relationship{releases} relationship.
-
-> contributes ::  Rel  CompilerModel  Many  Compiler  Many  Person
-> contributes  = Rel  PrCompiler  PrPerson
-> releases    ::  Rel  CompilerModel  One   Compiler  Many  Release
-> releases     = Rel  PrCompiler  PrRelease
-
-Now we can finally link the relationship sets and the entity sets to each other.
-All relationship sets are enumerated in a nested tuple:
-
-> type CompilerRelations =  (  Rel CompilerModel  Many  Compiler  Many  Person
->                        ,  (  Rel CompilerModel  One   Compiler  Many  Release, ())
->                        )
-
-We define a typeclass with a functional dependency that links the relationships to
-the entity sets:
-
-> class ERModel phi rels | phi -> rels, rels -> phi where
->   relations :: rels
->
-> instance ERModel CompilerModel CompilerRelations where
->   relations = (contributes, (releases, ()))
-
-We now achieved the goal stated in in the introduction: the ER
-model from the previous section is encoded in Haskell. In the next section,
-we will build a simple in-memory database from the ground up. If you are
-interested in the implementation, continue reading. If you are just interested
-in using it, skip to section \ref{sec:inmeminterface} on page
-\pageref{sec:inmeminterface} for a description of the interface.
-
+%include ermodels/encoding.lhs
 
 \section{Building an in-memory database in Haskell}
 \label{sec:inmem}
@@ -259,146 +198,50 @@ entity storage.
 
 We have experimented with using the |HList| library for this module, but that
 turns out to be quite inconvenient. It is especially different to compose
-functions such as |hMap| and |hLookupByHNat|. From talking to other people that use
-type-level programming libraries, it turns out that almost everybody uses their
-own type-level programming library. Often, the more generic the library, the
-more difficult it is to work with. In a dependently typed programming language
-this would probably be a lot easier.
+functions such as |hMap| and |hLookupByHNat|.
+From our own experience, and by talking to other people that use type-level
+programming libraries, it turns out that almost everybody uses their own
+type-level programming library.
+We think this is not a deficit of the libraries, but a language problem.
+The first problem is that a library is sometimes not expressive enough.
+A second, more general problem, is that type errors become very large.
+Unfortunately, we cannot always hide the type errors from our library users, so
+they have to deal with the internals of the libary too.
+
+Therefore, we implement our own heterogenous lists. An |Hlist| is simply defined
+as either a |Nil| or a |Cons| value. They produce an index that is either |Nil|
+or |:*:|, which are both defined as empty datatypes because they are only used
+as type-level values.
+
+> data HList a where
+>   Nil  :: HList Nil
+>   Cons :: a -> HList b -> HList (a :*: b)
+>
+> data (:*:) a b
+> data Nil
+
+
+We can also provide typed indexes into the |HList|, which are inspired by
+Baars and Swierstra \cite{tttas}:
+
+> data Ix ls ix where
+>   Zero  :: Ix (a :*: b) a
+>   Suc   :: Ix xs a -> Ix (x :*: xs) a
+
+Finally, we will provide a function to lookup a value in a list, given an index:
+
+> lookupTList :: Ix phi ix -> HList phi -> ix
+> lookupTList Zero     (Cons y ys) = y
+> lookupTList (Suc x)  (Cons y ys) = lookupTList x ys
+
+We will provide more functions for our |HList| type that we will introduce when
+we need them.
 
 \subsection{Storing entities}
 
 \label{sec:entities}
 
-To store entities, we use a |Map| for each entity datatype. The |Map| uses integers
-(the primary keys) as keys, and the entities as values. When we create an
-entity, the integer key is returned as a reference to that entity. However,
-returning just an integer value is a bit too untyped: we also want to encode the
-type that we are dealing with. Therefore, we create the a datatype for
-references. It is indexed, on the type level, by both the ER model and the entity datatype:
-
-> data Ref phi a where
->   Ref :: phi a -> Int -> Ref phi a
-
-For a given entity datatype |e| we can create a map:
-
-> type EntityMap e = M.Map Int e
-
-We need an |EntityMap| for every entity datatype in our model. Consider the
-list of entity datatypes in our ER model (which is mechanically derived from the
-|CompilerEntities| datatype):
-
-> type EntityEnum = (Compiler, (Person, (Release, ())))
-
-Using a type level function, we can now easily determine what
-our final structure for storing entities is:
-
-> type family TList (f :: * -> *)  (phi :: * -> *) enum :: *
-> type instance TList f phi ()       = ()
-> type instance TList f phi (x, xs)  = (f x, TList f phi xs)
-> 
-> type EntityStorage phi enum = TList EntityMap phi enum
-
-As an example, we can manually derive the |EntityStorage| for |CompilerModel| and |EntityEnum|:
-
->     EntityStorage CompilerModel EntityEnum  
-> ~=  TList EntityMap CompilerModel EntityEnum
-> ~=  TList EntityMap CompilerModel (Compiler, (Person, (Release, ())))
-> ~=  (EntityMap Compiler, TList EntityMap CompilerModel (Person, (Release, ())))
-> ~=  (EntityMap Compiler, (EntityMap Person, TList EntityMap CompilerModel (Release, ())))
-> ~=  (EntityMap Compiler, (EntityMap Person, (EntityMap Release, TList EntityMap CompilerModel ())))
-> ~=  (EntityMap Compiler, (EntityMap Person, (EntityMap Release, ())))
-
-Before we can build the initial datastructure, we need something on the
-value-level that enumerates the types as well, so we introduce a |Witnesses|
-datatype as well:
-
-> data Witnesses (phi :: * -> *) (env :: *) where
->   WNil   :: Witnesses phi ()
->   WCons  :: El phi ix => Witnesses phi env -> Witnesses phi (ix, env)
-
-By constructing a value of |Witnesses| with a |WCons| for every type in our ER
-model we can make a list of all the proofs. This value is also mechanically
-derived from the |CompilerEntities| datatype:
-
-> witnesses :: Witnesses CompilerModel EntityEnum 
-> witnesses = WCons (WCons (WCons WNil))
-
-
-We now are finally ready to construct our datastructure, containing a |Map| for
-every entity datatype.
-
-> emptyStorage :: Witnesses phi enum -> EntityStorage phi enum
-> emptyStorage WNil        = ()
-> emptyStorage (WCons xs)  = (M.empty, emptyStorage xs)
-
-Our next task is to create entities and add them to the storage. For this, we
-need to find the corresponding |EntityMap| for an entity. Consider the following
-function:
-
-> newEntity :: El phi ent => ent -> EntityStorage phi enum -> EntityStorage phi enum
-
-In order for this to work, we need to find the |Map| for the datatype
-|ent|. We know that |ent| is in |phi|, because of the typeclass constraint.
-However, we do not know at what position in our |EntityStorage| the |Map| for |ent| is. In order to do that, we 
-introduce another typeclass that captures the relationship between |phi| and
-|enum|. It has an |allTypes| function that builds the |Witnesses|, and a
-function that, given a proof that |ix| is in |phi|, gives an index into the
-list.
-
-> class EnumTypes phi ls | phi -> ls, ls -> phi where 
->   allTypes :: Witnesses phi ls
->   index :: phi ix -> TIndex phi ix ls
-
-The type |TIndex| is a typed index into the environment. This is the same index
-as Baars (TODO cite) uses:
-
-> data TIndex (phi :: * -> *) ix env where
->   Zero  :: TIndex phi ix (ix, env)
->   Suc   :: TIndex phi ix env' -> TIndex phi ix (b, env')
-
-An as an example, here is an instance for the ER model from the previous section:
-
-> instance EnumTypes CompilerModel EntityEnum where
->   allTypes        = WCons (WCons (WCons WNil))
->   index Compiler  = Zero
->   index Person    = Suc Zero
->   index Release   = Suc (Suc Zero)
-
-Using a |TIndex|, we can write an update function that changes the map for a
-given entity type:
-
-> modTList  :: (f ent -> f ent) -> TIndex phi ent env -> TList f phi env -> TList f phi env
-> modTList f Zero     (a,b) = (f a,  b)
-> modTList f (Suc x)  (a,b) = (a, modTList f x b)
-
-And we are now ready to update our storage:
-
-> freshVariable = 0
-> 
-> newEntity  ::  (EnumTypes phi enum, El phi ent) 
->            =>  ent -> EntityStorage phi enum -> (EntityStorage phi enum, Ref phi ent)
-> newEntity e ls =  let  ident  = freshVariable
->                        ls'    = modTList (M.insert ident e) (index el) ls
->                        ref    = Ref el ident
->                   in (ls', ref)
-
-The fresh variable is now a constant function, but in section
-\ref{sec:inmeminterface}, we will put the |EntityStorage| and a fresh variable
-counter into a |State| monad, so we can get real fresh variables.
-
-To look up an entity given a reference, we first need a lookup function
-on the |EntityStorage|. Again, we can build a general function for |TList| that
-does just this:
-
-> lookupTList :: TIndex phi ix env -> TList f phi env -> f ix
-> lookupTList Zero = fst
-> lookupTList (Suc x) = lookupTList x . snd
-
-> lookupEntity  ::  (EnumTypes phi enum, El phi ent) 
->               =>  Ref phi ent -> EntityStorage phi enum -> Maybe ent
-> lookupEntity (Ref pr ix) = M.lookup ix . lookupTList pr
-
-Saving and deleting are implemented in the same straightforward way.
+%include ermodels/entities.lhs
 
 \subsection{Saving relationships}
 \label{sec:inmemrels}
@@ -580,8 +423,12 @@ can be modeled using only binary relationships)
 \end{itemize}
 
 \section{Conclusion}
+\label{sec:erconclusion}
 
 %if not thesis
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
 
 \end{document}
 
