@@ -45,6 +45,7 @@
 %endif
 
 \section{Generic programming}
+\ref{sec:introgp}
 
 \todo{What is generic programming?}
 

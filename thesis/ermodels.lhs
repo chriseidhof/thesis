@@ -308,23 +308,39 @@ convenient interface.
 \section{Interfacing with a relational database}
 
 In this section, we build an interface with a relational database.
-. In section \ref{sec:rdbschema} we show how we can model a relational database
-in Haskell. In
-section \ref{sec:rdbentities} we show how we can store entities in a relational
-database. Finally, in section \ref{sec:rdbrels} how we can store relationships.
-We will end with an easy to use interface for the user in section
-\ref{sec:rdbinterface}
+In section \ref{sec:rdbschema} we show how we can model a relational database
+in Haskell. We use a typed approach that is inspired by Leijen
+\cite{leijen2000domain}, and Oury and Swierstra \cite{oury2008power}.
+In section \ref{sec:rdbentities} we show how we can store entities in a relational
+database, this is a simple translation.
+Section \ref{sec:rdbrels} describes how we can store relationships. In
+particular, we will show how to translate relationships to either foreign keys
+or join tables.
+Finally, we will end with an easy to use interface for the user in section
+\ref{sec:rdbinterface}.
+
+The work in this section is not entirely finished yet. However, we give an
+outline of how to implement an interface and expect to do further implementation
+soon.
 
 \subsection{Modeling a relational database}
 \label{sec:rdbschema}
 
-A relational database management system (RDBMS) is a widely used database
-system. In an RDBMS, data is stored in tables. Every table has a schema, which
-describes what kind of data is stored. Such a schema is a list of attributes
-and an attribute consist of a name and a type. A table consists of rows. A row
-is a tuple with an element for every attribute.
+A relational database management system (RDBMS) is a widely used category of database
+systems.
+In an RDBMS, all data is stored in tables.
+Every table has a schema, which
+describes the structure of the data.
+Such a schema is a list of attributes, where an attribute consist of a name and a type.
+Every table stores a list of rows, where each row is a tuple with values for the
+attributes in the schema.
+A large difference with ER models is that there is no notion of relations in a
+RDBMS.
+A relation is encoded by adding foreign keys, which we will expand upon in
+section \ref{sec:rdbrels}.
 
 %include ../packages/Basil/src/Basil/Database/Relational/Core.lhs
+%include ../packages/Basil/src/Basil/Database/Relational/CoreExample.lhs
 %include ../packages/Basil/src/Basil/Database/Relational/Operations.lhs
 
 \subsection{Converting entities}
@@ -342,53 +358,6 @@ is a tuple with an element for every attribute.
 \label{sec:rdbinterface}
 
 TODO: show how we can have almost the same interface for relational databases.
-
-\section{Saving the in-memory database to a relational database}
-
-\label{sec:rdb}
-
-When building a text-editor, the workflow of an end-user is often like this: they
-load a document, make some changes and once they are happy with their changes,
-they store the document. On the implementation level, the text file is first
-read into memory, that memory is altered, and finally the memory is written back
-to the hard disk.
-
-For more complicated documents, instead of a text-file, we might use a database.
-The user will expect the same behavior: they load a file, make some changes, and
-the changes are only persisted when they press \emph{save}. By combining our
-libraries for the relational database and the in-memory database we can achieve
-exactly this: the document is read from the database, changes are stored in the
-in-memory database and the in-memory database is finally stored to the
-relational database. CoreData \todo{cite} is a proprietary technology by Apple
-that, among other things, implements this behavior.
-
-There are two approaches to achieve this using the libraries we have at our
-disposal. The first approach would involve extending the in-memory database to
-include hooks. For example, there might be a hook that is called whenever an
-item is not found (in which case we will try to find the item in a relational
-database). However, we propose an approach that is simpler: we build a couple of
-top-level functions that can combine two persistence implementations. 
-
-\subsection{A common interface for persistence}
-
-The in-memory database shares almost the same interface with the relational
-database. We can build a typeclass that abstracts over both interfaces. This
-will be very handy when combining the two interfaces in the next section. 
-
-Recall the type for the |new| and |find| operation on the in-memory database:
-
-> find :: (El phi entity) => Ref phi entity -> Basil phi env rels (Maybe entity)
-> new  ::  (El phi entity) 
->      =>  entity 
->      ->  PList phi entity (InitialValues phi entity rels rels) rels 
->      ->  Basil phi env rels (Ref phi entity)
-
-%include ../packages/Basil/src/Basil/Interface.lhs
-
-\subsection{Combining the in-memory database and the relational database}
-
-\todo{show how we can combine two arbitrary instances of persistence typeclass
-to provide core-data behavior}
 
 \section{Querying the database}
 \label{sec:query}
@@ -414,24 +383,175 @@ support any queries at all. This code is inspired by HaskellDB \todo{cite}
 %let query = True
 %include ../packages/Basil/src/Basil/InMemory/Interface.lhs
 
-\subsection{Querying the relational database}
+Querying the relational database can be implemented in an even easier way.
 
-TODO: compile query into sql using |toSql|.
 
 \section{Future work}
 
+Our library provides a good starting point, but is far from complete. In this
+section we will discuss possible ways to extend our library.
+
+\subsection{ER model extensions}
+
+Our way of representing ER models is quite limited. We can extend our approach
+in a couple of directions:
+
 \begin{itemize}
-\item Extend relationships to have attributes, too.
-\item Extend relationships to be about more than two entities (or show how those
-can be modeled using only binary relationships)
-\item More support for (primary) keys.
-\item Undo/redo support built on top of the in-mem/rdbms combination
-\item Interface/generate webservice based on ER model
-\item Composing of relations? Just like function composition
+\item \emph{Extend relationships to have attributes}. At the moment,
+relationships do not have attributes. By adding support for this we can express
+more relationships. Most attributes on relationships can be expressed by moving
+the attribute to one of the entities. However, in a many-to-many relationship
+this is not possible. 
+
+For example, consider a |Person| who has been working on a
+|Compiler|, and we want to track at what date she started working on the
+|Compiler|. A way to work around this limitation is by manually introducing a virtual entity |V| that
+only has a date attribute, and introduce a one-to-many relationship between 
+|V| and |Compiler| and a one-to-many relationship between |V| and |Person|. 
+
+\item \emph{Extend relationships to be between more than two entities}. 
+This can again be modeled by adding a virtual entry 
+
+\item \emph{More support for (primary) keys}
+Our primary keys are implicit: we add an |id| attribute of type |Int| for each
+entitity.
+In practice this works well, but sometimes more control over primary
+keys is needed.
+
+\item \emph{More control over the logical layer}
+Sometimes more control over the logical and physical layer is needed. For
+example: it is not possible to use our library with legacy databases. When a
+schema does not exactly match the schema we generate, our approach does not work
+anymore.
+RBMSs also provide efficient ways to compose queries (e.g. using the
+\texttt{JOIN} statement.) Our library does not compile such composed queries to
+efficient \texttt{JOIN} statements, but naively joins tables. Compiling queries
+more efficiently would possibly lead to large performance gains, but currently,
+this is not possible.
+
+\item \emph{More control over the physical layer}
+When building a high-performance application it can be useful to have control
+over the physical layer. For example, when a |Person| is often found by
+searching for an e-mailaddress, adding a |Trie| datastructure that maps
+emailadresses to |Person| values increases performance. Our library could be
+extended with configuration options similar to performance pragmas.
+
 \end{itemize}
+
+
+\subsection{Saving the in-memory database to a relational database}
+
+\label{sec:rdb}
+
+Consider a user that uses a text-editor to edit some files on disk.
+The workflow of the user is often like this: she
+loads a document and make some changes to document.
+Once she is happy with the changes, she stores the document.
+If we look at the implementation, the text file is first
+read into memory, the memory representation is altered,
+and finally the memory is written back to the disk. In other words: the
+in-memory database is used as a scratchpad before commiting changes to the real
+database.
+
+For more complicated documents, we might use a lightweight database instead of a text-file.
+The user will expect the same behavior: she loads a file, makes some changes, and
+only when she presses \emph{save} the changes are persisted.
+By combining our
+libraries for the relational database and the in-memory database we can achieve
+exactly this: the document is read from the database, changes are stored in the
+in-memory database and the in-memory database is finally stored to the
+relational database.
+This technique is implement by
+CoreData\footnote{\url{http://developer.apple.com/macosx/coredata.html}}.
+
+Instead of providing a way to combine the in-memory database and relational
+database, we can build a common interface for both databases.  We could then
+design a stacking mechanism to join two databases into a new database, which can
+then be stacked again.  Another use case would be to have a distributed
+databases that stores its data over multiple servers, which we could edit using
+an in-memory database.
+
+\subsection{Miscellaneous}
+
+For all operations that alter the data in a database, we could add inverse
+operations. This way, we can provide the user of the library with automatic undo
+and redo support.
+
+Based on our ER model, we could generate a complete interface for editing values
+in databases. This can work independently of the logical layer that is used.
+Furthermore, instead of defining our ER model in Haskell, we could provide a
+graphical user interface that allows for construction of new ER models.
+If we combine these two techniques we can build a platform for rapid application
+development (however, unless we provide customization capabilities, the applications
+that can be built are quite limited).
+
+\subsection{Improving type errors}
+
+There is a lot of work to be done on improving the type errors of this library.
+Because we make heavy use of type-level programming, type errors can grow quite
+large and become hard to understand.
+
+To give an example of a simple
+mistake: recall the in-memory example from section \ref{sec:inmemexample}. If we
+forget to include the |Compiler| entity when creating a |Release| entity, we get the
+type error in figure \ref{fig:typeerror}. 
+This is an error that is easy to make and it happens quite often in practice.
+However, the type error is so complicated that new users of the library might be
+scared away instantly. 
+From the type error, it is hard to see how the program has to
+be changed to be correct.
+
+We would like to use the techniques described by Heeren et al. \cite{heeren2003scripting} to
+improve the error messages in our library. However, the technique lacks an
+implementation in a mainstream compiler.
+
+\begin{figure}
+\begin{verbatim}
+[1 of 1] Compiling Example          ( example.lhs, interpreted )
+
+example.lhs:111:52:
+    Couldn't match expected type 
+           `Basil.Data.TList.R:AppendIfTrueTruexxs
+             (Ref (Compiler :*: (Person :*: (Release :*: Nil))) t,
+              Dir R,
+              Ix
+                (TContributes :*: (TReleases :*: Nil))
+                (Rel
+                   (Compiler :*: (Person :*: (Release :*: Nil)))
+                   One
+                   Compiler
+                   Many
+                   Release))
+             t1'
+           against inferred type `Nil'
+      Expected type: 
+        List
+         CompilerModel
+         Release
+         (InitialValues
+            CompilerModel Release CompilerRelations CompilerRelations)
+         CompilerRelations
+      InferPList CompilerModel Release Nil CompilerRelations
+    In the third argument of `new', namely `PNil'
+    In a stmt of a 'do' expression: rId <- new ixRelease ghc612 PNil
+Failed, modules loaded: none.
+\end{verbatim}
+\caption{Forgetting to include a |Ref| to the |Compiler| entity}
+\label{fig:typeerror}
+\end{figure}
+
 
 \section{Conclusion}
 \label{sec:erconclusion}
+
+In this section we have seen how to translate an ER model into a Haskell
+representation.
+By making heavy use of type-level programming, we have provided an interface
+that is type-safe: all operations on entities and relations are type-checked.
+We have seen how to build an in-memory database from our ER model and how to
+interface with a relational database.
+Our approach abstracts over the logical layer, which allows library users to write code
+that works independently of the storage mechanism.
 
 %if not thesis
 

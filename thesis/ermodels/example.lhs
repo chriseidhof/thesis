@@ -42,8 +42,8 @@ We define the |contributes| and |releases| relationship sets. Note that we give
 an extra |String| parameter, which will be used in a later section, when we
 build an interface to a relational database.
 
-> type TContributes = Rel  CompilerModel  Many  Compiler  Many  Person
-> type TReleases    = Rel  CompilerModel  One   Compiler  Many  Release
+> type TContributes  = Rel  CompilerModel  Many  Compiler  Many  Person
+> type TReleases     = Rel  CompilerModel  One   Compiler  Many  Release
 > contributes :: TContributes
 > releases    :: TReleases
 > contributes  = Rel  Many  ixCompiler  "compilers"  Many  ixPerson  "persons"
@@ -58,8 +58,8 @@ Now we also need to enumerate the relationship sets on the type level:
 For each relationship we create an index (again, this could be done using
 Template Haskell):
 
-> ixContributes = Zero
-> ixReleases    = Suc Zero
+> ixContributes  = Zero
+> ixReleases     = Suc Zero
 
 We can give the instance for |ERModel| that links |CompilerModel| and
 |CompilerRelations|:
@@ -87,18 +87,19 @@ Now we can construct a |Compiler| entity and two |Release| entities:
 
 > ghc :: Compiler
 > ghc = Compiler "GHC" (URL "http://haskell.org/ghc")
-
+>
 > ghc612 :: Release
 > ghc612 = Release "6.12" (Date "11 Oct 2009") ""
-
+>
 > ghc610 :: Release
 > ghc610 = Release "6.10" (Date "4 Nov 2008") ""
 
 The |release| function constructs an |InitialValue| for a Compiler's release.
-It is a 3-tuple that contains a reference to a |Compiler| entity, the direction
+It is a tuple that contains a reference to a |Compiler| entity, the direction
 of the relationship and a pointer to the relationship.
 
-> release :: Ref CompilerModel Compiler -> (Ref CompilerModel Compiler, Dir R, Ix CompilerRelations TReleases)
+> release  ::  Ref CompilerModel Compiler 
+>          ->  (Ref CompilerModel Compiler, Dir R, Ix CompilerRelations TReleases)
 > release compiler = (compiler, DR, ixReleases)
 
 > type M a = Basil CompilerModel CompilerRelations a
@@ -119,20 +120,22 @@ ensures that we always provide the right initial relationships.
 This creates a |Compiler| entity and adds two releases to it. We now write a
 function that, given a reference to a |Compiler|, finds all releases:
 
-> example1 :: Ref CompilerModel Compiler 
->          -> M (Maybe (S.Set (Ref CompilerModel Release)))
+> example1  ::  Ref CompilerModel Compiler 
+>           ->  M (Maybe (S.Set (Ref CompilerModel Release)))
 > example1 cId = findRels DL ixReleases cId
 
-We can test both examples:
+We can test the first example:
 
 > runIt0 :: Ref CompilerModel Compiler
-> runIt0  = fst (runBasil (example0))
+> runIt0  = fst (runBasil example0)
 
 Evaluating |runIt0| yields the following result:
 
 \begin{spec}
 Ref Fresh 0
 \end{spec}
+
+The second example combines both |example0| and |example1| into a new example:
 
 > runIt1 :: Maybe (S.Set (Ref CompilerModel Release))
 > runIt1  = fst (runBasil (example0 >>= example1))

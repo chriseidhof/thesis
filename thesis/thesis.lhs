@@ -12,6 +12,7 @@
 \usepackage{palatino}
 \usepackage{rotating}
 \usepackage{hyperref}
+\usepackage{todonotes}
 
 %include formatting.lhs
 %let thesis = True
