@@ -26,20 +26,10 @@
 
 %endif
 
-\section*{TODOs}
-
-\begin{itemize}
-\item What about deletion of entities and relationship soundness? 
-\item How to update relationships while keeping them sound?
-\item How to delete relationships?
-\end{itemize}
-
-
-
 \section{Introduction}
 
-Entity-relationship modeling \cite{chen1976entity} is a tool to design data models.
-An entity-relationship (ER) model is a declarative specification of a data
+Entity-relationship modeling \cite{chen1976entity} is a technique to design data models.
+An entity-relationship model (ER model) is a declarative specification of a data
 model, and can be used for deriving database schemas. An ER model describes
 entities and their relationships. In this chapter, we show how we to encode
 ER models in Haskell in a type-safe way.
@@ -60,25 +50,24 @@ HaskellDB. More specifically, data models can be divided into three categories \
 \item \emph{Conceptual models}, where entities and their relationships are
 described on a conceptual level. For example, an ER model.
 \item \emph{Logical models}, which are expressed in terms of the database
-management system. For example, relationships are expressed using foreign keys
-or join tables.
+management system. For example, an SQL schema for a relational database.
 \item \emph{Physical models}, which describe how logical models are stored on
 disk or in memory.
-Sometimes this is presented to the user.
-For example, a schema designer might add indexes on keys, which directly
-corresponds to changes in the physical layer.
+Sometimes this is presented to the user, for example, a schema designer might
+add indexes on keys, which directly corresponds to changes in the physical
+layer.
 \end{itemize}
 
 ER-models fall into the category of \emph{conceptual models}, whereas HaskellDB
 falls into the category of \emph{logical models}.
 Recent work by Visser \cite{sebasmscthesis}
-operates on the physical model.
+operates on the \emph{physical model}.
 
-In section \ref{sec:ermodels}, we give a definition of an ER model and introduce the
-vocabulary for ER modeling. We give an ER model that we will use as our running
+In section \ref{sec:ermodels}, we give the definition of an ER model and introduce the
+vocabulary for ER modeling. We show an ER model that we will use as our running
 example.
 
-In section \ref{sec:encoding}, we show how to encode an ER model in Haskell. 
+In section \ref{sec:encoding}, we encode the example ER model in Haskell. 
 We do this in a type-safe way. Entities can only have relationships with
 entities in the same ER model, and relationships can only relate between two
 entities in the ER model. This section encodes a \emph{conceptual model}.
@@ -86,11 +75,12 @@ entities in the ER model. This section encodes a \emph{conceptual model}.
 In section \ref{sec:inmem}, we build an in-memory database. Because different
 relationships (one to many, many to many), have different ways of handling them,
 we make heavy use of type-level programming to keep our code correct. 
-This section encodes a \emph{logical model}, and a translation from the
-conceptual model to the logic model.
+This section derives a \emph{logical model} from the conceptual model.
 
 In section \ref{sec:rdbschema} we sketch the outline of an interface to a
-relational database. Not all code has been written yet.
+relational database. 
+This section derives a different \emph{logical model} from the conceptual model.
+However: not all code has been written yet.
 
 Section \ref{sec:rdb} shows how we can combine the
 in-memory database and the relational database, where the in-memory database
@@ -100,8 +90,8 @@ Section \ref{sec:query}
 describes a query language for ER models and how that is translated into queries
 for the in-memory database and SQL queries for the relational database.
 
-Finally, in section \ref{sec:erconclusion} we look at how our library works in
-practice and discuss future work.
+Finally, in section \ref{sec:erfuture} we describe future work, and in section
+\ref{sec:erconclusion} we conclude.
 
 This chapter provides the following contributions:
 
@@ -358,6 +348,7 @@ section \ref{sec:rdbrels}.
 \label{sec:rdbinterface}
 
 TODO: show how we can have almost the same interface for relational databases.
+However, we first need to finish the work in section \ref{sec:rdbrels}.
 
 \section{Querying the database}
 \label{sec:query}
@@ -368,10 +359,11 @@ or a single entity, by its |id|. In this section we will implement
 example, we might want to find all |Person| entities with the name |"chris"|, or
 all compilers with a version larger than |1|. In this section, we will show how
 we can construct such queries in a typed way, and perform them on both the
-in-memory database and the relational database. We see querying databases as a
-a separate aspect: not every storage engine might support it. For example, we
-could use ER models for modeling a webservice, but most webservices don't
-support any queries at all. This code is inspired by HaskellDB \todo{cite}
+in-memory database and the relational database.
+
+Querying databases is a a separate aspect: not every logical layer might support it.
+For example, we could use ER models to model a remote XML-based webservice, but most webservices don't
+support any queries at all.
 
 \subsection{Representing queries}
 
@@ -387,6 +379,7 @@ Querying the relational database can be implemented in an even easier way.
 
 
 \section{Future work}
+\label{sec:erfuture}
 
 Our library provides a good starting point, but is far from complete. In this
 section we will discuss possible ways to extend our library.
