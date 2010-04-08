@@ -1,7 +1,7 @@
 %if False
 
 > {-# LANGUAGE GADTs, ExistentialQuantification, TypeSynonymInstances,
-> FlexibleContexts, PackageImports #-}
+> FlexibleContexts, PackageImports, Arrows #-}
 > module Main where
 
 > import Control.Applicative
@@ -27,7 +27,7 @@
 > import Network.Salvia.Interface
 > import Data.Record.Label
 > import Control.Category
-> import Prelude hiding ((.))
+> import Prelude as Prelude hiding ((.))
 > import Network.Protocol.Http.Data
 
 
@@ -44,27 +44,66 @@ Arrows are a different way of representing control structures, and an arrow
 differs from a monad because the environment is always explicit.
 For example, if we redefine the |Web| datatype for an arrow-based interface, we
 add an extra type-parameter |i|, which captures the input of an arrow. The |o|
-type-paramater indicates the result of running a |Web| computation. Note that
-there are no functions in the new |Web| type. Composition is instead expressed
-using the |Seq| constructor. If we compose to |Web| values that produce a |b|
-and a |c|, respectively, and we want to reuse the |b| value in a later
-computation, we can use the |Thread| constructor, which threads a value to the
-next computation.
+type-parameter indicates the result of running a |Web| computation.
+Note that there are no functions stored in the |Web| type itself, which is
+essential for serialization, as we will see later on.
 
 > data Web i o where
+
+The |Single| constructor indicates a single |Page| that is shown to the user.
+
 >   Single  :: Page i o -> Web i o
+
+The |Req| is a constructor that produces the |RequestBody| for a specific
+request. It is needed to provide global access to the |RequestBody| throughout a
+computation.
+
 >   Req     :: Web () RequestBody
+
+To compose to |Web| computations, we provide the |Seq| datatype.
+ 
 >   Seq     :: Web a b -> Web b c -> Web a c
->   Thread  :: Web a b -> Web b c -> Web a (b,c)
->   Choice  :: (a -> Bool) -> Web a b -> Web a b -> Web a b
+
+When we want to thread a value through a computation, we can use the |First|
+constructor. It takes a computation, and adds an extra |c| value to the input and
+the output.
+When running the |Web| computation, the |c| value will be passed around
+unchanged.
+
+>   First   :: Web a b -> Web (a, c) (b, c)
+
+Finally, we provide a constructor |Choice| for making choices. We will see how
+to use this later on.
+
+>   Choice  :: Web a b -> Web (Either a c) (Either b c)
+
+We can make |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
+|Category| type-classes, as seen in Figure \ref{fig:webinstances}.
+
+\begin{figure}
+> instance Functor (Web i) where
+>   fmap = flip Seq . fun
+
+> instance Arrow Web where
+>   arr   = Single . Fun
+>   first = First
+
+> instance ArrowChoice Web where
+>   left = Choice
+
+> instance Category Web where
+>   id  = fun Prelude.id
+>   (.) = flip Seq
+\caption{Instances for common type-classes}
+\label{fig:webinstances}
+\end{figure}
 
 > instance Show (Web i o) where
 >   show (Single s) = show s
 >   show Req        = "Req"
 >   show (Seq a b)  = show a ++ " >>> " ++ show b
->   show (Thread l r) = "Thread (" ++ show l ++ ", " ++ show r ++ ")"
->   show (Choice c l r) = "Choice (" ++ show l ++ "," ++ show r
->                          ++ ")"
+>   show (First f)      = "First (" ++ show f ++ ")"
+>   show (Choice a)    = "Choice (" ++ show a ++ ")"
 
 \todo{Better explanation for |Thread|. Even a different type?}
 \todo{Explain |Req|}
@@ -99,6 +138,9 @@ If we store the input of a |Web| value together with the |Web| value, we get a
 continuation. We can hide the input type |i| using existential quantification.
 
 > data Continuation o = forall i . Cont i (Web i o)
+
+> instance Functor Continuation where
+>   fmap f (Cont i w) = Cont i (fmap f w)
 > 
 > instance Show (Continuation o) where show (Cont i w) = take 120 $ show w
 
@@ -109,6 +151,10 @@ not use functions to represent the environment.
 > data Result o where
 >   Done    :: o -> Result o
 >   Step    :: X.Html -> Continuation o -> Result o
+
+> instance Functor Result where
+>   fmap f (Done x) = Done (f x)
+>   fmap f (Step h c) = Step h (fmap f c)
 
 To get the result of a single page, we provide the |runPage| function:
 
@@ -124,13 +170,16 @@ flow. Instead of rendering the form as usual, we also add the error messages.
 If the form is entered correctly, we can return the value.
 The function |fromSuccess| converts a |Failing a| into an |a|.
 
+> choice :: (a -> Bool) -> Web a b -> Web a b -> Web a b
+> choice f l r = proc x -> if f x then l -< x else r -< x
+
 > runForm :: X.Html -> (RequestBody -> Failing b) -> Web () b
 > runForm formHtml parse  = start
->  where start =      Req 
->              `Seq`  fun parse
->              `Seq`  Choice isFailure
->                     retry 
->                     (fun fromSuccess)
+>  where start =    Req 
+>              >>>  fun parse
+>              >>>  choice isFailure
+>                   retry 
+>                   (fun fromSuccess)
 >        retry = display showFormWithError `Seq` start
 >        showFormWithError (Failure msgs) = makeForm (X.toHtml msgs X.+++ formHtml)
 
@@ -166,12 +215,11 @@ Handling a request is simple:
 > handleRequest (Seq    l r)  inp np body = case handleRequest l inp np body of
 >   Done res              -> handleRequest r res np body
 >   Step page (Cont i c)  -> Step page (Cont i (c `Seq` r))
-> handleRequest (Thread l r)  inp np body = case handleRequest l inp np body of
->   Done res              -> handleRequest (r `Seq` fun ((,) res)) res np body
->   Step page (Cont i c)  -> Step page (Cont i (Thread c r))
-> handleRequest (Choice c l r) inp np body = if    c inp 
->                                         then  handleRequest l inp np body
->                                         else  handleRequest r inp np body
+> handleRequest (First l) (i1,i2) np body = case handleRequest l i1 np body of
+>     Done res              -> Done (res, i2)
+>     Step page (Cont i c)  -> Step page (Cont (i,i2) (First c))
+> handleRequest (Choice l) (Left inp)  np body = fmap Left $ handleRequest l inp np body
+> handleRequest (Choice a) (Right inp) np body = Done (Right inp)
 
 
 
@@ -199,14 +247,12 @@ Handling a request is simple:
 > runServer p e = do
 >   env <- newMVar e
 >   start defaultConfig
->         -- This echoes the (parsed) query paramaters.
 >         (hDefaultEnv (do e' <- liftIO $ takeMVar env
 >                          h <- hCurrentPath
 >                          contId <- (intercalate "/". __segments) <$> hCurrentPath
 >                          ps <- (map (fmap fromJust) . filter (isJust . snd)) <$> hRequestParameters "utf-8"
 >                          let (html, e'') = run e' contId ps
->                          -- liftIO $ print e'
->                          liftIO $ print (contId, ps) -- , e'')
+>                          liftIO $ print (contId, ps)
 >                          liftIO $ putMVar env e''
 >                          response (contentType =: Just ("text/html", Just "utf-8"))
 >                          send (show html)
@@ -217,28 +263,27 @@ Handling a request is simple:
 > hCurrentPath = request (getM (_path . asUri))
 
 
->
-> -- createServerPart :: Env -> IO (ServerPart Response)
-> -- createServerPart e = do env <- newMVar e
-> --                         return $ ServerPartT $ handle env
-> -- 
-> -- handle :: MVar Env -> ReaderT Request (WebT IO) Response
-> -- handle env = do req <- ask
-> --                     formInputs = map (\(k,v) -> (k, B.unpack $ inputValue v)) $ rqInputs req
-> --                 e <- liftIO $ takeMVar env
-> --                 let (html, e') = run e contId formInputs
-> --                 liftIO $ putMVar env e'
-> --                 return $ toResponse html
-
-> exampleEnv = M.singleton "/arc" (Cont () arc)
+> exampleEnv = M.singleton "/arc" (Cont () arc'')
 
 > main = runServer 8080 exampleEnv
 
 > 
 > arc :: Web () ()
-> arc =        input 
->     `Thread` (link "Click Here")
->     `Seq`    (display (\(name, ()) -> X.toHtml $ "Hello, " ++ name))
+> arc =      input 
+>     &&&   link "Click Here"
+>     >>>   display (\(name, _cal) -> X.toHtml $ "Hello, " ++ name)
+
+> arc' = proc () -> do
+>    name <- input -< ()
+>    link "Click here" -< ()
+>    display (\n -> X.toHtml $ "Hello, " ++ n) -< name
+
+> arc'' = proc () -> do
+>    x <- input -< ()
+>    link "Click here" -< ()
+>    if x > (10 :: Integer)
+>      then display (\n -> X.toHtml $ "Hello, " ++ show n) -< x
+>      else display (const $ X.toHtml "ok.") -< ()
 
 > class DefaultForm i  where form :: Form i
 
@@ -257,58 +302,7 @@ Handling a request is simple:
 
 %endif
  
-% There are two combinators for sequencing, the |>>>| combinator just sequences
-% two interactions, and the |>&>| combinator also remembers the result from the
-% first interaction.
-% 
-% > (>>>) :: Web a b -> Web b c -> Web a c
-% > (>>>) = Seq
-% 
-% > infixl >&>
-% > (>&>) :: Web a b -> Web b c -> Web a (b,c)
-% > (>&>) = Thread
-% 
-% The |arr| combinator lifts a pure function into the |Web| type:
-% 
-% > arr :: (a -> b) -> Web a b
-% > arr = Single . Fun
-% 
-% Before we define an example, we first provide some smart constructors:
-% 
-% > fun :: (i -> o) -> Web i o
-% > fun      = Single . Fun
-% >
-% > form :: String -> (String -> o) -> Web i o
-% > form x   = Single . Form x
-% >
-% > display :: (i -> String) -> Web i ()
-% > display  = Single . Display
-% 
-% Now we can define our example. After the first form the |>&>| combinator is
-% used, to pass sure the value to the final |display| page.
-% 
-% > example  =    form "Hi, what's your name?" id
-% >          >&>  form "Enter two numbers:" (map (read :: String -> Int) . words)
-% >          >>>  display finalPage
-% >  where  sum        = (+) :: Int -> Int -> Int
-% >         finalPage name [x,y] = "Hi " ++ name ++ ", the sum is: " ++ show (sum x y)
-% 
-% We can build an interactive evaluator in the console that reads out requests and
-% runs a |Web| computation:
-% 
-% > runConsole :: a -> Web a () -> IO ()
-% > runConsole a w = do putStr "Request> "
-% >                     req <- getLine
-% >                     case handleRequest w a req of
-% >                       Done ()       -> putStrLn "Done"
-% >                       Step msg i w' -> do putStrLn msg
-% >                                           runConsole i w'
-% 
-% \subsection{Tracing}
-% 
-% Everytime we come across a bind, we can emit a trace step. From a full list of trace steps we can recover a program point. However, the trace steps will keep growing for every step the user takes. If we consider recursive programs, the trace steps may grow infinitely. This is the approach that WASH takes. In the next section, we will look at a way to prevent these infinite traces.
-% 
-% \subsection{Observable sharing}
+
 % 
 % We now proceed to the serialization of a |Web| value. In order to do that,
 % we will first convert a recursive |Web| value into an explicit graph with
