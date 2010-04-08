@@ -22,6 +22,8 @@
 
 %endif
 
+\todo{Define entire interface in last section.}
+
 In this section we will build a monadic continuation-based
 web programming library. 
 The interface that we define is inspired by iTasks \cite{iTasks}, which is a

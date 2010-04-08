@@ -150,5 +150,12 @@ TODO: indexed monad with access control etc.
 \bibliographystyle{plain}
 \bibliography{bibliography}
 
+\section*{Library interfaces}
+
+\subsection{The arrow-based interface}
+\label{sec:arrowinterface}
+
+%include continuations/ArrowBasedInterface.lhs
+
 \end{document}
 %endif

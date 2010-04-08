@@ -21,3 +21,4 @@
 %format fv1
 %format fv2
 %format fv3
+%format -< = "\prec"

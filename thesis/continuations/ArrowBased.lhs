@@ -2,7 +2,7 @@
 
 > {-# LANGUAGE GADTs, ExistentialQuantification, TypeSynonymInstances,
 > FlexibleContexts, PackageImports, Arrows #-}
-> module Main where
+> module ArrowBased where
 
 > import Control.Applicative
 > import Control.Applicative.Error (Failing (..))
@@ -39,12 +39,95 @@ As we have seen in the previous section, web continuations can be expressed as
 monads.
 However, because the monadic approach stores functions inside the |Web| and
 |Result| datatypes, it is not possible to serialize these datatypes.
+If we change our library to an Arrow-based interface
+\cite{hughes2000generalising}, we can solve this. We will first show some
+examples, then implement the library in section \label{sec:arrowimpl},
+and finally discuss how to serialize these continuations in \label{sec:arrowserial}.
 
-Arrows are a different way of representing control structures, and an arrow
-differs from a monad because the environment is always explicit.
-For example, if we redefine the |Web| datatype for an arrow-based interface, we
-add an extra type-parameter |i|, which captures the input of an arrow. The |o|
-type-parameter indicates the result of running a |Web| computation.
+First, we will show some example programs using our library. For the API used in
+these examples see section \ref{sec:arrowinterface}.
+The solution to the Arc challenge stated the introduction of this chapter is
+written down in the following way:
+
+> arc :: Web () ()
+> arc =     input 
+>     &&&   link "Click Here"
+>     >>>   display (\x -> X.toHtml $ "Hello, " ++ fst x)
+
+Using arrow notation \cite{paterson2001new}, we can write down our example in a
+style that is reminiscent of monadic do-notation. Arrow notation can save a lot
+of code, especially when dealing with variables that are used multiple times.
+With normal arrows, these variables have to be explicitly threaded each time,
+and using arrow notation all the threading is implicit.
+
+> arc' = proc () -> do
+>    name <- input                              -< ()
+>    link "Click here"                          -< ()
+>    display (\n -> X.toHtml $ "Hello, " ++ n)  -< name
+
+The difference with monadic do-notation is the |-<| symbol, which denotes the
+input of the function.
+Compared to writing arrows using standard combinators, arrow notation becomes
+especially useful when constructing larger programs.
+When desugared, the following programming is quite large.
+However, using arrow notation, it is almost as simple as its monadic
+counterpart.
+
+> arcExtended = proc () -> do
+>    x     <- input      -< ()
+>    name  <- input      -< ()
+>    link "Click here"   -< ()
+>    display X.toHtml    -< (name :: String)
+>    if x > (42 :: Integer)
+>       then display (\n -> X.toHtml $ "Large number: " ++ show n)  -< x
+>       else display (const $ X.toHtml "Small.")                    -< ()
+
+\subsection{The library implementation}
+\label{sec:arrowimpl}
+
+The difference between monads and arrows has been a topic of research since the
+introduction of arrows \cite{hughes2000generalising, lindley2008idioms}.
+However, for our purposes, we focus on two important aspects of arrows:
+
+\begin{itemize}
+\item Arrows are \emph{explicit in their environment}. The environment that an
+arrow uses is always explicit as its input parameter.
+This means that users of an arrow-based interface have to explicitly define
+inputs and outputs of each arrow, but this problem is largely solved by using
+arrow notation.
+\item We can represent our |Web| structure \emph{without using functions as
+continuations}. Because arrows are explicit about their environment, we can
+store the environment and a \emph{trace} that describes how we got the current
+state. From such an environment and a trace we can construct the continuation
+after a program restart. A similar approach is taken in WASH
+\cite{thiemann2002wash}.
+\end{itemize}
+
+
+\begin{figure}
+\begin{spec}
+class Category a => Arrow a where
+  arr :: (b -> c) -> a b c
+  first :: a b c -> a (b, d) (c, d)
+  second :: a b c -> a (d, b) (d, c)
+  (***) :: a b c -> a b' c' -> a (b, b') (c, c')
+  (&&&) :: a b c -> a b c' -> a b (c, c')
+\end{spec}
+
+\caption{The Arrow typeclass}
+\label{fig:Arrow}
+
+\end{figure}
+
+We will now redefine the |Web| datatype in such a way that we can make it an
+instance of the |Arrow| typeclas. The |Arrow| typeclass is defined in figure
+\ref{fig:Arrow}, and the minimal definition consists of |arr| and |first|. As we
+can see, any |Arrow| instance needs to be of kind |* -> * -> *|, and the |Web|
+datatype from the previous section is of kind |* -> *|.
+
+Therefore, we add an extra type-parameter |i|, which captures the input of a
+|Web| computation, or in other words: its environment.
+The |o| type-parameter indicates the result of running a |Web| computation.
 Note that there are no functions stored in the |Web| type itself, which is
 essential for serialization, as we will see later on.
 
@@ -60,7 +143,7 @@ computation.
 
 >   Req     :: Web () RequestBody
 
-To compose to |Web| computations, we provide the |Seq| datatype.
+To compose two |Web| computations, we provide the |Seq| constructor.
  
 >   Seq     :: Web a b -> Web b c -> Web a c
 
@@ -73,30 +156,170 @@ unchanged.
 >   First   :: Web a b -> Web (a, c) (b, c)
 
 Finally, we provide a constructor |Choice| for making choices. We will see how
-to use this later on.
+to use this later on. \todo{Explain better.}
 
 >   Choice  :: Web a b -> Web (Either a c) (Either b c)
 
-We can make |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
+We have made |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 |Category| type-classes, as seen in Figure \ref{fig:webinstances}.
 
 \begin{figure}
-> instance Functor (Web i) where
->   fmap = flip Seq . fun
 
-> instance Arrow Web where
+> instance Functor (Web i)  where fmap = flip Seq . arr
+> instance ArrowChoice Web  where left = Choice
+>
+> instance Arrow Web        where
 >   arr   = Single . Fun
 >   first = First
-
-> instance ArrowChoice Web where
->   left = Choice
-
-> instance Category Web where
->   id  = fun Prelude.id
+>
+> instance Category Web     where
+>   id  = arr Prelude.id
 >   (.) = flip Seq
+
 \caption{Instances for common type-classes}
 \label{fig:webinstances}
+
 \end{figure}
+
+The |Page| datatype from the previous section is changed in the same way. We add
+an extra parameter |i| that captures the input of a page. Furthermore, we add a
+constructor |Fun| that can contain any Haskell function.
+
+> data Page i o where
+>   Fun      :: (i -> o)                              -> Page i o
+>   Form     :: X.Html -> (RequestBody -> Failing o)  -> Page a o
+>   Display  :: (a -> X.Html)                         -> Page a ()
+>   Link     :: String                                -> Page a ()
+
+We also provide smart constructors that lift a |Page| type into the |Web| type:
+
+> input    :: DefaultForm f => Web () f
+> display  :: (i -> X.Html) -> Web i ()
+> link     :: String -> Web i ()
+
+
+Now we can define the |Result| datatype, which is very similar to the |Result|
+datatype from the previous section. A |Result| can either be completely done,
+which is indicated by the |Done| constructor, or it can yield some HTML and a
+continuation.
+
+> data Result o where
+>   Done    :: o -> Result o
+>   Step    :: X.Html -> Continuation o -> Result o
+
+The |Continuation| is not just a |Web i o| value, but also stores the input |i|.
+We can wrap this in an existential type.
+
+> data Continuation o = forall i . Cont i (Web i o)
+
+%if False
+
+> instance Functor Continuation where
+>   fmap f (Cont i w) = Cont i (fmap f w)
+> 
+> instance Show (Continuation o) where show (Cont i w) = take 120 $ show w
+
+
+> instance Functor Result where
+>   fmap f (Done x) = Done (f x)
+>   fmap f (Step h c) = Step h (fmap f c)
+
+%endif
+
+To get the result of a single page, we provide the |runPage| function, which is
+again very similar to the |runPage| function in the previous section.
+
+> runPage :: Page i o -> i -> NextPage -> Result o
+> runPage (Fun f)           i np = Done  (f i)
+> runPage (Form msg parse)  _ np = Step  (makeForm msg) 
+>                                        (returnCont $ runForm msg parse)
+> runPage (Display msg)     i np = Step  (continue (msg i) np "Continue") 
+>                                        noResult
+> runPage (Link  s)         i np = Step  (continue X.noHtml np s)
+>                                        noResult
+
+The helper functions |noResult| and |returnCont| build simple continuations:
+
+> noResult :: Continuation ()
+> noResult = returnCont (arr (const ()))
+
+> returnCont :: Web () o -> Continuation o
+> returnCont = Cont ()
+
+To run a |Form|, we parse the request, and if it is a |Failure|, we restart the
+flow. Instead of rendering the form as usual, we also add the error messages.
+If the form is entered correctly, we can return the value.
+The function |fromSuccess| converts a |Failing a| into an |a|.
+
+
+> runForm :: X.Html -> (RequestBody -> Failing b) -> Web () b
+> runForm formHtml parse  = start
+>  where start =    Req 
+>              >>>  arr parse
+>              >>>  choice isFailure
+>                   retry 
+>                   (arr fromSuccess)
+>        retry = display showFormWithError `Seq` start
+>        showFormWithError (Failure msgs) = makeForm (X.toHtml msgs X.+++ X.br X.+++ formHtml)
+
+> choice :: (a -> Bool) -> Web a b -> Web a b -> Web a b
+> choice f l r = proc x -> if f x then l -< x else r -< x
+
+Now we can define the function |handleRequest|, which takes a |Web| value and
+its input, a fresh URL that is used as link to the next page and a
+|RequestBody|. It will produce a |Result|, which is either |Done| or a
+continuation.
+
+> handleRequest :: Web i o -> i -> NextPage -> RequestBody -> Result o
+
+The cases for |Req| and |Single| are straightforward:
+
+> handleRequest (Req)         inp np body = Done body
+> handleRequest (Single page) inp np body = runPage page inp np
+
+To handle a |Seq|, we first handle the request for the left part of the
+sequence. If it returns with a |Done| value, we can recursively continue with the right
+part.
+However, if we find a |Step|, we restructure the |Step| to include the right
+part of the sequence in the continuation of the |Step|:
+
+> handleRequest (Seq    l r)  inp np body = case handleRequest l inp np body of
+>   Done res              -> handleRequest r res np body
+>   Step page (Cont i c)  -> Step page (Cont i (c `Seq` r))
+
+The |First| constructor threads values and is defined in a straightforward way:
+
+> handleRequest (First l) (i1,i2) np body = case handleRequest l i1 np body of
+>     Done res              -> Done (res, i2)
+>     Step page (Cont i c)  -> Step page (Cont (i,i2) (First c))
+
+Finally, for the |Choice| constructor we pattern-match on the input type, which
+is an |Either| value:
+
+> handleRequest (Choice a) (Left   inp) np body = Left <$> handleRequest a inp np body
+> handleRequest (Choice a) (Right  inp) np body = Done (Right inp)
+
+The rest of the functions are very similar to their monadic counterparts, and
+can be found in the code accompanying this thesis. To be complete, we have
+provided the library interface in section \ref{sec:arrowinterface}.
+
+\subsection{Serialization of Arrows}
+\label{sec:arrowserial}
+
+Serialization of a |Continuation| value:
+ * Make sure that every i is (Show,Read)
+ * Add a trace to every step.
+
+New problem: trace may grow large: malicious users can perform cyclic actions
+that can increase memory usage enourmously.
+Future work: use data-reify to detect loops and defunctionalize
+
+
+%if False
+
+> input = Single (uncurry Form (runForm' form))
+> display = Single . Display
+> link = Single . Link
 
 > instance Show (Web i o) where
 >   show (Single s) = show s
@@ -105,85 +328,11 @@ We can make |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 >   show (First f)      = "First (" ++ show f ++ ")"
 >   show (Choice a)    = "Choice (" ++ show a ++ ")"
 
-\todo{Better explanation for |Thread|. Even a different type?}
-\todo{Explain |Req|}
-
-Our page datatype now has a similar structure, it is also parameterized over an
-extra |i| for the input. To support arbitary functions, we have added a |Fun|
-constructor.
-
-> data Page i o where
->   Fun      :: (i -> o)                              -> Page i o
->   Form     :: X.Html -> (RequestBody -> Failing o)  -> Page a o
->   Display  :: (a -> X.Html)                         -> Page a ()
->   Link     :: String                                -> Page a ()
-
 > instance Show (Page i o) where
 >   show (Fun f) = "Fun"
 >   show (Form f _) = "Form " ++ show f
 >   show (Display f) = "Display"
 >   show (Link l) = "link: " ++ l
-
-We also provide smart constructors that lift a |Page| type into the |Web| type:
-
-> fun = Single . Fun
-> input :: DefaultForm f => Web () f
-> input = Single (uncurry Form (runForm' form))
-> display = Single . Display
-> display' :: X.HTML a => a -> Web () ()
-> display' a = Single (Display (const (X.toHtml a)))
-> link = Single . Link
-
-If we store the input of a |Web| value together with the |Web| value, we get a
-continuation. We can hide the input type |i| using existential quantification.
-
-> data Continuation o = forall i . Cont i (Web i o)
-
-> instance Functor Continuation where
->   fmap f (Cont i w) = Cont i (fmap f w)
-> 
-> instance Show (Continuation o) where show (Cont i w) = take 120 $ show w
-
-Now we can define the |Result| datatype, which is very similar to the |Result|
-datatype from the previous section. However, our |Continuation| datatype does
-not use functions to represent the environment.
-
-> data Result o where
->   Done    :: o -> Result o
->   Step    :: X.Html -> Continuation o -> Result o
-
-> instance Functor Result where
->   fmap f (Done x) = Done (f x)
->   fmap f (Step h c) = Step h (fmap f c)
-
-To get the result of a single page, we provide the |runPage| function:
-
-> runPage :: Page i o -> i -> NextPage -> Result o
-> runPage (Fun f)           i np = Done (f i)
-> runPage (Form msg parse)  _ np = Step (makeForm msg) (Cont () (runForm msg parse))
-> runPage (Display msg)     i np = Step (continue (msg i) np "Continue") (Cont () (fun (const ())))
-> runPage (Link  s)         i np = Step (continue X.noHtml np s) (Cont () (fun (const ())))
-
-
-To run a |Form|, we parse the request, and if it is a |Failure|, we restart the
-flow. Instead of rendering the form as usual, we also add the error messages.
-If the form is entered correctly, we can return the value.
-The function |fromSuccess| converts a |Failing a| into an |a|.
-
-> choice :: (a -> Bool) -> Web a b -> Web a b -> Web a b
-> choice f l r = proc x -> if f x then l -< x else r -< x
-
-> runForm :: X.Html -> (RequestBody -> Failing b) -> Web () b
-> runForm formHtml parse  = start
->  where start =    Req 
->              >>>  fun parse
->              >>>  choice isFailure
->                   retry 
->                   (fun fromSuccess)
->        retry = display showFormWithError `Seq` start
->        showFormWithError (Failure msgs) = makeForm (X.toHtml msgs X.+++ formHtml)
-
-%if False
 
 > continue :: X.HTML x => x -> NextPage -> String -> X.Html
 > continue x np linkText = x X.+++ X.br X.+++ (ahref np (X.toHtml linkText))
@@ -205,23 +354,6 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 >                  parse env = x where (Identity x, _, _) = Formlets.runFormState (map (fmap Left) env) f
 >              in (html, parse)
 
-%endif
-
-Handling a request is simple:
-
-> handleRequest :: Web i o -> i -> NextPage -> RequestBody -> Result o
-> handleRequest (Single page) inp np body = runPage page inp np
-> handleRequest (Req)         inp np body = Done body
-> handleRequest (Seq    l r)  inp np body = case handleRequest l inp np body of
->   Done res              -> handleRequest r res np body
->   Step page (Cont i c)  -> Step page (Cont i (c `Seq` r))
-> handleRequest (First l) (i1,i2) np body = case handleRequest l i1 np body of
->     Done res              -> Done (res, i2)
->     Step page (Cont i c)  -> Step page (Cont (i,i2) (First c))
-> handleRequest (Choice l) (Left inp)  np body = fmap Left $ handleRequest l inp np body
-> handleRequest (Choice a) (Right inp) np body = Done (Right inp)
-
-
 
 > type Env = M.Map String (Continuation ())
 
@@ -230,7 +362,7 @@ Handling a request is simple:
 >                        Nothing   -> (pageNotFound, env)
 >                        Just (Cont i c) ->
 >                          let np = page
->                              result        = handleRequest c i np reqBody -- np?
+>                              result        = handleRequest c i np reqBody
 >                              (html, cont') = handleResult np result
 >                              env' = maybe (M.delete page env) (\x -> M.insert page x env) cont'
 >                          in (html, env')
@@ -263,31 +395,12 @@ Handling a request is simple:
 > hCurrentPath = request (getM (_path . asUri))
 
 
-> exampleEnv = M.singleton "/arc" (Cont () arc'')
+> exampleEnv = M.singleton "/arc" (Cont () arcExtended)
 
 > main = runServer 8080 exampleEnv
 
-> 
-> arc :: Web () ()
-> arc =      input 
->     &&&   link "Click Here"
->     >>>   display (\(name, _cal) -> X.toHtml $ "Hello, " ++ name)
-
-> arc' = proc () -> do
->    name <- input -< ()
->    link "Click here" -< ()
->    display (\n -> X.toHtml $ "Hello, " ++ n) -< name
-
-> arc'' = proc () -> do
->    x <- input -< ()
->    link "Click here" -< ()
->    if x > (10 :: Integer)
->      then display (\n -> X.toHtml $ "Hello, " ++ show n) -< x
->      else display (const $ X.toHtml "ok.") -< ()
 
 > class DefaultForm i  where form :: Form i
-
-%if False
 
 > makeForm f = X.form X.! [X.method "POST"] X.<< (f X.+++ X.submit "submit" "submit")
  
