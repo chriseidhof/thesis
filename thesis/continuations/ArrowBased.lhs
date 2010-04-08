@@ -16,6 +16,7 @@
 > import qualified Data.Map as M
 > import Control.Concurrent.MVar
 > import Data.List (intercalate)
+> import Data.Maybe (isJust, fromJust)
 
 > import Network.Protocol.Http
 > import Network.Protocol.Uri
@@ -55,7 +56,15 @@ next computation.
 >   Req     :: Web () RequestBody
 >   Seq     :: Web a b -> Web b c -> Web a c
 >   Thread  :: Web a b -> Web b c -> Web a (b,c)
->   Choice  :: Web a Bool -> Web a b -> Web a b -> Web a b
+>   Choice  :: (a -> Bool) -> Web a b -> Web a b -> Web a b
+
+> instance Show (Web i o) where
+>   show (Single s) = show s
+>   show Req        = "Req"
+>   show (Seq a b)  = show a ++ " >>> " ++ show b
+>   show (Thread l r) = "Thread (" ++ show l ++ ", " ++ show r ++ ")"
+>   show (Choice c l r) = "Choice (" ++ show l ++ "," ++ show r
+>                          ++ ")"
 
 \todo{Better explanation for |Thread|. Even a different type?}
 \todo{Explain |Req|}
@@ -69,6 +78,12 @@ constructor.
 >   Form     :: X.Html -> (RequestBody -> Failing o)  -> Page a o
 >   Display  :: (a -> X.Html)                         -> Page a ()
 >   Link     :: String                                -> Page a ()
+
+> instance Show (Page i o) where
+>   show (Fun f) = "Fun"
+>   show (Form f _) = "Form " ++ show f
+>   show (Display f) = "Display"
+>   show (Link l) = "link: " ++ l
 
 We also provide smart constructors that lift a |Page| type into the |Web| type:
 
@@ -84,6 +99,8 @@ If we store the input of a |Web| value together with the |Web| value, we get a
 continuation. We can hide the input type |i| using existential quantification.
 
 > data Continuation o = forall i . Cont i (Web i o)
+> 
+> instance Show (Continuation o) where show (Cont i w) = take 120 $ show w
 
 Now we can define the |Result| datatype, which is very similar to the |Result|
 datatype from the previous section. However, our |Continuation| datatype does
@@ -95,10 +112,12 @@ not use functions to represent the environment.
 
 To get the result of a single page, we provide the |runPage| function:
 
-> runPage :: Page i o -> i -> Result o
-> runPage (Fun f)           i  = Done (f i)
-> runPage (Form msg parse)  _  = Step msg     (Cont () (runForm msg parse))
-> runPage (Display msg)     i  = Step (msg i) (Cont () (fun (const ())))
+> runPage :: Page i o -> i -> NextPage -> Result o
+> runPage (Fun f)           i np = Done (f i)
+> runPage (Form msg parse)  _ np = Step (makeForm msg) (Cont () (runForm msg parse))
+> runPage (Display msg)     i np = Step (continue (msg i) np "Continue") (Cont () (fun (const ())))
+> runPage (Link  s)         i np = Step (continue X.noHtml np s) (Cont () (fun (const ())))
+
 
 To run a |Form|, we parse the request, and if it is a |Failure|, we restart the
 flow. Instead of rendering the form as usual, we also add the error messages.
@@ -109,13 +128,18 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 > runForm formHtml parse  = start
 >  where start =      Req 
 >              `Seq`  fun parse
->              `Seq`  Choice (fun isFailure)
+>              `Seq`  Choice isFailure
 >                     retry 
 >                     (fun fromSuccess)
 >        retry = display showFormWithError `Seq` start
->        showFormWithError (Failure msgs) = X.toHtml msgs X.+++ formHtml
+>        showFormWithError (Failure msgs) = makeForm (X.toHtml msgs X.+++ formHtml)
 
 %if False
+
+> continue :: X.HTML x => x -> NextPage -> String -> X.Html
+> continue x np linkText = x X.+++ X.br X.+++ (ahref np (X.toHtml linkText))
+
+> ahref url text = X.anchor X.! [X.href url] X.<< text
 
 > fromFailure (Failure x) = x
 > fromSuccess (Success x) = x
@@ -136,15 +160,19 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 
 Handling a request is simple:
 
-> handleRequest :: Web i o -> i -> RequestBody -> Result o
-> handleRequest (Single page) inp body = runPage page inp
-> handleRequest (Req)         inp body = Done body
-> handleRequest (Seq    l r)  inp body = case handleRequest l inp body of
->   Done res              -> handleRequest r res body
+> handleRequest :: Web i o -> i -> NextPage -> RequestBody -> Result o
+> handleRequest (Single page) inp np body = runPage page inp np
+> handleRequest (Req)         inp np body = Done body
+> handleRequest (Seq    l r)  inp np body = case handleRequest l inp np body of
+>   Done res              -> handleRequest r res np body
 >   Step page (Cont i c)  -> Step page (Cont i (c `Seq` r))
-> handleRequest (Thread l r)  inp body = case handleRequest l inp body of
->   Done res              -> handleRequest (r `Seq` fun ((,) res)) res body
+> handleRequest (Thread l r)  inp np body = case handleRequest l inp np body of
+>   Done res              -> handleRequest (r `Seq` fun ((,) res)) res np body
 >   Step page (Cont i c)  -> Step page (Cont i (Thread c r))
+> handleRequest (Choice c l r) inp np body = if    c inp 
+>                                         then  handleRequest l inp np body
+>                                         else  handleRequest r inp np body
+
 
 
 > type Env = M.Map String (Continuation ())
@@ -153,8 +181,8 @@ Handling a request is simple:
 > run env page reqBody = case M.lookup page env of
 >                        Nothing   -> (pageNotFound, env)
 >                        Just (Cont i c) ->
->                          let np = "/" ++ page
->                              result        = handleRequest c i reqBody -- np?
+>                          let np = page
+>                              result        = handleRequest c i np reqBody -- np?
 >                              (html, cont') = handleResult np result
 >                              env' = maybe (M.delete page env) (\x -> M.insert page x env) cont'
 >                          in (html, env')
@@ -174,12 +202,12 @@ Handling a request is simple:
 >         -- This echoes the (parsed) query paramaters.
 >         (hDefaultEnv (do e' <- liftIO $ takeMVar env
 >                          h <- hCurrentPath
->                          liftIO $ putStrLn $ show h
 >                          contId <- (intercalate "/". __segments) <$> hCurrentPath
->                          liftIO $ putStrLn contId
->                          let formInputs = undefined
->                          let (html, e') = run e contId formInputs
->                          liftIO $ putMVar env e'
+>                          ps <- (map (fmap fromJust) . filter (isJust . snd)) <$> hRequestParameters "utf-8"
+>                          let (html, e'') = run e' contId ps
+>                          -- liftIO $ print e'
+>                          liftIO $ print (contId, ps) -- , e'')
+>                          liftIO $ putMVar env e''
 >                          response (contentType =: Just ("text/html", Just "utf-8"))
 >                          send (show html)
 >                      ))
