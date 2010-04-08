@@ -24,6 +24,7 @@
 %include chris.fmt 
 % vim:spell
 \usepackage{a4wide}
+\usepackage{natbib}
 \usepackage{times}
 \usepackage{fancyvrb}
 \usepackage{url}
@@ -31,6 +32,7 @@
 \usepackage{palatino}
 \usepackage{rotating}
 \usepackage{hyperref}
+\usepackage{todonotes}
 
 %include formatting.lhs
 
@@ -44,12 +46,17 @@
 
 %endif
 
-\section{Generic programming}
-\ref{sec:introgp}
+\section{Introduction}
 
-\todo{What is generic programming?}
+What is the problem?
 
-\section{Simple generic views}
+Why is it important?
+
+What is our solution?
+
+List of contributions.
+
+\section{Generic HTML generation}
 
 In Haskell, we can easily generate an HTML representation of our datatype using
 generic programming. For example, consider the |Person| datatype:
@@ -99,7 +106,7 @@ If we if we print the value of |ghtml chris| we get the following result:
 <label>Email: </label>chris@eidhof.nl> 
 \end{verbatim}
 
-\section{Customization}
+\subsection{Customization}
 \label{sec:customization}
 
 Generating HTML based on the structure of the type is a feature that virtually
@@ -130,22 +137,8 @@ And using the same technique as above, we can generate |HTML| for values of the
 |PersonView| datatype. This is powerful, because we can keep using the |Person|
 datatype from our database, and only change it in the view part of the code.
 
-\subsection{Intermezzo: model view controller}
+\section{Generic Forms}
 
-Most web applications are structured using the Model, View, Controller paradigm.
-We believe this is a good way to separate logical parts of an application: The
-model part is concerned with the data storage, the view presents data to the end
-user and the controller coordinates all of this.
-
-The |Person| datatype that we have used as our running example is used for
-generating view code. However, that datatype typically comes from our model. If
-we change the order of fields or even the types of fields to generate better
-view code, we are blurring the distinction between model and view code. Changing
-the order of fields might be acceptable, but where do we draw the line? Using
-specific view datatypes helps us to generate custom views without having to
-change the model code. Therefore, it keeps a clean separation of concerns.
-
-\section{Formlets}
 
 We will now present the interface of the formlets  library \cite{CLWY08essence},
 which we will later use to build generic forms.
@@ -216,6 +209,8 @@ and yields an |a| if it succeeds or an |Error| with helpful error messages if it
 fails.
 
 \subsection{Generic forms}
+
+\todo{Does this match the structure problem / why matter / solution?}
 
 Writing a function to generically build a form based on a datatype is again
 fairly trivial. We omit the implementation, but we give the type signature:
@@ -291,6 +286,37 @@ generates a generic form for it. It also changes the parser function such that
 the original value |x| is returned with the changes from the form.
 
 \section{Generating JSON and XML}
+
+What is the problem?
+
+Why does it matter?
+
+What is our solution?
+
+Solution.
+
+\section{Intermezzo: model view controller}
+\todo{where to put this?}
+
+Most web applications are structured using the Model, View, Controller paradigm.
+We believe this is a good way to separate logical parts of an application: The
+model part is concerned with the data storage, the view presents data to the end
+user and the controller coordinates all of this.
+
+The |Person| datatype that we have used as our running example is used for
+generating view code. However, that datatype typically comes from our model. If
+we change the order of fields or even the types of fields to generate better
+view code, we are blurring the distinction between model and view code. Changing
+the order of fields might be acceptable, but where do we draw the line? Using
+specific view datatypes helps us to generate custom views without having to
+change the model code. Therefore, it keeps a clean separation of concerns.
+
+\section{Future work}
+
+Statically typed APIs a la Diatchki.
+More basic combinators.
+
+\section{Conclusion}
 
 %if not thesis
 \end{document}

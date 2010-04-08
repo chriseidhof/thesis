@@ -1,4 +1,4 @@
-all: ermodels.pdf
+all: continuations.pdf
 	open $<
 
 %.tex: %.lhs
