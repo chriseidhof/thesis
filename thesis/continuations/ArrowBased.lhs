@@ -4,34 +4,31 @@
 > FlexibleContexts, PackageImports, Arrows #-}
 > module ArrowBased where
 
-> import Control.Applicative
-> import Control.Applicative.Error (Failing (..))
 > import "mtl" Control.Monad.Identity (Identity (..))
 > import "transformers" Control.Monad.Trans
-> import Control.Monad.Reader hiding (liftIO)
-> import qualified Data.ByteString.Lazy.Char8 as B
+> import Control.Applicative
+> import Control.Applicative.Error (Failing (..))
 > import Control.Arrow
-> import qualified Text.XHtml.Strict as X
-> import qualified Text.XHtml.Strict.Formlets as Formlets
-> import qualified Data.Map as M
+> import Control.Category
 > import Control.Concurrent.MVar
+> import Control.Monad.Reader hiding (liftIO)
 > import Data.List (intercalate)
 > import Data.Maybe (isJust, fromJust)
-
+> import Data.Record.Label
 > import Network.Protocol.Http
+> import Network.Protocol.Http.Data
 > import Network.Protocol.Uri
 > import Network.Protocol.Uri.Data
 > import Network.Salvia.Handlers
 > import Network.Salvia.Impl.Config
 > import Network.Salvia.Impl.Server
 > import Network.Salvia.Interface
-> import Data.Record.Label
-> import Control.Category
 > import Prelude as Prelude hiding ((.))
-> import Network.Protocol.Http.Data
+> import qualified Data.ByteString.Lazy.Char8 as B
+> import qualified Data.Map as M
+> import qualified Text.XHtml.Strict as X
+> import qualified Text.XHtml.Strict.Formlets as Formlets
 
-
-> type RequestBody = [(String,String)]
 
 %endif
 
@@ -41,8 +38,8 @@ However, because the monadic approach stores functions inside the |Web| and
 |Result| datatypes, it is not possible to serialize these datatypes.
 If we change our library to an Arrow-based interface
 \cite{hughes2000generalising}, we can solve this. We will first show some
-examples, then implement the library in section \label{sec:arrowimpl},
-and finally discuss how to serialize these continuations in \label{sec:arrowserial}.
+examples, then implement the library in section \ref{sec:arrowimpl},
+and finally discuss how to serialize these continuations in \ref{sec:arrowserial}.
 
 First, we will show some example programs using our library. For the API used in
 these examples see section \ref{sec:arrowinterface}.
@@ -217,7 +214,7 @@ We can wrap this in an existential type.
 > instance Functor Continuation where
 >   fmap f (Cont i w) = Cont i (fmap f w)
 > 
-> instance Show (Continuation o) where show (Cont i w) = take 120 $ show w
+> instance Show (Continuation o) where show (Cont i w) = show w
 
 
 > instance Functor Result where
@@ -303,19 +300,9 @@ The rest of the functions are very similar to their monadic counterparts, and
 can be found in the code accompanying this thesis. To be complete, we have
 provided the library interface in section \ref{sec:arrowinterface}.
 
-\subsection{Serialization of Arrows}
-\label{sec:arrowserial}
-
-Serialization of a |Continuation| value:
- * Make sure that every i is (Show,Read)
- * Add a trace to every step.
-
-New problem: trace may grow large: malicious users can perform cyclic actions
-that can increase memory usage enourmously.
-Future work: use data-reify to detect loops and defunctionalize
-
-
 %if False
+
+> type RequestBody = [(String,String)]
 
 > input = Single (uncurry Form (runForm' form))
 > display = Single . Display
@@ -414,53 +401,3 @@ Future work: use data-reify to detect loops and defunctionalize
 > instance Applicative Identity where pure = return; (<*>) = ap;
 
 %endif
- 
-
-% 
-% We now proceed to the serialization of a |Web| value. In order to do that,
-% we will first convert a recursive |Web| value into an explicit graph with
-% observable sharing. This is done using the \library{data-reify} library (TODO cite) 
-% from Gill (TODO cite). To see how this works, we can
-% take a look at a simple example for lists. Consider the following two mutually
-% recursive expressions:
-% 
-% \begin{spec}
-% data List a = Nil | Cons a (List a)
-% x = Cons 'a' y
-% y = Cons 'b' x
-% \end{spec}
-% 
-% If we try to inspect the structure of this expression, we get an infinite value.
-% In order to work with \library{data-reify}, we first change our data-structure
-% to its \emph{pattern-functor} (TODO cite multirec):
-% 
-% \begin{spec}
-% newtype Fix a     = In {out :: a (Fix a)}
-% data PF_List a r  = NilF | ConsF a r deriving Show
-% type List' a      = Fix (PF_List a)
-% \end{spec}
-% 
-% Now we can redefine |x| and |y| using our new datatype:
-% 
-% \begin{spec}
-% x' = In (ConsF 'a' y')
-% y' = In (ConsF 'b' x')
-% \end{spec}
-% 
-% If we make the type |PF_List| an instance of |Traversable|, we can reify the
-% recursive value |x'|, yielding the following result:
-% 
-% \begin{spec}
-% let [(1,ConsF 'a' 2),(2,ConsF 'b' 1)] in 1
-% \end{spec}
-% 
-% The result is a \emph{finite} list of key/value pairs, where each key represents
-% a node in the graph. The recursive positions have been replaced by a reference
-% to such a key.  Because our program is always finite, it should always be
-% possible to build such a graph. 
-% 
-% If we explicitly encode the structure of an arrow-based computation, we can build a finite representation of our program using this technique. We can number all the nodes and use them as code pointers. Because the environment is always explicitly passed on between every bind, we can restore a continuation from disk, given an input for an arrow and a code pointer.
-% 
-% \subsection{Conclusion}
-% 
-% We have extend our examples to be a little more complex, such as using dynamic choice. Without arrow-notation, this quickly becomes very inconvenient. Using arrow-notation, the examples look a bit simpler but are still a lot more complex than the monadic notation. It is a matter of taste, but arrow notation is awkward and not a good match for web programming.

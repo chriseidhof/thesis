@@ -6,15 +6,20 @@
 
 %endif
 
-Defunctionalization is a technique (TODO cite) to convert higher-order functional programs into first-order programs, i.e. programs without higher-order functions. We will explain the technique by defunctionalizing an example program.
+Defunctionalization is a technique to convert higher-order functional programs
+into first-order programs, i.e. programs without higher-order functions
+\cite{reynoldsdefunctionalization, danvy2001defunctionalization}.
+We will explain the technique by defunctionalizing an example program.
+After that, we will try to embed defunctionalization in the Haskell type system
+by using an index monad. However, the code is not finished.
 
 Consider the following example, written in monadic style:
 
-> example = do name <- form "Hello, what's your name?" id
->              display $ "Hi, " ++ name
->              num    <- form "Enter numbers:" sum'
->              display "OK"
->              return $ name ++ ", the sum is: " ++ show num
+> example = do  name <- form "Hello, what's your name?" id
+>               display $ "Hi, " ++ name
+>               num    <- form "Enter numbers:" sum'
+>               display "OK"
+>               return $ name ++ ", the sum is: " ++ show num
 
 %if False
 
@@ -24,19 +29,23 @@ Consider the following example, written in monadic style:
 %endif
 
 
-If we rewrite this example without do-notation, we can see explicit lambdas:
+If we rewrite this example without do-notation, we can see the lambdas. We have
+numbered each lambda:
 
 
 > exampleCPS :: Web String
 > exampleCPS =  
 >  {- 1 -} form "Hello, what's your name?" id >>= 
->  {- 2 -}   \name -> display ("Hi, " ++ name) >>=
->  {- 3 -}      \() -> form "Enter numbers:" sum' >>= 
->  {- 4 -}        \num -> display "OK" >>=
->  {- 5 -}          \() -> return $ name ++ ", the sum is " ++ show num
+>  {- 2 -} \name  -> display ("Hi, " ++ name) >>=
+>  {- 3 -} \()    -> form "Enter numbers:" sum' >>= 
+>  {- 4 -} \num   -> display "OK" >>=
+>  {- 5 -} \()    -> return $ name ++ ", the sum is " ++ show num
 
-We can now do manual defunctionalization. First, will create a data structure with a constructor for each function. That constructor contains a field for every free variable inside that function. For example, inside the last function both |name| and |l| are free. The datatype for our example program looks like this:
-
+We can now do manual defunctionalization.
+First, will create a data structure with a constructor for each function.
+That constructor contains a field for every free variable inside that function.
+For example, inside the last function both |name| and |l| are free variables.
+The datatype for our example program looks like this:
 
 > data Defunc input where
 >   D1  :: Defunc ()
@@ -45,27 +54,60 @@ We can now do manual defunctionalization. First, will create a data structure wi
 >   D4  :: String -> Defunc Int
 >   D5  :: String -> Int -> Defunc ()
 
-Every constructor corresponds to a continuation and contains exactly the environment for executing it. We have parameterized the datatype over |input|. The type |input| corresponds to the type of the variable that is abstracted over. For example, |C4| corresponds to the lambda abstraction on lines 4-5, which takes an |Int| as parameter.
+Every constructor corresponds to a continuation and contains exactly the
+environment for executing it.
+We have parameterized the datatype over |input|, which is the type of the
+variable that is bound by the corresponding lambda.
+The type |input| corresponds to the type of the variable that is abstracted over.
+For example, |C4| corresponds to the lambda abstraction on lines 4-5, which
+takes an |Int| as parameter.
 
-> applyC :: Defunc a -> (a -> Web String)
+To interpret a |Defunc| value, we can define an |apply| function that takes a
+|Defunc a| and the input of type |a|, and produces a |Web| computation:
+
+> applyC :: Defunc a -> a -> Web String
 > applyC (D1)          ()    = form "Hello, what's your name?" id >>= applyC D2
 > applyC (D2)          name  = display ("hi, " ++ name)           >>= applyC (D3 name)
 > applyC (D3 name  )   ()    = form "Enter numbers"         sum'  >>= applyC (D4 name)
 > applyC (D4 name  )   num   = display "ok!"                      >>= applyC (D5 name num)
 > applyC (D5 name num) ()    = return $ name ++ ", the sum is " ++ show num
 
-Finally, we can give the |exampleDefunc| function:
+Finally, we can give the |exampleDefunc| function, which is the defunctionalized
+variant of |exampleCPS|:
 
 > exampleDefunc :: Web String
 > exampleDefunc = applyC D1 ()
 
-Defunctionalization is a whole-program transformation. It considers all functions in a program, creates a datastructure with a constructor for every function. The constructor has a field for every free variable of such a function.
+A defunctionalized program is explicit about its environment.
+For example, the |D5| constructor stores in its environment a |String| and an
+|Int| value.
+Because a |Defunc| value encodes a program pointer as well as its environment,
+it can be seen as an equivalent of a continuation. 
+However, it is straightforward to serialize the |Defunc| datatype, as opposed to
+serializing normal Haskell functions.
 
-While this is a concise description of defunctionalization, it is not that easy in Haskell. There are a couple of issues that arise. The first is observable sharing: how can we observe that a function is recursive, e.g.: how do we make sure that the datastructure we generate is finite? The second is calculating the free variables of a function: how can we inspect which variables are free? In the next subsections, we will look at two ways to deal with these problems: an embedded custom monad, and a preprocessor.
+Defunctionalization is a program transformation that works as a whole program
+transformation.
+It needs to inspect bindings, sharing and the types of variables.
+In Haskell, we cannot inspect bindings and sharing of a function. In Template
+Haskell, however, we can inspect the entire program, but we do not have type
+information available.
+
+To provide a workaround for these problems, we use the next section to introduce
+a monad that is explicit about the environment and types in the environment. 
+It does not inspect sharing, but it is a first step in the direction of
+automatic defunctionalization.
 
 \subsection{A custom parameterized monad}
 
-The key idea is that we will use the type system to perform analysis of our code. We will start out with a very simple Monad, which is only parameterized over its result type. Then we will add another parameter for the free variable analysis. Finally, we will see that we need two additional parameters that are used to give unique identifiers to every |bind| construct.
+The key idea is that we will use the type system to perform analysis of our
+code by building an indexed monad.
+This idea to encode a program analysis in the type system has been around for some time in the Haskell community
+\cite{russo2008library, pucella2009haskell, fluet2006monadic}.
+
+We will start out with a very simple Monad, which is only parameterized over its result type.
+Then we will add another parameter for the free variable analysis.
+Finally, we will see that we need two additional parameters that are used to give unique identifiers to every |bind| construct.
 
 \begin{spec}
 data Cont a where
@@ -134,14 +176,9 @@ data Cont freeVars from to a where
          -> Cont uniq from to2 b
 \end{spec}
 
-Instead of explaining how this works, we will ask the following question: is this acceptable? Our goal was to hide complexity in the library, providing a clean and simple interface for the library user. We have now arrived at such a complex datatype that it is almost impossible for most people to use it. When the library user makes a mistake, the type errors will become really complex.  Therefore, we have refrained from further developing this datatype, because Haskell's type system is not meant for or useable for these kinds of analyses.
-
-\subsection{A preprocessor}
-
-We have also looked at writing a preprocessor for our language. Using a preprocessor, free variable analysis is easy and we can use a straightforward textbook implementation. However, when generating the datatype used for defunctionalization, we need the type of every variable. This is not easily accessible from the source language, unless we explicitly type every variable that is bound. This also not a way forward, as it puts a heavy burden on the user of the language.
-
-\subsection{The ideal situation}
-
-Defunctionalization can be done on an abstract syntax tree that is annotated with types. Currently, this is not possible, due to the limitations of the Haskell language. We can envision a language where it is possible to write program transformations on fully typed abstract syntax tree, that would allow us to write down the defunctionalization in a concise way.
-
-For our purposes, unfortunately, automatic defunctionalization of Haskell programs is too hard.
+We have not continued work on this approach beyond this point.
+The original reason to use monads instead of arrows is because it is easier for the user.
+However, using this library is quite hard, because we can not hide the
+complexity of the type-level functions from the end user.
+If she makes a simple mistake, she can get a complicated type error that obfuscates
+the real problem.

@@ -25,6 +25,8 @@
 
 \maketitle
 
+\tableofcontents
+
 %endif
 
 \section{Introduction}
@@ -99,7 +101,7 @@ When we restart our server all
 client state is lost.
 
 Therefore, we provide an alternative interface in section
-\label{sec:arrowbased}. 
+\ref{sec:arrowbased}. 
 It is based on arrows \cite{hughes2000generalising}, and arrow values can be serialized more easily.
 However, arrows have a different problem: they put more burden on the user of
 the library.
@@ -110,20 +112,29 @@ track of the environment so that we can perform automatic defunctionalization
 its usefulness: when users of the library make a mistake, the type errors are
 quite complex.
 
-In the last sections, we provide future work and conclude.
+In the last sections, we provide future work and conclude. There is an appendix
+with the interfaces for both the monadic and arrow-based library on page 
+\pageref{sec:interfaces}.
 
 \todo{contributions}
 
+\newpage
 \section{A monadic approach}
 \label{sec:monadic}
 
 %include continuations/Monadic.lhs
 
+\newpage
 \section{An arrow-based approach}
 \label{sec:arrowbased}
 
 %include continuations/ArrowBased.lhs
 
+\subsection{Serialization of Arrows}
+\label{sec:arrowserial}
+%include continuations/ArrowSerialize.lhs
+
+\newpage
 \section{Defunctionalization with indexed monads}
 \label{sec:defunctionalization}
 
@@ -132,18 +143,54 @@ In the last sections, we provide future work and conclude.
 \section{Conclusion}
 
 We have investigated a monadic approach, an arrow-based approach and
-defunctionalization. The monadic approach has the simplest interface and is the
-easiest to use. However, it lacks serialization of values. The arrow-based
-interface is easier to serialize, but does not provide a nice interface.
+defunctionalization.
+The monadic approach has the simplest interface and is the
+easiest to use.
+However, it lacks serialization of values.
+
+The arrow-based interface enables serialization, but requires more work from the
+library user. Arrow notation alleviates that problem, but does require the
+library user to learn new syntax. It is a bit more cumbersome to use than
+monadic do-notation. We still think that it is the best option at the moment.
+
 Defunctionalization is a promising technique, but Haskell is unfortunately not
-yet equipped with the right tools to do defunctionalization as a library or
-using a preprocessor. For now, we will use the monadic library, because it has
-the cleanest interface.
+yet equipped with the right meta-programming tools to do defunctionalization
+without modifying the compiler. This is because defunctionalization needs to
+inspect variable bindings, recursion and type information.
+In a language like MetaML \cite{taha1997multi, sheard1998using, moggi-idealized}
+this would be easier. In a recent discussion
+\footnote{\url{http://comments.gmane.org/gmane.comp.lang.haskell.cafe/72693}} on
+the haskell-cafe mailing-list several meta-programming alternatives have been
+compared by their relative strengths.
 
-Related work.
+\subsection{Related work}
 
+Our monadic library was inspired by iTasks \cite{plasmeijeriTasks}, a web programming library in
+the Clean language. In Haskell, the WASH framework \cite{thiemann2002wash}
+provides a similar style of web programming, but unfortunately, the code suffers
+from severe bitrot. The links programming lanugage \cite{cooper2006links} hides
+the notion of continuations from the user, and allows the user to construct web
+programs using regular functions.
 
-TODO: indexed monad with access control etc.
+In dynamically typed languages, continuation-based web programming has been
+around for quite some time \cite{ducasse2007seaside, restruct,
+krishnamurthi2007implementation}.
+Because of the dynamic natures of their languages, these libraries can serialize
+and deserialize continuations easily.
+However, as stated in the introduction, their programs are not statically
+checked by the compiler, and do not have the advantage of having type-inference.
+
+\subsection{Future work}
+
+We plan to extend the arrow-based library to support the serialization of
+continuations and release it on hackage
+\footnote{\url{http://hackage.haskell.org}}. We want to extend the library to
+support more primitive actions that can also be user-defined.
+
+We hope that a new typed meta-programming language for Haskell will arise that
+enables us to do defunctionalization of monadic |Web| values. That way we can
+provide a very simple but powerful interface to the library users while being
+able to serialize functions.
 
 %if not thesis
 
@@ -151,6 +198,12 @@ TODO: indexed monad with access control etc.
 \bibliography{bibliography}
 
 \section*{Library interfaces}
+\label{sec:interfaces}
+
+\subsection{The monadic interface}
+\label{sec:monadinterface}
+
+%include continuations/MonadicInterface.lhs
 
 \subsection{The arrow-based interface}
 \label{sec:arrowinterface}

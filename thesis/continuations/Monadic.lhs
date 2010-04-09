@@ -25,8 +25,9 @@
 \todo{Define entire interface in last section.}
 
 In this section we will build a monadic continuation-based
-web programming library. 
-The interface that we define is inspired by iTasks \cite{iTasks}, which is a
+web programming library. The full interface of the library is in Section
+\ref{sec:monadinterface}.
+The interface that we define is inspired by iTasks \cite{plasmeijeriTasks}, which is a
 library in the Clean language for building web workflows.
 
 First, we define the request body to be a list of key/value strings.
@@ -106,7 +107,7 @@ If we need to display something using the |Step| or |Problem| constructor, we co
 second field of the step constructor (which is of type |Web| a) with the right
 operand |r|.
 
->   l >>= r  = Web $ \np req -> case (runWeb l np req) of
+>   l >>= r  = Web $ \np req -> case runWeb l np req of
 >                Done x          -> runWeb (r x) np req
 >                Step msg l'     -> Step     msg  (l' >>= r) 
 >                Problem msg l'  -> Problem  msg  (l' >>= r)
@@ -144,10 +145,10 @@ The |handleResult| calculates the HTML to be displayed, given a fresh URL and a
 
  
 To run the application, we provide helper functions that build a
-Happstack\footnote{\url{http://hackage.haskell.org/package/Happstack}}
+Happstack\footnote{\url{http://hackage.haskell.org/package/happstack}}
 application. In this application, there is one global |Env| value, which means
 that continuations are per-application and not per-user.
-In a final version, the |Env| should be stored in a session.
+In a final version of this library, the |Env| should be stored in a session.
  
 > runServer :: Int -> Env -> IO ()
 > runServer p env = do
@@ -228,7 +229,7 @@ provide a class |DefaultForm| with instances for |String|, |Integer| and |(,)|.
 \subsection{Serialization}
 
 When we run our program as a process on the webserver, we can keep the continuations in-memory.
-However, we would like to store the continuations to disk.
+However, we would like to store the continuations on disk.
 There are two main reasons for this:
 
 \begin{itemize}

@@ -9,5 +9,6 @@ all: continuations.pdf
 
 ermodels.lhs: ../packages/Basil/src/Basil/Relations/*.lhs
 
+continuations.tex: continuations/*.lhs
 
 .PHONY: %.lhs
