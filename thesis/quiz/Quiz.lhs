@@ -35,30 +35,6 @@ To build a |Quiz| application, we first define its data model.
 > $(deriveAll ''ResponseView  "PFResponseView")
 > type instance PF ResponseView = PFResponseView
 
-> type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
-
-
-> type TQuestions  = Rel  QuizModel  One   Quiz  Many  Question
-> type TResponses  = Rel  QuizModel  One   Quiz  Many  Response
-> questions   :: TQuestions
-> responses   :: TResponses
-
-> type QuizRelations = TQuestions B.:*: TResponses B.:*: Nil
-
-> ixQuiz     :: Ix QuizModel Quiz
-> ixQuestion :: Ix QuizModel Question
-> ixResponse :: Ix QuizModel Response
-
-> ixQuestions :: Ix QuizRelations TQuestions
-> ixResponses :: Ix QuizRelations TResponses
-
-> instance ERModel QuizModel QuizRelations where
->   relations  =  TCons4 questions
->              $  TCons4 responses
->              $  TNil4 
->   witnesses  =  WCons ixQuiz $  WCons ixQuestion $  WCons ixResponse $  WNil
-
-
 > type M a = Basil QuizModel QuizRelations a
 > type St = BasilState QuizModel QuizRelations
 > type Web i o = WebT (MVar St) IO i o
@@ -145,6 +121,8 @@ To build a |Quiz| application, we first define its data model.
 >                           X.+++  X.br
 >                           X.+++  static (Take i) "take quiz"
 
+> mainMenu = X.unordList [static Add "add quiz", static List "list quizzes"]
+
 
 
 > handle :: QuizRoute -> Continuation (MVar St) IO ()
@@ -155,23 +133,5 @@ To build a |Quiz| application, we first define its data model.
 
 > main = do
 >   ref <- newMVar emptyBasilState :: IO (MVar St)
->   runServer 8080 handle (Env ref M.empty)
+>   runServer 8080 mainMenu handle (Env ref M.empty)
 
-> type instance TypeEq Quiz     Quiz     = True 
-> type instance TypeEq Quiz     Question = False
-> type instance TypeEq Quiz     Response = False
-> type instance TypeEq Question Quiz     = False
-> type instance TypeEq Question Question = True
-> type instance TypeEq Question Response = False
-> type instance TypeEq Response Quiz     = False
-> type instance TypeEq Response Question = False
-> type instance TypeEq Response Response = True
-
-> questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  ""
-> responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
-> ixQuestions = Zero
-> ixResponses = Suc Zero
-
-> ixQuiz = Zero
-> ixQuestion = Suc Zero
-> ixResponse = Suc (Suc Zero)

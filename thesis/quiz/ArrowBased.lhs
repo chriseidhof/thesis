@@ -430,24 +430,26 @@ provided the library interface in section \ref{sec:arrowinterface}.
 > addCont :: Env s m -> String -> Continuation s m () -> Env s m
 > addCont (Env s mp) nm c = Env s $ M.insert nm c mp
 
-> runServer :: ToURL route => Int -> (route -> Continuation s IO ()) -> Env s IO ->  IO ()
-> runServer p handle e = do
+> runServer :: ToURL route => Int -> X.Html -> (route -> Continuation s IO ()) -> Env s IO ->  IO ()
+> runServer p index handle e = do
 >   env <- newMVar e
 >   start defaultConfig
 >         (hDefaultEnv (do path <- (tail . __segments) <$> hCurrentPath
->                          e' <- liftIO $ takeMVar env
->                          liftIO $ print path
->                          (e'',contId) <- liftIO $ if (length path == 2 && head path == "c")
->                             then return (e', head (tail path))
->                             else (case fmap handle (fromURL path) of
->                                    Nothing -> return (e', "")
->                                    Just p  -> do newId <- randomString
->                                                  let eNew = addCont e' newId p
->                                                  return (eNew, newId))
->                          ps <- (map (fmap fromJust) . filter (isJust . snd)) <$> hRequestParameters "utf-8"
->                          (html, e''') <- liftIO $ run e'' contId ps
->                          liftIO $ print (contId, ps)
->                          liftIO $ putMVar env e'''
+>                          html <- if path == [] then return index else do
+>                            e' <- liftIO $ takeMVar env
+>                            liftIO $ print path
+>                            (e'',contId) <- liftIO $ if (length path == 2 && head path == "c")
+>                               then return (e', head (tail path))
+>                               else (case fmap handle (fromURL path) of
+>                                      Nothing -> return (e', "")
+>                                      Just p  -> do newId <- randomString
+>                                                    let eNew = addCont e' newId p
+>                                                    return (eNew, newId))
+>                            ps <- (map (fmap fromJust) . filter (isJust . snd)) <$> hRequestParameters "utf-8"
+>                            (html, e''') <- liftIO $ run e'' contId ps
+>                            liftIO $ print (contId, ps)
+>                            liftIO $ putMVar env e'''
+>                            return html
 >                          response (contentType =: Just ("text/html", Just "utf-8"))
 >                          send (show html)
 >                      ))

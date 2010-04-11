@@ -9,6 +9,8 @@
 > import Generics.Regular.Views
 > import Generics.Regular.Formlets
 > import Control.Applicative
+> import Basil hiding ((:*:))
+> import qualified Basil as B
 
 > newtype Email = Email { unEmail :: String }
 > newtype Date  = Date  { unDate  :: String }
@@ -37,4 +39,45 @@
 > type instance PF Question = PFQuestion
 > type instance PF Response = PFResponse
 
+> type instance TypeEq Quiz     Quiz     = True 
+> type instance TypeEq Quiz     Question = False
+> type instance TypeEq Quiz     Response = False
+> type instance TypeEq Question Quiz     = False
+> type instance TypeEq Question Question = True
+> type instance TypeEq Question Response = False
+> type instance TypeEq Response Quiz     = False
+> type instance TypeEq Response Question = False
+> type instance TypeEq Response Response = True
+
+> questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  ""
+> responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
+> ixQuestions = Zero
+> ixResponses = Suc Zero
+
+> ixQuiz = Zero
+> ixQuestion = Suc Zero
+> ixResponse = Suc (Suc Zero)
+
+> type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
+
+
+> type TQuestions  = Rel  QuizModel  One   Quiz  Many  Question
+> type TResponses  = Rel  QuizModel  One   Quiz  Many  Response
+> questions   :: TQuestions
+> responses   :: TResponses
+
+> type QuizRelations = TQuestions B.:*: TResponses B.:*: Nil
+
+> ixQuiz     :: Ix QuizModel Quiz
+> ixQuestion :: Ix QuizModel Question
+> ixResponse :: Ix QuizModel Response
+
+> ixQuestions :: Ix QuizRelations TQuestions
+> ixResponses :: Ix QuizRelations TResponses
+
+> instance ERModel QuizModel QuizRelations where
+>   relations  =  TCons4 questions
+>              $  TCons4 responses
+>              $  TNil4 
+>   witnesses  =  WCons ixQuiz $  WCons ixQuestion $  WCons ixResponse $  WNil
 
