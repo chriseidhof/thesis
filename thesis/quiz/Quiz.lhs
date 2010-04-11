@@ -12,28 +12,28 @@
 > import qualified Control.Monad.State as ST
 > import Generics.Regular
 > import Generics.Regular.Formlets
+> import Generics.Regular.Views
+> import Data.Record.Label
+> import Control.Applicative hiding (many)
 > import Control.Concurrent.MVar
+> import Control.Arrow
+> import qualified Text.XHtml.Strict as X
+> import qualified Data.Map as M
+> import Data.List (intersperse)
+> import Data.Maybe (catMaybes)
+> import QuizUrl
+> import QuizModel
+> import qualified Text.XHtml.Strict.Formlets as F
 
-> newtype Email = Email { unEmail :: String }
-> newtype Date  = Date  { unDate  :: String }
 
 To build a |Quiz| application, we first define its data model.
 
-> data Quiz      = Quiz {subject :: String, description :: String}
-> data Question  = Question {title :: String, choiceA, choiceB, choiceC :: String}
-> data Response  = Response { name :: String
->                           , email :: Email
->                           , date :: Date
->                           , answers :: [Answer] }
-> data Answer    = A | B | C
+> data ResponseView  = ResponseView { _name :: String
+>                                   , _email :: Email
+>                                   }
 
-> $(deriveAll ''Quiz  "PFQuiz")
-> $(deriveAll ''Question  "PFQuestion")
-> $(deriveAll ''Response  "PFResponse")
-
-> type instance PF Quiz = PFQuiz
-> type instance PF Question = PFQuestion
-> type instance PF Response = PFResponse
+> $(deriveAll ''ResponseView  "PFResponseView")
+> type instance PF ResponseView = PFResponseView
 
 > type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
 
@@ -61,26 +61,101 @@ To build a |Quiz| application, we first define its data model.
 
 > type M a = Basil QuizModel QuizRelations a
 > type St = BasilState QuizModel QuizRelations
-> type Web i o = WebT IO i o
+> type Web i o = WebT (MVar St) IO i o
 
 > instance DefaultForm Quiz     where form = gform Nothing
 > instance DefaultForm Question where form = gform Nothing
 
-> basil :: (a -> M b) -> Web (a, MVar St) b
-> basil f = liftAM $ \(a, refState) -> do
+> basil' = basil . const
+
+> basil  :: (a -> M b) -> Web a b
+> basil  f = proc a -> do
+>    st <- St -< ()
+>    (liftAM $ \(refState, a) -> do
 >             st <- takeMVar refState
 >             let (x, st') = contBasil (f a) st
 >             putMVar refState st'
 >             return x
+>           ) -< (st, a)
 
-> addQuiz :: Web (MVar St) (Ref QuizModel Quiz)
-> addQuiz = proc st -> do
+> addQuiz :: Web () ()
+> addQuiz = proc () -> do
 >   q   <- input -< ()
->   (basil (\x -> new ixQuiz x PNil)) -< (q, st)
+>   ref <- (basil (\x -> new ixQuiz x PNil)) -< q
+>   _   <- addQuestions -< ref
+>   display (const $ X.toHtml "added quiz with questions.") -< ()
 
-> addQuestions = proc (st, q) -> do
+> addQuestions :: Web (Ref QuizModel Quiz) ([Ref QuizModel Question])
+> addQuestions = proc q -> do
 >   qs  <- inputMany -< ()
->   basil (\(qs,qz) -> mapM (\question -> new ixQuestion question (PCons qz PNil)) qs) -< ((qs, q), st) 
+>   basil (\(qs,qz) -> mapM (newQuestion qz) qs) -< (qs, q) 
+
+> newQuestion qz question = new ixQuestion question (PCons (qz, DR, ixQuestions) PNil)
+
+> listQuizzes :: Web () ()
+> listQuizzes = proc () -> do
+>   qs <- basil' (findAll ixQuiz) -< ()
+>   display (X.concatHtml . map quizWithLink) -< qs
+
+> viewQuiz :: Web (Ref QuizModel Quiz) ()
+> viewQuiz = proc ref -> do
+>   quiz <- basil find -< ref
+>   Just qsR  <- basil (findRels DL ixQuestions) -< ref
+>   qs   <- basil (mapM find) -< S.toList qsR
+>   case quiz of
+>     Just quiz -> display quizWithQuestions -< (ref, quiz, catMaybes qs)
+>     Nothing   -> display (const "Not Found") -< ()
+
+> takeQuiz :: Web (Ref QuizModel Quiz) ()
+> takeQuiz = proc ref -> do
+>   quiz <- basil find -< ref
+>   case quiz of
+>     Just quiz ->  do Just qsR  <- basil (findRels DL ixQuestions) -< ref
+>                      qs   <- basil (mapM find) -< S.toList qsR
+>                      display ghtml -< quiz
+>                      f    <- form'' responseForm -< ()
+>                      as <- many getAnswer -< (catMaybes qs)
+>                      display ghtml -< f {answers = as}
+>                      
+>     Nothing   -> display (const "Not Found") -< ()
+
+> responseForm = projectedForm responseProj newResponse
+>  where newResponse  = Response "" (Email "") (Date "now") []
+
+> getAnswer :: Web Question Answer
+> getAnswer = form''' answerForm
+>  where answerForm q   = F.plug ((title q X.+++ X.br) X.+++) 
+>                       $ F.enumRadio [(QA, choiceA q),(QB, choiceB q),(QC, choiceC q)]
+>                                     Nothing
+
+> responseProj :: Response :-> ResponseView
+> responseProj = Lens $ ResponseView <$> _name `for` lName <*> _email `for` lEmail
+
+
+> quizWithQuestions :: (Ref QuizModel Quiz, Quiz, [Question]) -> X.Html
+> quizWithQuestions (Ref _ (Fresh i), q, qs) =    ghtml q 
+>                           X.+++  X.br
+>                           X.+++ (X.concatHtml $ intersperse X.br $ (map ghtml) qs)
+>                           X.+++  static (Take i) "take quiz"
+
+> quizWithLink :: (Ref QuizModel Quiz, Quiz) -> X.Html
+> quizWithLink (Ref _ (Fresh i), q) =    ghtml q 
+>                           X.+++  X.br
+>                           X.+++  static (View i) "view"
+>                           X.+++  X.br
+>                           X.+++  static (Take i) "take quiz"
+
+
+
+> handle :: QuizRoute -> Continuation (MVar St) IO ()
+> handle Add      = Cont () addQuiz
+> handle List     = Cont () listQuizzes
+> handle (View i) = Cont (Ref ixQuiz (Fresh i)) viewQuiz
+> handle (Take x) = Cont (Ref ixQuiz (Fresh x)) takeQuiz
+
+> main = do
+>   ref <- newMVar emptyBasilState :: IO (MVar St)
+>   runServer 8080 handle (Env ref M.empty)
 
 > type instance TypeEq Quiz     Quiz     = True 
 > type instance TypeEq Quiz     Question = False
