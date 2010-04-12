@@ -73,10 +73,10 @@ way to pattern-match on them. Also, we want to restrict the kinds of |cardL| and
 this, we change |Rel| as following:
 
 \begin{spec}
-data Rel phi cardinalityL cardinalityR l r where
+data Rel entities cardinalityL cardinalityR l r where
   Rel  ::  Cardinality cardinalityL 
        ->  Cardinality cardinalityR
-       ->  Rel phi cardinalityL l cardinalityR r
+       ->  Rel entities cardinalityL l cardinalityR r
 
 data Cardinality a where
   One   :: Cardinality One
@@ -115,12 +115,12 @@ We now
 add an additional type-parameter to |Rel|, and two parameters to its
 constructor, so that we can ensure the entities are in the same ER Model:
 
-> data Rel model cardinalityL l cardinalityR r where
+> data Rel entities cardinalityL l cardinalityR r where
 >   Rel  ::  Cardinality cardinalityL 
 >        ->  Cardinality cardinalityR
->        ->  Ix model l
->        ->  Ix model r
->        ->  Rel phi cardinalityL l cardinalityR r
+>        ->  Ix entities l
+>        ->  Ix entities r
+>        ->  Rel entities cardinalityL l cardinalityR r
 
 We could have changed the |Rel| constructor to have type-class constraints
 instead of adding these fields, but having the indexes explicit will be handy
@@ -144,7 +144,7 @@ We define a typeclass with a functional dependency that links the relationships 
 the entity sets. For reasons that will become clear later on, we have used the
 |TList4| type.
 
-> class ERModel phi rels | phi -> rels, rels -> phi where
+> class ERModel entities rels | entities -> rels, rels -> entities where
 >   relations  :: TList4 Rel rels
 > 
 > instance ERModel CompilerModel CompilerRelations where

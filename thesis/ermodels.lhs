@@ -13,6 +13,7 @@
 \usepackage{rotating}
 \usepackage{hyperref}
 \usepackage{todonotes}
+\usepackage{natbib}
 
 %include formatting.lhs
 
@@ -44,7 +45,7 @@ databases \cite{bringert2004student, leijen2000domain}.
 Using HaskellDB, the programmer can model relational database schemas
 and query the database in a strongly typed way.
 Our approach is based on ER models and operates on a different level than
-HaskellDB. More specifically, data models can be divided into three categories \cite{chen1976entity}:
+HaskellDB. More specifically, \citet{chen1976entity} divides data models into three categories:
 
 \begin{itemize}
 \item \emph{Conceptual models}, where entities and their relationships are
@@ -58,10 +59,11 @@ add indexes on keys, which directly corresponds to changes in the physical
 layer.
 \end{itemize}
 
-ER-models fall into the category of \emph{conceptual models}, whereas HaskellDB
-falls into the category of \emph{logical models}.
-Recent work by Visser \cite{sebasmscthesis}
-operates on the \emph{physical model}.
+If we focus on Haskell, our encoding of ER-models falls into the category of
+\emph{conceptual models}, whereas HaskellDB falls into the category of
+\emph{logical models}.
+Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical
+model}.
 
 In section \ref{sec:ermodels}, we give the definition of an ER model and introduce the
 vocabulary for ER modeling. We show an ER model that we will use as our running
@@ -91,7 +93,8 @@ describes a query language for ER models and how that is translated into queries
 for the in-memory database and SQL queries for the relational database.
 
 Finally, in section \ref{sec:erfuture} we describe future work, and in section
-\ref{sec:erconclusion} we conclude.
+\ref{sec:erconclusion} we conclude. To be complete, we have included all the
+interfaces of the libraries in section \ref{sec:erinterfaces}.
 
 This chapter provides the following contributions:
 
@@ -201,7 +204,8 @@ they have to deal with the internals of the libary too.
 Therefore, we implement our own heterogenous lists. An |Hlist| is simply defined
 as either a |Nil| or a |Cons| value. They produce an index that is either |Nil|
 or |:*:|, which are both defined as empty datatypes because they are only used
-as type-level values.
+as type-level values. The full interface for our |HList| library is defined in
+section \ref{sec:erhlist}.
 
 > data HList a where
 >   Nil  :: HList Nil
@@ -210,22 +214,12 @@ as type-level values.
 > data (:*:) a b
 > data Nil
 
-
 We can also provide typed indexes into the |HList|, which are inspired by
 Baars and Swierstra \cite{tttas}:
 
 > data Ix ls ix where
 >   Zero  :: Ix (a :*: b) a
 >   Suc   :: Ix xs a -> Ix (x :*: xs) a
-
-Finally, we will provide a function to lookup a value in a list, given an index:
-
-> lookupTList :: Ix phi ix -> HList phi -> ix
-> lookupTList Zero     (Cons y ys) = y
-> lookupTList (Suc x)  (Cons y ys) = lookupTList x ys
-
-We will provide more functions for our |HList| type that we will introduce when
-we need them.
 
 \subsection{Storing entities}
 
@@ -545,6 +539,41 @@ We have seen how to build an in-memory database from our ER model and how to
 interface with a relational database.
 Our approach abstracts over the logical layer, which allows library users to write code
 that works independently of the storage mechanism.
+
+\newpage
+
+\section{Library interfaces}
+
+\label{sec:erinterfaces}
+
+\subsection{HList library}
+
+\label{sec:erhlist}
+
+%include ermodels/hlistinterface.lhs
+
+\subsection{Basil Core Interface}
+
+\label{sec:ercoreif}
+
+%include ermodels/coreinterface.lhs
+
+\subsection{Query Interface}
+
+\label{sec:erqueryif}
+
+%include ermodels/queryinterface.lhs
+
+\subsection{In-memory Interface}
+
+\label{sec:inmemif}
+
+%include ermodels/inmeminterface.lhs
+
+%  \subsection{Relational database nterface}
+%  
+%  %include ermodels/inmeminterface.lhs
+
 
 %if not thesis
 

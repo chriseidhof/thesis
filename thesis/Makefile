@@ -1,4 +1,4 @@
-all: continuations.pdf
+all: ermodels.pdf
 	open $<
 
 %.tex: %.lhs
@@ -7,7 +7,7 @@ all: continuations.pdf
 %.pdf: %.tex bibliography.bib
 	latexmk -pdf $<
 
-ermodels.lhs: ../packages/Basil/src/Basil/Relations/*.lhs
+ermodels.tex: ../packages/Basil/src/Basil/Relations/*.lhs ermodels/*.lhs
 
 continuations.tex: continuations/*.lhs
 
