@@ -17,6 +17,8 @@
 
 This section describes how we can build an example in-memory database based on
 the ER-model from section \ref{sec:encoding}.
+The library used in this example is described in the previous sections and summarized in sections \ref{sec:ercoreif} and
+\ref{sec:inmemif}.
 
 First, recall the entity datatypes:
 

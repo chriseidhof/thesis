@@ -156,8 +156,11 @@ We now achieved the goal stated in in the introduction: the ER
 model from the previous section is encoded in Haskell. In the next section,
 we will build a simple in-memory database from the ground up. If you are
 interested in the implementation, continue reading. If you are just interested
-in using it, skip to section \ref{sec:inmeminterface} on page
-\pageref{sec:inmeminterface} for a description of the interface.
+in using it, skip to section \ref{sec:inmemexample} on page
+\pageref{sec:inmemexample} for a complete example that defines an example and an
+in-memory database. It makes uses of the library interface that is built in the
+following sections and summarized in sections \ref{sec:ercoreif} and
+\ref{sec:inmemif}.
 
 Instead of giving the witnesses and |Rel| values explicitly, we might have
 done everything implicitly and let the type-inferencer do the work. However, as
