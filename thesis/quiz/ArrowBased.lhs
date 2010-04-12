@@ -34,91 +34,7 @@
 
 %endif
 
-As we have seen in the previous section, web continuations can be expressed as
-monads.
-However, because the monadic approach stores functions inside the |WebT m| and
-|Result| datatypes, it is not possible to serialize these datatypes.
-If we change our library to an Arrow-based interface
-\cite{hughes2000generalising}, we can solve this. We will first show some
-examples, then implement the library in section \ref{sec:arrowimpl},
-and finally discuss how to serialize these continuations in \ref{sec:arrowserial}.
-
-First, we will show some example programs using our library. For the API used in
-these examples see section \ref{sec:arrowinterface}.
-The solution to the Arc challenge stated the introduction of this chapter is
-written down in the following way:
-
-> arc :: Monad m => WebT s m () ()
-> arc =     input 
->     &&&   link "Click Here"
->     >>>   display (\x -> X.toHtml $ "Hello, " ++ fst x)
-
-Using arrow notation \cite{paterson2001new}, we can write down our example in a
-style that is reminiscent of monadic do-notation. Arrow notation can save a lot
-of code, especially when dealing with variables that are used multiple times.
-With normal arrows, these variables have to be explicitly threaded each time,
-and using arrow notation all the threading is implicit.
-
-> arc' :: Monad m => WebT s m () ()
-> arc' = proc () -> do
->    name <- input                              -< ()
->    link "Click here"                          -< ()
->    display (\n -> X.toHtml $ "Hello, " ++ n)  -< name
-
-The difference with monadic do-notation is the |-<| symbol, which denotes the
-input of the function.
-Compared to writing arrows using standard combinators, arrow notation becomes
-especially useful when constructing larger programs.
-When desugared, the following programming is quite large.
-However, using arrow notation, it is almost as simple as its monadic
-counterpart.
-
-> arcExtended :: Monad m => WebT s m () ()
-> arcExtended = proc () -> do
->    x     <- input      -< ()
->    name  <- input      -< ()
->    link "Click here"   -< ()
->    display X.toHtml    -< (name :: String)
->    if x > (42 :: Integer)
->       then display (\n -> X.toHtml $ "Large number: " ++ show n)  -< x
->       else display (const $ X.toHtml "Small.")                    -< ()
-
 \subsection{The library implementation}
-\label{sec:arrowimpl}
-
-The difference between monads and arrows has been a topic of research since the
-introduction of arrows \cite{hughes2000generalising, lindley2008idioms}.
-However, for our purposes, we focus on two important aspects of arrows:
-
-\begin{itemize}
-\item Arrows are \emph{explicit in their environment}. The environment that an
-arrow uses is always explicit as its input parameter.
-This means that users of an arrow-based interface have to explicitly define
-inputs and outputs of each arrow, but this problem is largely solved by using
-arrow notation.
-\item We can represent our |WebT m| structure \emph{without using functions as
-continuations}. Because arrows are explicit about their environment, we can
-store the environment and a \emph{trace} that describes how we got the current
-state. From such an environment and a trace we can construct the continuation
-after a program restart. A similar approach is taken in WASH
-\cite{thiemann2002wash}.
-\end{itemize}
-
-
-\begin{figure}
-\begin{spec}
-class Category a => Arrow a where
-  arr :: (b -> c) -> a b c
-  first :: a b c -> a (b, d) (c, d)
-  second :: a b c -> a (d, b) (d, c)
-  (***) :: a b c -> a b' c' -> a (b, b') (c, c')
-  (&&&) :: a b c -> a b c' -> a b (c, c')
-\end{spec}
-
-\caption{The Arrow typeclass}
-\label{fig:Arrow}
-
-\end{figure}
 
 We will now redefine the |WebT m| datatype in such a way that we can make it an
 instance of the |Arrow| typeclas. The |Arrow| typeclass is defined in figure
@@ -176,7 +92,7 @@ We have made |WebT m| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 > instance Monad m => ArrowChoice (WebT s m)  where left = Choice
 >
 > instance Monad m => Arrow (WebT s m)        where
->   arr f = Single (Fun (\x -> return (f x)))
+>   arr f = Single (PureFun f)
 >   first = First
 >
 > instance Monad m => Category (WebT s m)     where
@@ -199,6 +115,7 @@ an extra parameter |i| that captures the input of a page. Furthermore, we add a
 constructor |Fun| that can contain any Haskell function.
 
 > data Page m i o where
+>   PureFun  :: (i -> o)                            -> Page m i o
 >   Fun      :: (i -> m o)                          -> Page m i o
 >   Form     :: (i -> (X.Html, (RequestBody -> o))) -> Page m i o
 >   Display  :: (a -> X.Html)                       -> Page m a ()
@@ -217,19 +134,49 @@ continuation.
 
 > data Result s m o where
 >   Done      :: o -> Result s m o
->   Step      :: X.Html -> Continuation s m o -> Result s m o
+>   Step      :: (Bool -> X.Html) -> Continuation s m o -> Result s m o
 
 The |Continuation| is not just a |WebT s m i o| value, but also stores the input |i|.
 We can wrap this in an existential type.
 
-> data Continuation s m o = forall i . Cont i (WebT s m i o)
+> data Continuation s m o where
+>   Cont     :: i  -> WebT s m i o -> Continuation s m o
+>   NoCont   :: o  -> Continuation s m o
 
 %if False
 
+>   -- Single  :: Page m i o -> WebT s m i o
+>   -- Req     :: WebT s m () RequestBody
+>   -- St      :: WebT s m () s
+>   -- Seq     :: WebT s m a b -> WebT s m b c -> WebT s m a c
+>   -- First   :: WebT s m a b -> WebT s m (a, c) (b, c)
+
+Restructure performs partial evaluation.
+If it can already apply the next part of the continuation it will do so.
+In particular, it will apply |Choice| values that will not be triggered and apply pure functions.
+
+> restructure :: Continuation s m o -> Continuation s m o
+> restructure (Cont x (Seq (Choice l) r))           = case x of 
+>    Left y  -> Cont x (Seq (Choice l) r)
+>    Right y -> restructure $ Cont (Right y) r
+> restructure (Cont x (Choice l))           = case x of 
+>    Left y  -> Cont x (Choice l)
+>    Right y -> NoCont (Right y)
+> restructure (Cont i (Seq (Single (PureFun f)) r)) = restructure (Cont (f i) r)
+> restructure (Cont i (Seq (Seq l1 l2) r))  = case restructure $ Cont i (Seq l1 l2) of
+>   NoCont o -> restructure $ Cont o r
+>   Cont i l -> Cont i (Seq l r)
+> restructure (Cont i (Single (PureFun f))) = NoCont (f i)
+> restructure (Cont i w) = Cont i w
+> restructure (NoCont o) = NoCont o
+
 > instance Monad m => Functor (Continuation s m) where
 >   fmap f (Cont i w) = Cont i (fmap f w)
+>   fmap f (NoCont o) = NoCont (f o)
 > 
-> instance Show (Continuation s m o) where show (Cont i w) = show w
+> instance Show o => Show (Continuation s m o) where 
+>   show (Cont i w) = "cont(" ++ show w ++ ")"
+>   show (NoCont i) = "nocont(" ++ show i ++ ")"
 
 
 > instance Monad m => Functor (Result s m) where
@@ -242,11 +189,12 @@ To get the result of a single page, we provide the |runPage| function, which is
 again very similar to the |runPage| function in the previous section.
 
 > runPage :: Monad m => Page m i o -> i -> NextPage -> m (Result s m o)
+> runPage (PureFun f)       i np = return $ Done (f i)
 > runPage (Fun f)           i np = liftM Done $ f i
 > runPage (Form f )         i np = let (msg, parse) = f i in
->                                   return $ Step  (makeForm np msg) 
+>                                   return $ Step  (const $ makeForm np msg) 
 >                                        (        returnCont $ runForm msg parse)
-> runPage (Display msg)     i np = return $ Step  (continue (msg i) np "Continue") 
+> runPage (Display msg)     i np = return $ Step  (continue (msg i)  np "Continue") 
 >                                                 noResult
 > runPage (Link  s)         i np = return $ Step  (continue X.noHtml np s)
 >                                                 noResult
@@ -254,7 +202,7 @@ again very similar to the |runPage| function in the previous section.
 The helper functions |noResult| and |returnCont| build simple continuations:
 
 > noResult :: Monad m => Continuation s m ()
-> noResult = returnCont (arr (const ()))
+> noResult = NoCont ()
 
 > returnCont :: Monad m => WebT s m () o -> Continuation s m o
 > returnCont = Cont ()
@@ -296,6 +244,7 @@ part of the sequence in the continuation of the |Step|:
 >  x <- handleRequest l s inp np body
 >  case x of
 >    Done res              -> handleRequest r s res np body
+>    Step page (NoCont o)  -> return $ Step page (Cont o r)
 >    Step page (Cont i c)  -> return $ Step page (Cont i (c `Seq` r))
 
 The |First| constructor threads values and is defined in a straightforward way:
@@ -304,6 +253,7 @@ The |First| constructor threads values and is defined in a straightforward way:
 >  x <- handleRequest l s i1 np body
 >  case x of
 >     Done res              -> return $ Done (res, i2)
+>     Step page (NoCont o)  -> return $ Step page (NoCont (o,i2))
 >     Step page (Cont i c)  -> return $ Step page (Cont (i,i2) (First c))
 
 Finally, for the |Choice| constructor we pattern-match on the input type, which
@@ -371,18 +321,21 @@ provided the library interface in section \ref{sec:arrowinterface}.
 > instance Show (WebT s m i o) where
 >   show (Single s) = show s
 >   show Req        = "Req"
+>   show St         = "St"
 >   show (Seq a b)  = show a ++ " >>> " ++ show b
 >   show (First f)      = "First (" ++ show f ++ ")"
 >   show (Choice a)    = "Choice (" ++ show a ++ ")"
 
 > instance Show (Page m i o) where
+>   show (PureFun f) = "PureFun"
 >   show (Fun f) = "Fun"
 >   show (Form  _) = "Form "
 >   show (Display f) = "Display"
 >   show (Link l) = "link: " ++ l
 
-> continue :: X.HTML x => x -> NextPage -> String -> X.Html
-> continue x np linkText = x X.+++ X.br X.+++ (ahref np (X.toHtml linkText))
+> continue :: X.HTML x => x -> NextPage -> String -> Bool -> X.Html
+> continue x np linkText True  = x X.+++ X.br X.+++ (ahref np (X.toHtml linkText))
+> continue x np linkText False = X.toHtml x 
 
 > ahref url text = X.anchor X.! [X.href $ u url] X.<< text
 
@@ -404,9 +357,12 @@ provided the library interface in section \ref{sec:arrowinterface}.
 
 > data Env s m = Env s (M.Map String (Continuation s m ()))
 
-> run :: Monad m => Env s m -> String -> RequestBody -> m (X.Html, Env s m) 
+> -- run :: Monad m => Env s m -> String -> RequestBody -> m (X.Html, Env s m) 
+> run :: Env s IO -> String -> RequestBody -> IO (X.Html, Env s IO)
 > run env@(Env s m) page reqBody = case M.lookup page m of
 >   Nothing   -> return (pageNotFound, env)
+>   Just (NoCont i) -> do
+>        return (pageNotFound, Env s $ M.delete page m)
 >   Just (Cont i c) -> do
 >     let np = page
 >     result        <- handleRequest c s i np reqBody
@@ -416,9 +372,13 @@ provided the library interface in section \ref{sec:arrowinterface}.
 
 > type NextPage = String
 
-> handleResult :: Monad m => NextPage -> Result s m () -> m (X.Html, Maybe (Continuation s m ()))
-> handleResult np  (Done x )            = return (X.toHtml "Done", Nothing)
-> handleResult np  (Step msg cont)      = return (msg, Just cont)
+> -- handleResult :: Monad m => NextPage -> Result s m () -> m (X.Html, Maybe (Continuation s m ()))
+> handleResult :: NextPage -> Result s IO () -> IO (X.Html, Maybe (Continuation s IO ()))
+> handleResult np  (Done x )              = return (X.toHtml "Done", Nothing)
+> -- handleResult np  (Step msg (NoCont i))  = 
+> handleResult np  (Step msg cont)        = case restructure cont of
+>   NoCont i -> return (msg False, Just cont)
+>   cont'    -> putStrLn (take 200 $ show cont') >> return (msg True,  Just cont')
 
 > pageNotFound = X.toHtml "Page not found."
 
