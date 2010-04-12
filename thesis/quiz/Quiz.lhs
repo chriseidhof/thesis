@@ -5,7 +5,7 @@
 
 > module Quiz where
 
-TODO: add JSON API.
+TODO: add multiple form actions.
 
 > import Basil hiding ((:*:))
 > import qualified Basil as B
@@ -76,7 +76,9 @@ TODO: add JSON API.
 > listQuizzes :: Web () ()
 > listQuizzes = proc () -> do
 >   qs <- basil' (findAll ixQuiz) -< ()
->   display (X.concatHtml . map quizWithLink) -< qs
+>   case qs of
+>     [] -> display X.toHtml -< "No quizzes yet."
+>     _  -> display (X.concatHtml . map quizWithLink) -< qs
 
 > viewQuiz :: Web (Ref QuizModel Quiz) ()
 > viewQuiz = proc ref -> do

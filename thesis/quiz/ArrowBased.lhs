@@ -13,7 +13,7 @@
 > import Control.Concurrent.MVar
 > import Control.Monad.Reader hiding (liftIO, forever)
 > import Data.List (intercalate)
-> import Data.Maybe (isJust, fromJust)
+> import Data.Maybe (isJust, fromJust, catMaybes)
 > import Data.Record.Label
 > import Network.Protocol.Http
 > import Network.Protocol.Http.Data
@@ -51,42 +51,12 @@ essential for serialization, as we will see later on.
 > -- type Web i o = WebT IO i o
 
 > data WebT s m i o where
-
-The |Single| constructor indicates a single |Page| that is shown to the user.
-
 >   Single  :: Page m i o -> WebT s m i o
-
-The |Req| is a constructor that produces the |RequestBody| for a specific
-request. It is needed to provide global access to the |RequestBody| throughout a
-computation.
-
 >   Req     :: WebT s m () RequestBody
-
-To access the state, we provide a constructor |St|:
-
 >   St      :: WebT s m () s
-
-To compose two |Web| computations, we provide the |Seq| constructor.
- 
 >   Seq     :: WebT s m a b -> WebT s m b c -> WebT s m a c
-
-When we want to thread a value through a computation, we can use the |First|
-constructor. It takes a computation, and adds an extra |c| value to the input and
-the output.
-When running the |WebT| computation, the |c| value will be passed around
-unchanged.
-
 >   First   :: WebT s m a b -> WebT s m (a, c) (b, c)
-
-Finally, we provide a constructor |Choice| for making choices. We will see how
-to use this later on. \todo{Explain better.}
-
 >   Choice  :: WebT s m a b -> WebT s m (Either a c) (Either b c)
-
-We have made |WebT m| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
-|Category| type-classes, as seen in Figure \ref{fig:webinstances}.
-
-\begin{figure}
 
 > instance Monad m => Functor (WebT s m i)    where fmap = flip Seq . arr
 > instance Monad m => ArrowChoice (WebT s m)  where left = Choice
@@ -105,51 +75,30 @@ We have made |WebT m| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 > liftAM' :: Monad m => m o -> WebT s m i o
 > liftAM' f = Single (Fun (const f))
 
-\caption{Instances for common type-classes}
-\label{fig:webinstances}
+> data FormHandler o = FormHandler String (RequestBody -> o)
 
-\end{figure}
-
-The |Page| datatype from the previous section is changed in the same way. We add
-an extra parameter |i| that captures the input of a page. Furthermore, we add a
-constructor |Fun| that can contain any Haskell function.
+> instance Functor FormHandler where
+>   fmap f (FormHandler s g) = FormHandler s (f . g)
 
 > data Page m i o where
->   PureFun  :: (i -> o)                            -> Page m i o
->   Fun      :: (i -> m o)                          -> Page m i o
->   Form     :: (i -> (X.Html, (RequestBody -> o))) -> Page m i o
->   Display  :: (a -> X.Html)                       -> Page m a ()
->   Link     :: String                              -> Page m a ()
+>   PureFun  :: (i -> o)                           -> Page m i o
+>   Fun      :: (i -> m o)                         -> Page m i o
+>   Form     :: (i -> (X.Html, [FormHandler o]))   -> Page m i o
+>   Display  :: (a -> X.Html)                      -> Page m a ()
+>   Link     :: String                             -> Page m a ()
 
-We also provide smart constructors that lift a |Page| type into the |WebT m| type:
 
 > input    :: (Monad m, DefaultForm f) => WebT s m () f
 > display :: (X.HTML h) => (i -> h) -> WebT s m i ()
 > link     :: String -> WebT s m i ()
 
-Now we can define the |Result| datatype, which is very similar to the |Result|
-datatype from the previous section. A |Result| can either be completely done,
-which is indicated by the |Done| constructor, or it can yield some HTML and a
-continuation.
-
 > data Result s m o where
 >   Done      :: o -> Result s m o
 >   Step      :: (Bool -> X.Html) -> Continuation s m o -> Result s m o
 
-The |Continuation| is not just a |WebT s m i o| value, but also stores the input |i|.
-We can wrap this in an existential type.
-
 > data Continuation s m o where
 >   Cont     :: i  -> WebT s m i o -> Continuation s m o
 >   NoCont   :: o  -> Continuation s m o
-
-%if False
-
->   -- Single  :: Page m i o -> WebT s m i o
->   -- Req     :: WebT s m () RequestBody
->   -- St      :: WebT s m () s
->   -- Seq     :: WebT s m a b -> WebT s m b c -> WebT s m a c
->   -- First   :: WebT s m a b -> WebT s m (a, c) (b, c)
 
 Restructure performs partial evaluation.
 If it can already apply the next part of the continuation it will do so.
@@ -178,12 +127,9 @@ In particular, it will apply |Choice| values that will not be triggered and appl
 >   show (Cont i w) = "cont(" ++ show w ++ ")"
 >   show (NoCont i) = "nocont(" ++ show i ++ ")"
 
-
 > instance Monad m => Functor (Result s m) where
 >   fmap f (Done x)   = Done (f x)
 >   fmap f (Step h c) = Step h (fmap f c)
-
-%endif
 
 To get the result of a single page, we provide the |runPage| function, which is
 again very similar to the |runPage| function in the previous section.
@@ -191,9 +137,9 @@ again very similar to the |runPage| function in the previous section.
 > runPage :: Monad m => Page m i o -> i -> NextPage -> m (Result s m o)
 > runPage (PureFun f)       i np = return $ Done (f i)
 > runPage (Fun f)           i np = liftM Done $ f i
-> runPage (Form f )         i np = let (msg, parse) = f i in
->                                   return $ Step  (const $ makeForm np msg) 
->                                        (        returnCont $ runForm msg parse)
+> runPage (Form f )         i np = let (msg, parse) = f i
+>                                  in return $ Step  (const $ makeForm np msg parse)
+>                                                    (returnCont $ runForm msg parse)
 > runPage (Display msg)     i np = return $ Step  (continue (msg i)  np "Continue") 
 >                                                 noResult
 > runPage (Link  s)         i np = return $ Step  (continue X.noHtml np s)
@@ -213,10 +159,21 @@ If the form is entered correctly, we can return the value.
 The function |fromSuccess| converts a |Failing a| into an |a|.
 
 
-> runForm :: Monad m => X.Html -> (RequestBody -> b) -> WebT s m () b
-> runForm formHtml parse  = start
->  where start =    Req 
->              >>>  arr parse
+> runForm :: Monad m => X.Html -> [FormHandler b] -> WebT s m () b
+> runForm formHtml ps  = start
+>  where start =  proc () -> do
+>                   r <- Req -< ()
+>                   (FormHandler _ parse) <- chooseP ps -< r
+>                   returnA -< parse r
+
+> chooseP :: Monad m => [FormHandler b] -> WebT s m RequestBody (FormHandler b)
+> chooseP [x] = arr (const x)
+> chooseP xs = arr choose
+>  where choose reqBody = if (null actions) then head xs else head actions
+>          where actions = catMaybes $ zipWith f [1..] xs 
+>                f x fh@(FormHandler nm p) | "submit_" ++ show x `elem` keys = Just fh
+>                f x _                     | otherwise = Nothing
+>                keys    = map fst reqBody
 
 > choice :: Monad m => (a -> Bool) -> WebT s m a b -> WebT s m a b -> WebT s m a b
 > choice f l r = proc x -> if f x then l -< x else r -< x
@@ -272,13 +229,18 @@ provided the library interface in section \ref{sec:arrowinterface}.
 
 > type RequestBody = [(String,String)]
 
+TODO: fromSuccess is not okay here! check for errors!
+
 > inputMany :: (Monad m, DefaultForm f) => WebT s m () [f]
-> inputMany = input' >>> choice isFailure
->                        (arr (const []))
->                        (proc (Success x) -> do
->                          xs <- inputMany -< ()
->                          returnA -< (x:xs)
->                        )
+> inputMany = let (formHtml, parse@(FormHandler _ p)) = runForm' form
+>                 done    = FormHandler "Done" p
+>                 parsers = [Left <$> parse, Right <$> done] in
+>  proc () -> do
+>     res <- Single (Form $ const (formHtml, parsers)) -< ()
+>     case res of
+>       Left x  -> do xs <- inputMany -< ()
+>                     returnA -< ((fromSuccess x):xs)
+>       Right p -> returnA -< [fromSuccess $ p]
 
 > forever :: Monad m => WebT s m a a -> WebT s m a a
 > forever w = w >>> forever w
@@ -287,7 +249,7 @@ provided the library interface in section \ref{sec:arrowinterface}.
 > input' = form' form
 
 > form' :: Monad m => Form a -> WebT s m () (Failing a)
-> form' f = Single (Form $ const (formHtml, parse))
+> form' f = Single (Form $ const (formHtml, [parse]))
 >  where (formHtml, parse) = runForm' f
 
 > input = form'' form
@@ -308,12 +270,14 @@ provided the library interface in section \ref{sec:arrowinterface}.
 > form''' f = start
 >  where -- (formHtml, parse) = runForm' f
 >        start = proc x -> do
->             res <- (Single $ Form (\x -> runForm' $ f x)) -< x
+>             res <- (Single $ Form (myRunForm f)) -< x
 >             if isFailure res
 >               then do display showError -< res
 >                       start -< x
 >               else arr fromSuccess -< res
 >        showError (Failure msgs) = X.toHtml msgs
+>        myRunForm f x = (formHtml, [parse])
+>         where (formHtml, parse) = runForm' $ f x
 
 > display f = Single (Display (\x -> X.toHtml $ f x))
 > link = Single . Link
@@ -349,10 +313,10 @@ provided the library interface in section \ref{sec:arrowinterface}.
 
 
 
-> runForm' :: Form a -> (X.Html, RequestBody -> Failing a)
+> runForm' :: Form a -> (X.Html, FormHandler (Failing a))
 > runForm' f = let (_, Identity html, _) = Formlets.runFormState [] f
 >                  parse env = x where (Identity x, _, _) = Formlets.runFormState (map (fmap Left) env) f
->              in (html, parse)
+>              in (html, FormHandler "Submit" parse)
 
 
 > data Env s m = Env s (M.Map String (Continuation s m ()))
@@ -423,7 +387,9 @@ provided the library interface in section \ref{sec:arrowinterface}.
 
 > u x = "/c/" ++ x
 
-> makeForm np f = X.form X.! [X.method "POST", X.action (u np)] X.<< (f X.+++ X.submit "submit" "submit")
+> makeForm np f ps = X.form X.! [X.method "POST", X.action (u np)] X.<< 
+>   (f X.+++ X.br X.+++ buttons)
+>  where buttons = zipWith (\x (FormHandler nm _) -> X.submit ("submit_" ++ show x) nm) [1..] ps 
  
 > instance DefaultForm String  where form = Formlets.input Nothing
 > instance DefaultForm Integer where form = Formlets.inputInteger Nothing
