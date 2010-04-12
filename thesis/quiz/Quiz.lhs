@@ -5,6 +5,8 @@
 
 > module Quiz where
 
+TODO: add JSON API.
+
 > import Basil hiding ((:*:))
 > import qualified Basil as B
 > import ArrowBased
@@ -26,20 +28,23 @@
 > import qualified Text.XHtml.Strict.Formlets as F
 
 
-To build a |Quiz| application, we first define its data model.
-
 > data ResponseView  = ResponseView { _name :: String
 >                                   , _email :: Email
 >                                   }
 
+> data QuizForm = QuizForm {_subject :: String, _description :: TextArea}
+
 > $(deriveAll ''ResponseView  "PFResponseView")
 > type instance PF ResponseView = PFResponseView
+
+> $(deriveAll ''QuizForm  "PFQuizForm")
+> type instance PF QuizForm = PFQuizForm
 
 > type M a = Basil QuizModel QuizRelations a
 > type St = BasilState QuizModel QuizRelations
 > type Web i o = WebT (MVar St) IO i o
 
-> instance DefaultForm Quiz     where form = gform Nothing
+> instance DefaultForm Quiz     where form = projectedForm quizProj (Quiz "" "")
 > instance DefaultForm Question where form = gform Nothing
 
 > basil' = basil . const
@@ -107,6 +112,9 @@ To build a |Quiz| application, we first define its data model.
 > responseProj :: Response :-> ResponseView
 > responseProj = Lens $ ResponseView <$> _name `for` lName <*> _email `for` lEmail
 
+> quizProj :: Quiz :-> QuizForm
+> quizProj = Lens $ QuizForm  <$>  _subject      `for` lSubject 
+>                             <*>  _description  `for` (textAreaToString % lDescription)
 
 > quizWithQuestions :: (Ref QuizModel Quiz, Quiz, [Question]) -> X.Html
 > quizWithQuestions (Ref _ (Fresh i), q, qs) =    ghtml q 
@@ -134,4 +142,5 @@ To build a |Quiz| application, we first define its data model.
 > main = do
 >   ref <- newMVar emptyBasilState :: IO (MVar St)
 >   runServer 8080 mainMenu handle (Env ref M.empty)
+
 
