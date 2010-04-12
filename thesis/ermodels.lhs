@@ -256,7 +256,7 @@ convenient interface.
 
 %include ../packages/Basil/src/Basil/InMemory/Relations.lhs
 
-\subsection{The library interface}
+\subsection{Constructing the library interface}
 \label{sec:inmeminterface}
 
 %let query = False
