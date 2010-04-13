@@ -6,6 +6,8 @@
 > import Generics.Regular
 > import Generics.Regular.Views
 > import Generics.Regular.Formlets
+> import Generics.Regular.JSON
+> import Text.JSON
 > import Control.Applicative
 > import Data.Record.Label
 > import Prelude hiding ((.))
@@ -67,30 +69,23 @@ generated again, losing the changes made so far}.
 Generating code can save a lot of time when initially creating an application,
 but can introduce a maintenance problem if the generation source changes.
 While code generation can reduce program size and program complexity, developers
-refrain from using it because 
-
-\todo{explain more about why it is important.}
+often only use it the first time and make changes to the generated code.
 
 We use generic programming \todo{citation} as a technique for generating view
 code based on the structure of the model. However, generic programming suffers
-from a different problem: \emph{it is not possible to change the structure of a
-generic programming, except by changing the structure of the input}. 
-Changing our model code to accomodate for the view code clearly breaks
-abstractions and is not the right solution to this problem. 
-Not using generic programming is one solution, but implies that we need to write
-a lot more code.
+from a different problem: \emph{it is not possible to change the structure of
+the output, except by changing the structure of the input}. 
+Changing our model datatypes (the input) to accomodate for the view code (the
+output) clearly breaks abstractions and is not the right solution to this problem. 
 
 The solution we present in this chapter combines bidirectional programming with generic
 programming. A bidirectional program works in two ways: if a program converts from
 |A| to |B|, there is also a way to go back from a |B| to an |A|. The fclabels
 library\footnote{\url{http://hackage.haskell.org/package/fclabels}} 
 provides combinators to construct \emph{lenses} in Haskell, which allow
-for bidirectional programming. A lens is defined as a pair of functions |a -> c|
-and |c -> a -> a|. Suppose we have a model datatype |M| and a generic function
-that converts |M| into HTML. To change the output of the generic function we add a view datatype
-|V| which has the right structure, and build a lens from |M| to |V|. Now we can
-first convert an |M| into a |V| value and use the generic function on the |V|
-value.
+for bidirectional programming. Our solution uses lenses to convert a model
+datatype into a view datatype. The generic program then operators on the view
+datatype, and uses lenses to update the original model.
 
 In section \ref{sec:ghtml} we will describe how to generate HTML using generic
 programming.
@@ -199,7 +194,7 @@ the separation of concerns while having full flexibility over the view.
 \label{sec:gform}
 
 In this section, we will build type-safe, composable, error-checking forms using the formlets
-library \cite{formlets}. A form with type |Form a| tries to parse values of |a|.
+library \cite{formlets}. A form with type |Form a| tries to construct values of |a|.
 Its input is automatically checked for mistakes and a user-friendly
 error-message is shown if a mistake was made. We will first introduce the
 formlets library and then show how to build formlets generically.
@@ -293,29 +288,39 @@ form or a |Person|, we can introduce a |PersonForm| datatype:
 
 > data PersonForm = PersonForm { __name :: String, __birthDate :: Date}
 
-However, if we specialzie the function |gform| for |PersonForm|, we get the
+However, if we specialize the function |gform| for |PersonForm|, we get the
 following type:
 
 \begin{spec}
 pform  :: Maybe PersonForm -> Form PersonForm
 \end{spec}
 
-If we write a function |personToPersonForm|, we can change |pForm| to take a
-|Maybe Person| as input, but the output will remain the same. This is where
-bidirectional programming can help us. Using the lenses library, we can write a
-lens between |Person| and |PersonForm|, and convert the input of type |Person|
-to a |PersonForm|, and use the form output of type |PersonForm| to update the
-original input, yielding a changed |Person| value.
+The result of this function is a value of type |PersonForm|, and we need to
+update the original |Person| value.
+This is called the view-update problem \cite{foster2007combinators}, where a
+view on the original data is changed, and the changes need to be reflected in
+the original datatype. Lenses \cite{relationallenses, bohannon2008boomerang,
+greenwald333language, foster2008quotient} are a solution to this problem. A lens
+is defined as two functions with types |a -> c| and |c -> a -> a|. The first
+function takes an abstract type |a| and calculates a view type |c|. The second
+function takes a view type |c| and changes the abstract type |a| accordingly,
+yielding a new |a| value.
+
+Using the fclabels library, we can construct a
+lens between |Person| and |PersonForm|. Such a lens has type |Person :->
+PersonForm|. Our generic programming provides support for building forms with
+lenses. The |projectedForm| function takes a lens |a :-> c| and a value of type |a|, and 
+produces a form based on the structure of |c|. The result of the form is the
+changed |a| value.
 
 \begin{spec}
-projectedForm :: (Regular a, GFormlet (PF a)) => (b :-> a) -> b -> Form m b	
+projectedForm :: (Regular c, GFormlet (PF c)) => (a :-> c) -> a -> Form m a	
 \end{spec}
 
-Note howe the input and output of the form are of type |b|, but the form is
-rendered using type |a|. The first argument, a lens of type |b :-> a|, is used
-to convert between |b| and |a| values.
-We can now proceed do define such a lens. For a detailed explanation of how to
-construct lenses using the fclabels package, see \todo{TR fclabels}.
+We now proceed do define such a lens that converts between |Person| and
+|PersonView|. Combined with the |projectedForm| function, this will yield a form
+that is rendered as a |PersonView| form but produces |Person| values.
+For a detailed explanation of how to construct lenses using the fclabels package, see \todo{TR fclabels}.
 
 %if False
 
@@ -324,7 +329,15 @@ construct lenses using the fclabels package, see \todo{TR fclabels}.
 > $(deriveAll ''PersonForm "PFPersonForm")
 > type instance PF PersonForm  = PFPersonForm
 
-> instance Formlet Date
+> instance Formlet Date where formlet = undefined
+
+> instance JSON Email where
+>  readJSON = fmap Email . readJSON
+>  showJSON = showJSON . showEmail
+
+> instance JSON Date where
+>  readJSON = fmap Date . readJSON
+>  showJSON = showJSON . unDate
 
 %endif
 
@@ -343,14 +356,14 @@ personForm = projectedForm convertPerson
 The |projectedForm| first converts the value |x| to its projected datatype
 |PersonForm|, then generates a generic form for it.
 It also changes the parser
-function such that the original value |x| is returned with the changes from the
+function such that the input value |x| is returned with the changes from the
 form.
-Using lenses allowed us to construct the necessary bidirectional function using
+Using the fclabels package allows us to construct the bidirectional function using
 simple combinators.
 We have again modified our view code without changing our model code or
-constructing forms manually.
+constructing forms manually, thus maintaining the separation of concerns.
 
-\section{Generating JSON and XML}
+\section{Generating JSON}
 \label{sec:gjson}
 
 %What is the problem?
@@ -374,17 +387,113 @@ We show that by using our lenses library we can solve this problem.
 
 \subsection{Generic JSON generation}
 
-Our library provides the functions |toJSON| and |fromJSON|. 
+Our library provides the functions |toJSON| and |fromJSON|. The |toJSON| takes a
+value and converts it to a \emph{JSON}\footnote{\url{http://www.json.org/}} value, and the |fromJSON| takes a JSON value and tries to parse it.
+
+\begin{spec}
+gfrom  ::  (Regular a, GJSON (PF a)) =>  JSValue -> Result a
+gto    ::  (Regular a, GJSON (PF a)) =>  a -> JSValue
+\end{spec}
+
+If we convert an example |Person| value to JSON, we get the following result:
+
+\begin{verbatim}
+{"Name":"chris","BirthDate":"16-01-85","Email":"chris@eidhof.nl"}
+\end{verbatim}
+
+We can use this as our API and provide the JSON to our end users. However, if
+the |Person| datatype changes, the API will change accordingly. Suppose we split
+the |name| field into |firstName| and |lastName|:
+
+> data Person'  = Person'  { firstName1  :: String
+>                          , lastName1   :: String
+>                          , birthDate1  :: Date
+>                          , email1      :: Email 
+>                          }
+
+%if False
+
+>  deriving Show
+
+> $(mkLabels [''Person'])
+
+> chris' = Person' "chris" "eidhof" (Date "16-01") (Email "hi")
+
+%endif
+
+Now the JSON output will change, and people who depend on our API will have to
+rewrite their code. In order to solve this problem, we can use the fclabels
+package to provide a stable API. We define a |PersonAPI| datatype that is the
+same as our original |Person| datatype:
+
+> data PersonAPI = PersonAPI { name' :: String, birthDate' :: Date, email' :: Email }
+
+> personToPersonAPI :: Person :-> PersonAPI
+> personToPersonAPI = 
+>  Lens $ PersonAPI  <$> name'       `for`  lName
+>                    <*> birthDate'  `for`  lBirthDate
+>                    <*> email'      `for`  lEmail
+
+If we now change the |Person| datatype to have the fields |firstName| and
+|lastName| instead of |name|, the compiler will give an error on the
+|personToPersonAPI| function: the |lName| label does not exist anymore.
+
+Therefore, we will first define a lens that splits a name into a first name
+and a last name.
+
+> fullName :: Person' :-> String
+> fullName = label from to
+>  where  from  p  = unwords [firstName1 p, lastName1 p]
+>         to s  p  = case words s of
+>           [first,last]  -> p {firstName1 = first, lastName1 = last}
+>           _             -> p
+
+Now we can write the conversion function that uses the new |fullName| lens.
+
+> person'ToPersonAPI :: Person' :-> PersonAPI
+> person'ToPersonAPI = 
+>  Lens $ PersonAPI <$> name'      `for` fullName
+>                   <*> birthDate' `for` lBirthDate1
+>                   <*> email'     `for` lEmail1
+
+If we generate JSON for the |PersonAPI| values, the API will not change, even
+though our internal model can change. If the changes to the |Person| datatype
+are conflicting (for example, a field is removed), we get a compile-time error.
+
+Note that we did not write any JSON code manually. This means that our view
+datatype can also be reused for providing an XML interface. That way, multiple
+representations of the API are automatically kept in sync.
 
 \section{Future work}
 
-Statically typed APIs a la Diatchki.
+We think generic programming can be applied to solve more web programming
+problems. For example, we could generate documentation for our APIs
+automatically \cite{typedapis}.
+
+Generic programming for user interfaces is not only limited to web programming.
+We could reuse the same technique for programming of user interfaces on desktop
+computers or mobile phones.
+That way we can reuse all our model code and possible a large part of the
+controller code.
+
+The lenses solve the view-update problem. Proxima \cite{proxima} takes this
+approach further: they build a very rich editor that solves the view-update
+problem in an elegant way. We could extend our approach in the same way.
 
 \section{Conclusion}
 
-\section{Library interface}
+We have seen how generic programming can help us to construct view code with a minimal
+amount of programming. 
+y using intermediate view datatypes we can change the
+structure of the code without having to write view code manually.
+That way we focus on the structure of the code and do not have to concern us
+with how forms are implemented or which HTML tags are used.
+If we decide to use a different form library we can do so by building a generic
+function to build a form, and the changes to the view code are minimal.
 
-TODO.
+Using lenses allow for bi-directional programming, which is useful when using
+view datatypes that are used for both output and input. The fclabels library
+allows us to construct such lenses using combinators.
 
 %if not thesis
 
