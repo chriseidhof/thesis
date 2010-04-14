@@ -1,3 +1,5 @@
+%if False
+
 > {-# LANGUAGE TemplateHaskell, TypeFamilies, EmptyDataDecls,
 >              TypeSynonymInstances, TypeOperators, ScopedTypeVariables #-}
 >
@@ -9,8 +11,10 @@
 > import Routing
 > import qualified Text.XHtml.Strict as X
 
-For every component (e.g., virtual URL directory) we define a datatype. Here's
-the part for the |User| component.
+%endif
+
+We define a datatype with all the possible actions in our library.
+The user can list all the quizes, add a new quiz, view a quiz and take a quiz.
 
 > data QuizRoute = List
 >                | Add
@@ -19,14 +23,23 @@ the part for the |User| component.
 >   deriving Show
 >
 
-This is some TH code which is necessary for using the Regular library:
+Using Template Haskell, we can make |QuizRoute| an instance of the |Regular|
+class, a generic programming library.
 
 > $(deriveAll ''QuizRoute "PFQuizRoute")
 > type instance PF QuizRoute = PFQuizRoute
 
+This allows us to construct URLs from values of |QuizRoute| and parse URLs to
+values of |QuizRoute|:
+
 > instance ToURL QuizRoute where
 >  toURL = gtoURL . from
 >  fromURL = fmap to . gfromURL
+
+Finally, we provide a helper function that links to a |QuizRoute|. Using this
+function, we can link to other actions in our page without constructing URLs
+as |String| values. This gives us the guarantee that we only construct
+well-formed and valid URLs.
 
 > static :: QuizRoute -> String -> X.Html
 > static u s = X.anchor X.! [X.href $ "/" ++ renderURL (toURL u)] X.<< X.toHtml s

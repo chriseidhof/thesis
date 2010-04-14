@@ -190,7 +190,7 @@ This is powerful, because we can keep using the |Person| datatype from our
 database, and only change it in the view part of the code. We have maintained
 the separation of concerns while having full flexibility over the view.
 
-\section{Generic Forms}
+\section{Generic forms}
 \label{sec:gform}
 
 In this section, we will build type-safe, composable, error-checking forms using the formlets

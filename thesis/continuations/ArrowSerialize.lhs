@@ -29,6 +29,8 @@ We can then store a continuation as the number and the input value.
 
 \end{itemize}
 
+\todo{Tracing is much like a Zipper.}
+
 %if False
 
 > {-# LANGUAGE GADTs, ExistentialQuantification, TypeSynonymInstances,

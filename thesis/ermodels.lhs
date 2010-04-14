@@ -29,13 +29,39 @@
 
 \section{Introduction}
 
-Entity-relationship modeling \cite{chen1976entity} is a technique to design data models.
-An entity-relationship model (ER model) is a declarative specification of a data
-model, and can be used for deriving database schemas. An ER model describes
-entities and their relationships. In this chapter, we show how we to encode
-ER models in Haskell in a type-safe way.
-We will derive an in-memory database and a schema for a relational database from
-such an ER model.
+Every computer program manipulates data. To describe the data model of a
+program, several techniques exist.
+In this chapter, we will look at one such technique: entity relationship
+modeling \cite{chen1976entity}, a way to describe data models on a \emph{conceptual
+level}. A data model on the conceptual level, called a conceptual model, closely
+matches the way we think about data models.
+
+An entity-relationship model, or \emph{ER model}, is the result of entity relationship
+modeling. An entity-relationship model is a conceptual model.
+It is a formal description of a data model, which can be used for
+various purposes: it is a means to communicate between designers and users of a
+system to verify the mutual understanding of a data model.
+Furthermore, because an ER model is a formal specification, it can be used for
+code generation.
+Although an ER model is often manually translated to a database schema, we will
+build a library that performs this translation automatically.
+
+In ER models, entities are elementary units, and are linked to each other using
+relationships.
+An ER model constrains which types of entities can occur in our data model, and
+which types of relations can occur.
+We will encode these constraints in Haskell, using the type system.
+The result of our work will be a library that allows us to describe an ER model
+in Haskell, where all constraints are automatically checked by the type checker.
+
+From a data model on the conceptual level, we can derive a data model on the
+\emph{logical level}.
+A logical model describes a data model in terms of a database system.
+For example, a schema of a relational database system is a logical model, and a
+schema of an in-memory database too.
+We will use our library that encodes ER models to derive logical models
+automatically. For example, we will derive an in-memory database and a
+relational database from our 
 
 % TODO: move to section on the end?
 Building an interface to database management systems in Haskell is not a new
@@ -171,6 +197,7 @@ attributes and the relationship sets.  Figure \ref{fig:ermodel} is a sample ER
 model that represents information about Haskell compilers. 
 
 \section{Encoding an ER model in Haskell}
+\label{sec:erencoding}
 
 %include ermodels/encoding.lhs
 

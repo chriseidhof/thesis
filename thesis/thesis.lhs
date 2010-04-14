@@ -28,6 +28,9 @@
 
 \section*{Changelog}
 \begin{itemize}
+\change{april 13}{Added section about Quiz example}
+\change{april 13}{First draft about views ready for review}
+\change{april 9}{First draft about continuations ready for review}
 \change{april 6}{Wrote section about er-models}
 \change{march 16}{wrote library documentation for Basil (ER-modeling)}
 \change{march 10}{Wrote about formlets in view part}
@@ -43,20 +46,22 @@
 \chapter{Introduction}
 %include introduction.lhs
 \chapter{Entity Relationship Models}
+\label{chap:ermodels}
 %include ermodels.lhs
 \chapter{Continuation-based web programming}
+\label{chap:continuations}
 %include continuations.lhs
 \chapter{Generic views}
+\label{chap:views}
 %include views.lhs
+\chapter{Example: a Quiz system}
+\label{chap:quizexample}
+%include quiz.lhs
 
 \chapter{Conclusion}
+\label{chap:conclusion}
+%include conclusion.lhs
 
-\section{Future work}
-
-\section{Writing DSLs in Haskell}
-- write about the deficiencies: binding, type-level programming, observable sharing, etc.
-
-\section{Web-programming in Haskell}
 
 \bibliographystyle{plain}
 \bibliography{bibliography}

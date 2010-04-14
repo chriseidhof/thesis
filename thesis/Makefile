@@ -1,4 +1,4 @@
-all: views.pdf
+all: conclusion.pdf
 	open $<
 
 %.tex: %.lhs
@@ -10,5 +10,7 @@ all: views.pdf
 ermodels.tex: ../packages/Basil/src/Basil/Relations/*.lhs ermodels/*.lhs
 
 continuations.tex: continuations/*.lhs
+
+quiz.tex: quiz/*.lhs
 
 .PHONY: %.lhs
