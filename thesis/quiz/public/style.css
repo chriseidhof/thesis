@@ -1,0 +1,35 @@
+html, body {
+  font-family: Helvetica;
+}
+
+html {
+  background-color: #ccc;
+}
+
+body {
+  margin-top: 40px;
+  margin-bottom: 0;
+  padding: 10px;
+  background-color: #fff;
+  width: 800px;
+  border-top: solid 1px #999;
+  border-left: solid 1px #999;
+  border-right: solid 1px #999;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+label {
+  display: inline-block;
+  vertical-align: top;
+  width: 200px;
+}
+
+textarea {
+  width: 400px;
+  height: 200px;
+}
+
+input[type="text"], textarea {
+  margin-bottom: 1em;
+}

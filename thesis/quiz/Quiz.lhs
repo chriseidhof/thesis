@@ -181,7 +181,7 @@ We can run the server using the |runServer| function, which takes the port, the
 
 > main = do
 >   ref <- newMVar emptyBasilState :: IO (MVar St)
->   runServer 8080 homePage handle (Env ref M.empty)
+>   runServer 8080 homePage template handle (Env ref M.empty)
 
 The |homePage| is a static |Html| page that shows a list of actions.
 
@@ -228,6 +228,16 @@ The function |basil'| is a utility function that ignore the argument.
 
 > basil' :: M b -> Web a b
 > basil' = basil . const
+
+The template that we use:
+
+> template x = X.thehtml (
+>          (X.header  $ linkStyle "/public/style.css")
+>          X.+++ (X.body x)
+>            )
+
+> linkStyle name = (X.thelink X.! [X.rel "stylesheet", X.href name]) X.noHtml
+
 
 Finally, we need to give the |Regular| instances for |QuizForm| and
 |ResponseView|:

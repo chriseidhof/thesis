@@ -20,6 +20,7 @@
 > import Network.Protocol.Uri
 > import Network.Protocol.Uri.Data
 > import Network.Salvia.Handlers
+> import Network.Salvia.Handler.ExtendedFileSystem
 > import Network.Salvia.Impl.Config
 > import Network.Salvia.Impl.Server
 > import Network.Salvia.Interface
@@ -354,11 +355,12 @@ TODO: fromSuccess is not okay here! check for errors!
 > addCont :: Env s m -> String -> Continuation s m () -> Env s m
 > addCont (Env s mp) nm c = Env s $ M.insert nm c mp
 
-> runServer :: ToURL route => Int -> X.Html -> (route -> Continuation s IO ()) -> Env s IO ->  IO ()
-> runServer p index handle e = do
+> runServer :: ToURL route => Int -> X.Html -> (X.Html -> X.Html) -> (route -> Continuation s IO ()) -> Env s IO ->  IO ()
+> runServer p index template handle e = do
 >   env <- newMVar e
 >   start defaultConfig
->         (hDefaultEnv (do path <- (tail . __segments) <$> hCurrentPath
+>         (hDefaultEnv (hPrefixRouter [ ("/public", hExtendedFileSystem "public")]
+>                      (do path <- (tail . __segments) <$> hCurrentPath
 >                          html <- if path == [] then return index else do
 >                            e' <- liftIO $ takeMVar env
 >                            liftIO $ print path
@@ -375,8 +377,8 @@ TODO: fromSuccess is not okay here! check for errors!
 >                            liftIO $ putMVar env e'''
 >                            return html
 >                          response (contentType =: Just ("text/html", Just "utf-8"))
->                          send (show html)
->                      ))
+>                          send (show $ template html)
+>                      )))
 >         ()
 
 > hCurrentPath :: HttpM Request m => m Path
