@@ -45,6 +45,9 @@
 
 \chapter{Introduction}
 %include introduction.lhs
+\chapter{Example: a Quiz system}
+\label{chap:quizexample}
+%include quiz.lhs
 \chapter{Entity Relationship Models}
 \label{chap:ermodels}
 %include ermodels.lhs
@@ -54,9 +57,6 @@
 \chapter{Generic views}
 \label{chap:views}
 %include views.lhs
-\chapter{Example: a Quiz system}
-\label{chap:quizexample}
-%include quiz.lhs
 
 \chapter{Conclusion}
 \label{chap:conclusion}

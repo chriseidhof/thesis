@@ -25,14 +25,22 @@
 
 %endif
 
-We will encode our data model as an ER model, described in chapter
-\ref{chap:ermodels}. The encoding is done as described in section
-\ref{sec:erencoding}.
+We define our data model as an ER model, which is a formalism for building data
+models. In figure \ref{fig:quizermodel} you can see its graphical representation.
+Every quiz has a subject and a longer description, and can have many questions,
+but every question belongs to exactly one quiz.
+A response to a quiz contains the name and email-address of the respondant, as well as
+the date on which the quiz was taken, and a list of answers. A quiz has many
+responses, but every response belongs to exactly one quiz.
 
-Every quiz has a subject and a longer description, and many questions. A
-response to a quiz contains the name and email of the respondant, as well as the
-date on which the quiz was taken. Every response also contains the answers to
-the quiz. We limit ourselves to quizzes with three multiple-choice answers.
+\begin{figure}
+\includegraphics[width=15cm]{quiz/ermodel}
+\caption{The data model for our quiz system.}
+\label{fig:quizermodel}
+\end{figure}
+
+All the entities (represented by rectangles) are encoded as Haskell datatypes,
+with a record field for each attribute (represented by ovals).
 
 > data Quiz      = Quiz      { subject :: String, description :: String}
 > data Question  = Question  { title :: String, choiceA, choiceB, choiceC :: String}
@@ -44,12 +52,14 @@ the quiz. We limit ourselves to quizzes with three multiple-choice answers.
 
 > data Answer    = QA | QB | QC deriving (Show, Eq, Enum)
 
-We need to enumerate the entities of a |QuizModel| in a type-level list.
+We also enumerate the entities of a |QuizModel| in a type-level list.
 
 > type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
 
-Every quiz can have many questions, and many responses. For both relations we
-define a |Rel| type that captures the relationship.
+For both relationships, defined by the diamonds, we add a type. Note that the
+relationships have a cardinality. In the diagram, there is a |*| and a |1|
+annotation on the lines connecting the relationship with its entities. We encode
+this using the |Many| and |One| types, respectively.
 
 > type TQuestions  = Rel  QuizModel  One   Quiz  Many  Question
 > type TResponses  = Rel  QuizModel  One   Quiz  Many  Response
@@ -62,12 +72,13 @@ We also provide information on the value level for both relations:
 > responses   :: TResponses
 > responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
 
-We enumerate the relations in a type-level list:
+And we enumerate the relations in a type-level list:
 
 > type QuizRelations = TQuestions B.:*: TResponses B.:*: Nil
 
 Now we can make |QuizModel| and |QuizRelations| an instance of the |ERModel|
-class:
+class. We need to provide some information on the value level, which is
+explained in more detail in chapter \ref{chap:ermodels}.
 
 > instance ERModel QuizModel QuizRelations where
 >   relations  =  TCons4 questions
@@ -76,7 +87,8 @@ class:
 >   witnesses  =  WCons ixQuiz $  WCons ixQuestion $  WCons ixResponse $  WNil
 
 Finally, we provide indexes into the type-level lists for all entities and
-relationships:
+relationships. These are constructed mechanically, and serve as proof that a
+given entity is in the list of entities described by the ER model.
 
 > ixQuiz     :: Ix QuizModel Quiz
 > ixQuestion :: Ix QuizModel Question

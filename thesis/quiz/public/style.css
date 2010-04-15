@@ -1,9 +1,5 @@
 html, body {
-  font-family: Helvetica;
-}
-
-html {
-  background-color: #ccc;
+  font-family: constantia, palatino, "times new roman";
 }
 
 body {
@@ -11,12 +7,28 @@ body {
   margin-bottom: 0;
   padding: 10px;
   background-color: #fff;
-  width: 800px;
-  border-top: solid 1px #999;
-  border-left: solid 1px #999;
-  border-right: solid 1px #999;
+  width: 600px;
   margin-left: auto;
   margin-right: auto;
+}
+
+ul.menu {
+  list-style: none;
+  background-color: #f9f9f9;
+  border-top: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  padding: 5px;
+  text-align: center;
+}
+
+ul.menu a {
+  text-decoration: none;
+  color: #000;
+}
+
+ul.menu li {
+  display: inline;
+  padding: 1em;
 }
 
 label {
@@ -32,4 +44,23 @@ textarea {
 
 input[type="text"], textarea {
   margin-bottom: 1em;
+  border: 1px solid #999;
+  margin-left: 0;
 }
+
+input[type="text"] {
+  width: 250px;
+}
+
+label.radio {
+  width: 580px;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+h1.page {
+  font-size: 30px;
+}
+

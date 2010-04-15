@@ -65,6 +65,10 @@ To answer these questions, we will look at different approaches in both research
 on Haskell and research on web programming. We believe that an answer should
 also consist of a library.
 
+We will start with chapter \ref{chap:quizexample}, which shows a sample application that we have built
+using the libraries described in this thesis. The libraries are completely orthogonal, yet fit
+very good together.
+
 In chapter \ref{chap:ermodels} we will describe a library for representing and
 working with ER models in Haskell.
 We believe they form a good abstraction of data models on a high level.
@@ -82,13 +86,6 @@ Chapter \ref{chap:views} describes how we have used generic programming to
 reduce view boilerplate. We have built functions that build view code based on
 the structure of the input data, and show how to customize the generated code
 without removing away from code generation.
-
-Chapter \ref{chap:quizexample} describes a sample application that we have built
-using all three frameworks. The frameworks are completely orthogonal, yet fit
-very good together. We have modeled the flow between pages using our
-continuations library, access the data model using the ER modeling library and
-generate virtually all the view code with the generic programming techniques
-described in the chapter on views.
 
 In chapter \ref{chap:conclusion}, we describe related and future work and conclude.
 

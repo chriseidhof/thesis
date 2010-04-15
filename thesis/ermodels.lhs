@@ -60,38 +60,38 @@ A logical model describes a data model in terms of a database system.
 For example, a schema of a relational database system is a logical model, and a
 schema of an in-memory database too.
 We will use our library that encodes ER models to derive logical models
-automatically. For example, we will derive an in-memory database and a
-relational database from our 
+automatically.
+For example, we will derive an in-memory database schema and a relational
+database schema from an encoded ER model.
+We leverage the type system to make sure the generated logical models are
+correct and have the same constraints as their conceptual counterparts.
 
-% TODO: move to section on the end?
-Building an interface to database management systems in Haskell is not a new
-idea.
-HaskellDB is a typed interface to relational
-databases \cite{bringert2004student, leijen2000domain}.
-Using HaskellDB, the programmer can model relational database schemas
-and query the database in a strongly typed way.
-Our approach is based on ER models and operates on a different level than
-HaskellDB. More specifically, \citet{chen1976entity} divides data models into three categories:
+The conceptual and logical models are two categories. In \citet{chen1976entity},
+three categories for data models are defined:
 
 \begin{itemize}
 \item \emph{Conceptual models}, where entities and their relationships are
-described on a conceptual level. For example, an ER model.
+described on a conceptual level, which matches the way we think about data
+models. A conceptual model can be used for both communication as well as a
+formal method to describe data models.
 \item \emph{Logical models}, which are expressed in terms of the database
-management system. For example, an SQL schema for a relational database.
+management system. A logical model is often derived from the conceptual model.
 \item \emph{Physical models}, which describe how logical models are stored on
-disk or in memory.
-Sometimes this is presented to the user, for example, a schema designer might
-add indexes on keys, which directly corresponds to changes in the physical
-layer.
+disk or in hardware memory. A physical model describes the arrangement of the
+data on disk.
+Sometimes part of this model presented to the user, for example, a schema
+designer might add indexes on keys, which directly corresponds to changes in the
+physical layer.
 \end{itemize}
 
-If we focus on Haskell, our encoding of ER-models falls into the category of
-\emph{conceptual models}, whereas HaskellDB falls into the category of
-\emph{logical models}.
-Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical
-model}.
+If we look at related work in Haskell, we are not aware of other work that
+operates on the conceptual level. On the logical level, HaskellDB 
+\cite{bringert2004student, leijen2000domain} is a typed interface to relational
+databases. Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical
+level}.
 
-In section \ref{sec:ermodels}, we give the definition of an ER model and introduce the
+\todo{revised until here.}
+In section \ref{sec:ermodels}, we build an the definition of an ER model and introduce the
 vocabulary for ER modeling. We show an ER model that we will use as our running
 example.
 

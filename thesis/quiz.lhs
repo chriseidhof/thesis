@@ -31,13 +31,16 @@
 
 \section{Introduction}
 
-In this chapter we will use all three libraries above and build a system for
-creating and taking quizzes.
-A quiz contains a description and questions.
-If a user decides to take a quiz, she has to fill in her name and answer every
-question.
-In section \ref{sec:quizmodel} we build the ER-model for our quizzes. Then, in
-section \ref{sec:quizcontroller} we build the controller and view code.
+In this chapter we will build an example application for creating and taking
+simple multiple-choice quizzes.
+All the code is available as literate Haskell.
+The application is built on top of the three libraries used in this thesis, and
+we will give references to libraries where necessary.
+
+We will start by defining the data model for our quizzes in section
+\ref{sec:quizmodel}.
+Based on that data model we will build the controller and view code in section
+\ref{sec:quizcontroller}.
 
 \section{The Quiz model}
 
