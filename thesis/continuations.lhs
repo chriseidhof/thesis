@@ -192,11 +192,6 @@ enables us to do defunctionalization of monadic |Web| values. That way we can
 provide a very simple but powerful interface to the library users while being
 able to serialize functions.
 
-%if not thesis
-
-\bibliographystyle{plain}
-\bibliography{bibliography}
-
 \section*{Library interfaces}
 \label{sec:interfaces}
 
@@ -209,6 +204,12 @@ able to serialize functions.
 \label{sec:arrowinterface}
 
 %include continuations/ArrowBasedInterface.lhs
+
+%if not thesis
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
 
 \end{document}
 %endif

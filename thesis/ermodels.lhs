@@ -95,24 +95,17 @@ In section \ref{sec:ermodels}, we build an the definition of an ER model and int
 vocabulary for ER modeling. We show an ER model that we will use as our running
 example.
 
-In section \ref{sec:encoding}, we encode the example ER model in Haskell. 
-We do this in a type-safe way. Entities can only have relationships with
+In section \ref{sec:encoding}, we encode an example ER model in Haskell. 
+We do this in a type-safe way: entities can only have relationships with
 entities in the same ER model, and relationships can only relate between two
-entities in the ER model. This section encodes a \emph{conceptual model}.
+entities in the ER model.
 
-In section \ref{sec:inmem}, we build an in-memory database. Because different
-relationships (one to many, many to many), have different ways of handling them,
-we make heavy use of type-level programming to keep our code correct. 
-This section derives a \emph{logical model} from the conceptual model.
+In section \ref{sec:inmem}, we build an in-memory database, which is a
+\emph{logical model}. We show how to use type-level programming in order to enforce the constraints
+defined in the ER model.  The in-memory database is derived from the ER model.
 
-In section \ref{sec:rdbschema} we sketch the outline of an interface to a
-relational database. 
-This section derives a different \emph{logical model} from the conceptual model.
-However: not all code has been written yet.
-
-Section \ref{sec:rdb} shows how we can combine the
-in-memory database and the relational database, where the in-memory database
-acts as a \emph{scratch pad} before data is stored.
+In section \ref{sec:relationaldb} we build an interface to a relational database.
+Again, we use the ER model to derive the relational database schema.
 
 Section \ref{sec:query}
 describes a query language for ER models and how that is translated into queries
@@ -127,7 +120,7 @@ This chapter provides the following contributions:
 \begin{itemize}
 \item We give an encoding of ER models in Haskell.
 \item We translate ER models into an in-memory database.
-\item We outline how to translate an ER model into a relational databes.
+\item We translate ER models into a relational databes.
 \item We show how we can layer different logical models on top of each other.
 \item We define a query language that works on conceptual models and translates
 to logical models.
@@ -317,6 +310,7 @@ convenient interface.
 % The |FilteredEntities| can be implemented using type-functions.
 
 \section{Interfacing with a relational database}
+\label{sec:relationaldb}
 
 In this section, we build an interface with a relational database.
 In section \ref{sec:rdbschema} we show how we can model a relational database
@@ -330,14 +324,10 @@ or join tables.
 Finally, we will end with an easy to use interface for the user in section
 \ref{sec:rdbinterface}.
 
-The work in this section is not entirely finished yet. However, we give an
-outline of how to implement an interface and expect to do further implementation
-soon.
-
 \subsection{Modeling a relational database}
 \label{sec:rdbschema}
 
-A relational database management system (RDBMS) is a widely used category of database
+A relational database management system (RDBMS) is a widely used type of database
 systems.
 In an RDBMS, all data is stored in tables.
 Every table has a schema, which
@@ -345,9 +335,8 @@ describes the structure of the data.
 Such a schema is a list of attributes, where an attribute consist of a name and a type.
 Every table stores a list of rows, where each row is a tuple with values for the
 attributes in the schema.
-A large difference with ER models is that there is no notion of relations in a
-RDBMS.
-A relation is encoded by adding foreign keys, which we will expand upon in
+A large difference with ER models is that there is no notion of relationships in a
+RDBMS, instead a relationship is encoded by adding tables, which we will expand upon in
 section \ref{sec:rdbrels}.
 
 %include ../packages/Basil/src/Basil/Database/Relational/Core.lhs
@@ -368,8 +357,12 @@ section \ref{sec:rdbrels}.
 \subsection{Building an interface}
 \label{sec:rdbinterface}
 
-TODO: show how we can have almost the same interface for relational databases.
-However, we first need to finish the work in section \ref{sec:rdbrels}.
+For relational databases, we have provided an interface that is almost the same
+as the in-memory database. Instead of having |Basil| as the type, the relational
+database have |BasilDB| as their type. This allows us to build an application
+and test it using the in-memory database, and switch to a relational database
+for production use. The full interface is described in section
+\ref{sec:reldbinterface}.
 
 \section{Querying the database}
 \label{sec:query}
@@ -383,8 +376,9 @@ we can construct such queries in a typed way, and perform them on both the
 in-memory database and the relational database.
 
 Querying databases is a a separate aspect: not every logical layer might support it.
-For example, we could use ER models to model a remote XML-based webservice, but most webservices don't
-support any queries at all.
+For example, we could use ER models to model a remote XML-based webservice, but
+most webservices do not support any queries at all. We have implemented querying
+for both the in-memory database and the relational database.
 
 \subsection{Representing queries}
 
@@ -395,8 +389,6 @@ support any queries at all.
 
 %let query = True
 %include ../packages/Basil/src/Basil/InMemory/Interface.lhs
-
-Querying the relational database can be implemented in an even easier way.
 
 
 \section{Future work}
@@ -424,24 +416,26 @@ only has a date attribute, and introduce a one-to-many relationship between
 |V| and |Compiler| and a one-to-many relationship between |V| and |Person|. 
 
 \item \emph{Extend relationships to be between more than two entities}. 
-This can again be modeled by adding a virtual entry 
+In our current library, we can create a virtual entity to simulate relationships
+between more than two entities, but this is cumbersome and requires more work
+from the user of the library.
 
 \item \emph{More support for (primary) keys}
 Our primary keys are implicit: we add an |id| attribute of type |Int| for each
 entitity.
-In practice this works well, but sometimes more control over primary
-keys is needed.
+In practice this works well, but more control over primary
+keys is sometimes necessary. 
 
 \item \emph{More control over the logical layer}
-Sometimes more control over the logical and physical layer is needed. For
+It can be useful to provide more control over the logical layer. For
 example: it is not possible to use our library with legacy databases. When a
 schema does not exactly match the schema we generate, our approach does not work
 anymore.
 RBMSs also provide efficient ways to compose queries (e.g. using the
 \texttt{JOIN} statement.) Our library does not compile such composed queries to
-efficient \texttt{JOIN} statements, but naively joins tables. Compiling queries
-more efficiently would possibly lead to large performance gains, but currently,
-this is not possible.
+efficient \texttt{JOIN} statements, but naively joins tables, resulting in
+performance loss. Compiling queries more efficiently would possibly lead to
+large performance gains, but in our current implementation this is not possible.
 
 \item \emph{More control over the physical layer}
 When building a high-performance application it can be useful to have control
@@ -597,9 +591,10 @@ that works independently of the storage mechanism.
 
 %include ermodels/inmeminterface.lhs
 
-%  \subsection{Relational database nterface}
-%  
-%  %include ermodels/inmeminterface.lhs
+\subsection{Relational database interface}
+\label{sec:reldbinterface}
+
+%include ermodels/reldbinterface.lhs
 
 
 %if not thesis

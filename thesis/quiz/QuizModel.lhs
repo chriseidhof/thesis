@@ -56,25 +56,33 @@ We also enumerate the entities of a |QuizModel| in a type-level list.
 
 > type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
 
-For both relationships, defined by the diamonds, we add a type. Note that the
-relationships have a cardinality. In the diagram, there is a |*| and a |1|
-annotation on the lines connecting the relationship with its entities. We encode
-this using the |Many| and |One| types, respectively.
+%if False
 
-> type TQuestions  = Rel  QuizModel  One   Quiz  Many  Question
-> type TResponses  = Rel  QuizModel  One   Quiz  Many  Response
+> $(mkIndexes ''QuizModel  [''Quiz, ''Question, ''Response])
 
-We also provide information on the value level for both relations:
+%endif
 
-> questions   :: TQuestions
-> questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  ""
+For both relationships (the diamonds in the figure) we add a type. Note that the
+in the diagram, there is a |*| and a |1|
+annotation on the lines connecting the relationship with its entities. This is
+called the cardinality: ever |Question| entity belongs to exactly one |Quiz|
+entity and every |Quiz| entity can have zero or more |Question| entities. We encode
+this using the |One| and |Many| types, respectively.
+
+> type Questions  = Rel  QuizModel  One   Quiz  Many  Question
+> type Responses  = Rel  QuizModel  One   Quiz  Many  Response
+
+We also provide information on the value level for both relationships:
+
+> questions   :: Questions
+> questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  "questions"
 >
-> responses   :: TResponses
+> responses   :: Responses
 > responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
 
-And we enumerate the relations in a type-level list:
+And we enumerate the relationships in a type-level list:
 
-> type QuizRelations = TQuestions B.:*: TResponses B.:*: Nil
+> type QuizRelations = Questions B.:*: Responses B.:*: Nil
 
 Now we can make |QuizModel| and |QuizRelations| an instance of the |ERModel|
 class. We need to provide some information on the value level, which is
@@ -86,26 +94,29 @@ explained in more detail in chapter \ref{chap:ermodels}.
 >              $  TNil4 
 >   witnesses  =  WCons ixQuiz $  WCons ixQuestion $  WCons ixResponse $  WNil
 
-Finally, we provide indexes into the type-level lists for all entities and
-relationships. These are constructed mechanically, and serve as proof that a
+Finally, we provide indexes into the type-level lists for all entities 
+. These are constructed mechanically using Template Haskell, and serve as proof that a
 given entity is in the list of entities described by the ER model.
 
-> ixQuiz     :: Ix QuizModel Quiz
-> ixQuestion :: Ix QuizModel Question
-> ixResponse :: Ix QuizModel Response
+\begin{spec}
+ixQuiz      :: Ix QuizModel Quiz
+ixQuestion  :: Ix QuizModel Question
+ixResponse  :: Ix QuizModel Response
+\end{spec}
 
-> ixQuestions :: Ix QuizRelations TQuestions
-> ixResponses :: Ix QuizRelations TResponses
+The following Template Haskell generates the indexes above:
+
+> $(mkIndexes ''QuizRelations [''Questions, ''Responses])
+
+We also provide indexes for relationships, which point into the type-level lists
+containing all relationships.
+
+\begin{spec}
+ixQuestions  :: Ix QuizRelations Questions
+ixResponses  :: Ix QuizRelations Responses
+\end{spec}
 
 %if False
-
-
-> ixQuiz = Zero
-> ixQuestion = Suc Zero
-> ixResponse = Suc (Suc Zero)
-
-> ixQuestions = Zero
-> ixResponses = Suc Zero
 
 > $(deriveAll ''Quiz  "PFQuiz")
 > $(deriveAll ''Question  "PFQuestion")
@@ -117,14 +128,6 @@ given entity is in the list of entities described by the ER model.
 
 > $(mkLabels [''Quiz, ''Question, ''Response])
 
-> type instance TypeEq Quiz     Quiz     = True 
-> type instance TypeEq Quiz     Question = False
-> type instance TypeEq Quiz     Response = False
-> type instance TypeEq Question Quiz     = False
-> type instance TypeEq Question Question = True
-> type instance TypeEq Question Response = False
-> type instance TypeEq Response Quiz     = False
-> type instance TypeEq Response Question = False
-> type instance TypeEq Response Response = True
+> $(mkEqualities [''Quiz, ''Question, ''Response])
 
 %endif

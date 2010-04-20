@@ -43,10 +43,12 @@ Based on that data model we will build the controller and view code in section
 \ref{sec:quizcontroller}.
 
 \section{The Quiz model}
+\label{sec:quizmodel}
 
 %include quiz/QuizModel.lhs
 
 \section{The Quiz controller and views}
+\label{sec:quizcontroller}
 
 %include quiz/QuizUrl.lhs
 

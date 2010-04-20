@@ -1,4 +1,4 @@
-all: conclusion.pdf
+all: thesis.pdf
 	open $<
 
 %.tex: %.lhs

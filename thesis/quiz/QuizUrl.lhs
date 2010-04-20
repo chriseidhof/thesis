@@ -14,11 +14,12 @@
 %endif
 
 Our web application responds to URLs. We believe the URL forms part of the user
-interface: it should be readable and users should be able to copy and paste most
-URLs. Instead of defining URLs manually, we build a datatype for all possible
+interface: they should be readable most of the times, and users should be able
+to copy and paste them.
+We build a datatype for all possible
 URLs in our application: The user can list all the quizes, add a new quiz, view
-a quiz and take a quiz. If we generate URLs using this datatype, the compiler
-verifies that we only produce correct URLs.
+a quiz and take a quiz.
+If we generate URLs using this datatype, the compiler verifies that we only produce correct URLs.
 
 > data QuizRoute  =  List
 >                 |  Add
@@ -26,11 +27,11 @@ verifies that we only produce correct URLs.
 >                 |  Take  Int
 >   deriving Show
 
-This allows us to construct URLs from values of |QuizRoute| and parse URLs to
-values of |QuizRoute|. The |ToURL| typeclass defines that we can convert between
-ordinary URLs and values of |QuizRoute|.
+The datatype allows us to construct URLs from values of |QuizRoute| and parse URLs to
+values of |QuizRoute| if we make it an instance of the  |ToURL| typeclass. The
+typeclass captures that we can convert between the string representation of URLs and values of |QuizRoute|.
 The |toURL| and |fromURL| functions are defined using the |gtoURL| and
-|gFromURL| functions, which are generic functions.
+|gfromURL| functions, which are generic functions.
 
 > instance ToURL QuizRoute where
 >  toURL    = gtoURL . from

@@ -6,8 +6,8 @@
 > module Example where
 
 > import Basil
+> import Basil.InMemory
 > import qualified Data.Set as S
-> import qualified Control.Monad.State as ST
 
 > newtype Email = Email { unEmail :: String }
 > newtype URL   = URL   { unUrl   :: String }
@@ -60,8 +60,11 @@ Now we also need to enumerate the relationship sets on the type level:
 For each relationship we create an index (again, this could be done using
 Template Haskell):
 
-> ixContributes  = Zero
-> ixReleases     = Suc Zero
+> ixContributes  ::  Ix CompilerRelations TContributes
+> ixContributes  =   Zero
+>
+> ixReleases  ::  Ix CompilerRelations TReleases
+> ixReleases  =   Suc Zero
 
 We can give the instance for |ERModel| that links |CompilerModel| and
 |CompilerRelations|:
@@ -106,12 +109,12 @@ of the relationship and a pointer to the relationship.
 
 > type M a = Basil CompilerModel CompilerRelations a
 
-To create a new |Compiler| and a new |Release|, we can write the following code:
+To create a new |Compiler| and two new |Release|, we can write the following code:
 
 > example0 :: M (Ref CompilerModel Compiler)
 > example0  = do  cId   <- new  ixCompiler  ghc     PNil
->                 rId   <- new  ixRelease   ghc612  (PCons (release cId) PNil)
->                 rId'  <- new  ixRelease   ghc610  (PCons (release cId) PNil)
+>                 _     <- new  ixRelease   ghc612  (PCons (release cId) PNil)
+>                 _     <- new  ixRelease   ghc610  (PCons (release cId) PNil)
 >                 return cId
 
 Note that the third argument is based on the |InitialValues| function from
@@ -134,7 +137,7 @@ We can test the first example:
 Evaluating |runIt0| yields the following result:
 
 \begin{spec}
-Ref Fresh 0
+Ref 0
 \end{spec}
 
 The second example combines both |example0| and |example1| into a new example:
@@ -145,5 +148,5 @@ The second example combines both |example0| and |example1| into a new example:
 And evaluating |runIt2| yields the following result:
 
 \begin{spec}
-Just (fromList [Ref Fresh 1,Ref Fresh 2])
+Just (fromList [Ref 1,Ref 2])
 \end{spec}

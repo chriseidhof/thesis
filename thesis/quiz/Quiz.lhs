@@ -9,6 +9,7 @@
 
 
 > import Basil hiding ((:*:))
+> import Basil.InMemory
 > import qualified Basil as B
 > import ArrowBased
 > import qualified Data.Set as S
@@ -39,8 +40,8 @@ type |Web i ()|.
 > handle :: QuizRoute -> Continuation (MVar St) IO ()
 > handle Add       = Cont ()                      addQuiz
 > handle List      = Cont ()                      listQuizzes
-> handle (View i)  = Cont (Ref ixQuiz (Fresh i))  viewQuiz
-> handle (Take x)  = Cont (Ref ixQuiz (Fresh x))  takeQuiz
+> handle (View i)  = Cont (Ref ixQuiz i)  viewQuiz
+> handle (Take x)  = Cont (Ref ixQuiz x)  takeQuiz
 
 From here one, we will make heavy use of Arrow notation
 \cite{paterson2001new}. Using arrow notation, we can conveniently construct web
@@ -49,16 +50,16 @@ programs on top of our continuations library from chapter
 
 \subsection{Adding a Quiz}
 
-To add a quiz, we first show form for entering values of type |Quiz|, we then
+To add a quiz, we first show the form for entering values of type |Quiz|, we then
 add it to the database and proceed by adding questions to the quiz. Finally, we
 display a message that it was successfully added.
 
 > addQuiz :: Web () ()
 > addQuiz = proc () -> do
->   q    <-  input -< ()
->   ref  <-  (basil (\x -> new ixQuiz x PNil)) -< q
->   _    <-  addQuestions -< ref
->   display (const $ X.toHtml "added quiz with questions.") -< ()
+>   q    <-  input                                           -< ()
+>   ref  <-  (basil (\x -> new ixQuiz x PNil))               -< q
+>   _    <-  addQuestions                                    -< ref
+>   display (const $ X.toHtml "added quiz with questions.")  -< ()
 
 To add a quiz, we let the user input a form using the |input| function. The
 |input| function is overloaded using type-classes. Because we use the result of
@@ -73,16 +74,16 @@ helps us to construct a form that is rendered as a |Quiz| form, displayed in fig
 
 After the input |q| is entered, we add the quiz to the database, yielding a
 reference |ref| to the Quiz value. The database code is wrapped in the |basil|
-function. Then |new| function takes an index into the ER model, the entity value
-and a list with all the necessary references. For quizzes, this is an empty
-list, but we will see a more complicated example later on.
+function. The |new| function takes an index into the ER model, the entity value
+and a list with all the necessary references. For quizzes, this is the empty
+list |PNil|, but we will see a more complicated example later on.
 
 After the quiz is added to the database, we proceed to add questions to the
 quiz. We do this with the |addQuestions| function, which uses the reference to
 the |Quiz| value.  Finally, we display a message
 that the quiz was successfully added.
 
-The |addQuestions| uses the |inputMany| combinator, which is similar to |input|,
+The function |addQuestions| uses the |inputMany| combinator, which is similar to |input|,
 but instead shows the form many times, until the user presses |Done|.
 An example is rendered in figure \ref{fig:addQuestion}.
 After the user is done adding questions, it maps the |newQuestion| function to
@@ -90,8 +91,8 @@ each entered question, which stores the question in the database.
 
 > addQuestions :: Web (Ref QuizModel Quiz) ([Ref QuizModel Question])
 > addQuestions = proc q -> do
->   qs  <- inputMany -< ()
->   basil (\(qs,qz) -> mapM (newQuestion qz) qs) -< (qs, q) 
+>   qs  <- inputMany                              -< ()
+>   basil (\(qs,qz) -> mapM (newQuestion qz) qs)  -< (qs, q) 
 
 \begin{figure}[hb]
 \includegraphics[width=15cm]{quiz/screenshots/adding-choices}
@@ -121,15 +122,15 @@ function on every quiz. The result of viewing quizzes is show in figure
 > listQuizzes = proc () -> do
 >   qs <- basil' (findAll ixQuiz) -< ()
 >   case qs of
->     []  -> display X.toHtml -< "No quizzes yet."
->     _   -> display (X.concatHtml . map quizWithLink) -< qs
+>     []  -> display X.toHtml                           -< "No quizzes yet."
+>     _   -> display (X.concatHtml . map quizWithLink)  -< qs
 
 The |quizWithLink| takes a |Quiz| and its reference and produces the Html for
 that quiz. It uses the |ghtml| function to show the Html for a quiz and
 concatenates a link to either view or take the quiz.
 
 > quizWithLink :: (Ref QuizModel Quiz, Quiz) -> X.Html
-> quizWithLink (Ref _ (Fresh i), q) = X.concatHtml
+> quizWithLink (Ref _ i, q) = X.concatHtml
 >   [         ghtml q 
 >   ,  X.br,  static (View i) "view"
 >   ,  X.br,  static (Take i) "take quiz"
@@ -153,16 +154,17 @@ quizWithQuestions| shows a quiz with its question.
 > viewQuiz = proc ref -> do
 >   quiz <- basil find -< ref
 >   case quiz of
->     Just quiz -> do  Just qsR  <- basil (findRels DL ixQuestions) -< ref
->                      qs        <- basil (mapM find) -< S.toList qsR
->                      display quizWithQuestions -< (ref, quiz, catMaybes qs)
+>     Just quiz -> do  
+>       Just qsR  <- basil (findRels DL ixQuestions)  -< ref
+>       qs        <- basil (mapM find)                -< S.toList qsR
+>       display quizWithQuestions                     -< (ref, quiz, catMaybes qs)
 >     Nothing   -> display (const "Not Found") -< ()
 
 The function |quizwithQuestions| is very similar to |quizWithLink|, except that
 it also displays all the questions.
 
 > quizWithQuestions :: (Ref QuizModel Quiz, Quiz, [Question]) -> X.Html
-> quizWithQuestions (Ref _ (Fresh i), q, qs) =    ghtml q 
+> quizWithQuestions (Ref _ i, q, qs) =    ghtml q 
 >                           +++  X.br
 >                           +++ (X.concatHtml $ intersperse X.br $ (map ghtml) qs)
 >                           +++  static (Take i) "take quiz"
@@ -184,33 +186,33 @@ The form for getting a single answer is rendered as in figure \ref{fig:takeQuiz2
 >   quiz <- basil find -< ref
 >   case quiz of
 >     Just quiz ->  do  
->       Just qsR  <- basil (findRels DL ixQuestions) -< ref
->       qs        <- basil (mapM find) -< S.toList qsR
->       display ghtml -< quiz
->       response  <- form'' responseForm -< ()
->       as        <- many getAnswer -< (catMaybes qs)
->       display ghtml -< response {answers = as}
+>       Just qsR  <- basil (findRels DL ixQuestions)  -< ref
+>       qs        <- basil (mapM find)                -< S.toList qsR
+>       ()        <- display ghtml                    -< quiz
+>       response  <- form'' responseForm              -< ()
+>       as        <- many getAnswer                   -< (catMaybes qs)
+>       display ghtml                                 -< response {answers = as}
 >                      
 >     Nothing   -> display (const "Not Found") -< ()
 
 Note how we used the |form'' responseForm| method to ask for the user's
-response. It is rendered in figure \ref{fig:takeQuiz1}. However, it does not
+response. It is rendered in figure \ref{fig:takeQuiz1}. However, the form does not
 match the structure of the |Response| entity. Yet its result is a value of type
-|Response|. We can use the |form''| combinator when we want to customize the
+|Response|. We have used the |form''| combinator to customize the
 output of a generic program. In this example, we have written a |responseForm|
 function that converts between a |Response| and a |ResponseView| value. The
-|ResponseView| datatype is rendered as following:
+|ResponseView| datatype is defined as following:
 
-> data ResponseView  = ResponseView { _name :: String
->                                   , _email :: Email
->                                   }
+> data ResponseView  = ResponseView  {  _name   :: String
+>                                    ,  _email  :: Email
+>                                    } 
 
 We also define a function for converting between a |Response| and
 |ResponseView|. This function is a \emph{lens}, and allows us to convert a
 |Response| to a |ResponseView|, but also allows us to take an edited
 |ResponseView|, and update the original |Response| with the new value. In web
 programming, this happens very often: the form presented only shows fields for
-entering part of the data.
+entering a subset of the datatype.
 
 > responseProj :: Response :-> ResponseView
 > responseProj = Lens $ ResponseView <$> _name `for` lName <*> _email `for` lEmail
@@ -227,9 +229,11 @@ library\footnote{\url{http://hackage.haskell.org/package/formlets}}.
 
 > getAnswer :: Web Question Answer
 > getAnswer = form''' answerForm
->  where answerForm q   = F.plug ((title q +++ X.br) +++) 
->                       $ F.enumRadio [(QA, choiceA q),(QB, choiceB q),(QC, choiceC q)]
->                                     Nothing
+
+> answerForm :: Question -> Form Answer
+> answerForm q   = F.plug ((title q +++ X.br) +++) 
+>                $ F.enumRadio  [(QA, choiceA q),(QB, choiceB q),(QC, choiceC q)]
+>                               Nothing
 
 \begin{figure}
 \includegraphics[width=15cm]{quiz/screenshots/taking-quiz}
@@ -245,21 +249,27 @@ library\footnote{\url{http://hackage.haskell.org/package/formlets}}.
 
 \subsection{Miscellaneous functions}
 
-We can run the server using the |runServer| function, which takes the port, the
-|homePage|, the dispatch function |handle| and an environment.
+We can run the server using the |runServer| function, which takes the port, a
+static homepage, the dispatch function |handle| and an environment.
 
 > main = do
 >   ref <- newMVar emptyBasilState :: IO (MVar St)
 >   runServer 8080 homePage template handle (Env ref M.empty)
 
-The |homePage| is a static |Html| page that shows a list of actions.
+The |homePage| is a static Html page that shows a welcome message.
 
 > homePage = X.toHtml "Welcome to the quiz system."
 
-Now we will provide the instances for forms. For a |Quiz|, we again use a
-modified form, because we want to render the description input field as a
-multiline input field, which is done using the |TextArea| combinator provided by
-the generic programming library.
+Recall that a |Quiz| and |Question| were rendered using the |input| and
+|inputMany| combinator. To do this, we need to make |Quiz| and |Question| an
+instance of the |DefaultForm| typeclass.
+
+Recall that the |Quiz| datatype consists of a |subject| and a |description|
+field, which both have type |String|. However, we want to render the description
+as a multiline input field. This can be used by building a custom view datatype
+|QuizForm| and a lens between the view datatype and the |Quiz| datatype. The
+view datatype uses the |TextArea| type, which is provided by the generic
+programming library.
 
 > instance DefaultForm Quiz     where form = projectedForm quizProj (Quiz "" "")
 
@@ -269,7 +279,8 @@ the generic programming library.
 > quizProj = Lens $ QuizForm  <$>  _subject      `for` lSubject 
 >                             <*>  _description  `for` (textAreaToString % lDescription)
 
-For |Question|s, we use the normal generic forms.
+For |Question|s, we use the normal generic forms provided by the generic
+programming library.
 
 > instance DefaultForm Question where form = gform Nothing
 
@@ -279,7 +290,10 @@ We also have used some helper types and functions.
 > type St      = BasilState QuizModel QuizRelations
 > type Web i o = WebT (MVar St) IO i o
 
-The |basil| function lifts a database action into a |Web| value.
+The |basil| function lifts a database action into a |Web| value. It uses the
+in-memory database features provided by the data modeling library. The in-memory
+database is stored in an |MVar|. Therefore, performing a database action
+involves performing a change on the |MVar|.
 
 > basil  :: (a -> M b) -> Web a b
 > basil  f = proc a -> do
@@ -289,9 +303,9 @@ The |basil| function lifts a database action into a |Web| value.
 >             let (x, st') = contBasil (f a) st
 >             putMVar refState st'
 >             return x
->           ) -< (st, a)
+>     ) -< (st, a)
 
-The function |basil'| is a utility function that ignore the argument.
+The function |basil'| is a utility function that ignores the argument.
 
 > basil' :: M b -> Web a b
 > basil' = basil . const
