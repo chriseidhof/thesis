@@ -24,7 +24,7 @@
 
 \todo{Define entire interface in last section.}
 
-In this section we will build a monadic continuation-based
+In this section we build a monadic continuation-based
 web programming library. The full interface of the library is in Section
 \ref{sec:monadinterface}.
 The interface that we define is inspired by iTasks \cite{plasmeijeriTasks}, which is a
@@ -76,7 +76,7 @@ produces a |Result|:
 > runPage :: Page a ->  NextPage -> RequestBody -> Result a
 
 For the |Display| constructor, we display the message using the |continue|
-function, which we will define later.
+function, which we define later.
 For the second field of the |Step| constructor, which has type |Web a|, we
 return a unit value.
 As we will see, |Web| can be made an instance of the |Monad| typeclass.
@@ -268,9 +268,9 @@ This is the approach taken by the Clean compiler, which wraps everything in a
 \item We could use a different structure to represent our continuations which
 does not store functions explicitly. For example, instead of a monadic
 interface, we can provide an \emph{arrow interface}.
-We will expand on this approach in section \ref{sec:arrowbased}
+We expand on this approach in section \ref{sec:arrowbased}
 \item We could use a form of meta-programming to analyze the programming and
-\emph{defunctionalize} it. We will look further into this approach in section
+\emph{defunctionalize} it. We look further into this approach in section
 \ref{sec:defunctionalization}.
 \end{itemize}
 \todo{more approaches?}

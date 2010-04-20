@@ -37,7 +37,7 @@
 
 \subsection{The library implementation}
 
-We will now redefine the |WebT m| datatype in such a way that we can make it an
+We now redefine the |WebT m| datatype in such a way that we can make it an
 instance of the |Arrow| typeclas. The |Arrow| typeclass is defined in figure
 \ref{fig:Arrow}, and the minimal definition consists of |arr| and |first|. As we
 can see, any |Arrow| instance needs to be of kind |* -> * -> *|, and the |WebT m|
@@ -47,7 +47,7 @@ Therefore, we add an extra type-parameter |i|, which captures the input of a
 |WebT m| computation, or in other words: its environment.
 The |o| type-parameter indicates the result of running a |WebT m| computation.
 Note that there are no functions stored in the |WebT m| type itself, which is
-essential for serialization, as we will see later on.
+essential for serialization, as we see later on.
 
 > -- type Web i o = WebT IO i o
 
@@ -101,9 +101,10 @@ essential for serialization, as we will see later on.
 >   Cont     :: i  -> WebT s m i o -> Continuation s m o
 >   NoCont   :: o  -> Continuation s m o
 
-Restructure performs partial evaluation.
-If it can already apply the next part of the continuation it will do so.
-In particular, it will apply |Choice| values that will not be triggered and apply pure functions.
+Restructure performs partial evaluation, and tries to apply the next part of the
+continuation.
+In particular, it eliminates |Choice| values that will not be triggered and
+applies pure functions.
 
 > restructure :: Continuation s m o -> Continuation s m o
 > restructure (Cont x (Seq (Choice l) r))           = case x of 
@@ -181,7 +182,7 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 
 Now we can define the function |handleRequest|, which takes a |WebT m| value and
 its input, a fresh URL that is used as link to the next page and a
-|RequestBody|. It will produce a |Result|, which is either |Done| or a
+|RequestBody|. It produces a |Result|, which is either |Done| or a
 continuation.
 
 > handleRequest :: Monad m => WebT s m i o -> s -> i -> NextPage -> RequestBody -> m (Result s m o)

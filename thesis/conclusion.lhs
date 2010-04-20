@@ -109,7 +109,7 @@ especially because everything is strongly typed and checked at compile-time.
 
 \section{Future work}
 
-In each of the sections we have discussed possible future work, which we will
+In each of the sections we have discussed possible future work, which we 
 summarize here. For ER models,
 we can extend the library to support full ER models with relationships between more
 than two entities, attributes on relationships, add support for primary keys and
@@ -125,10 +125,10 @@ The generic programming library for building views is motivated by our own
 examples. In the future, we can add support for more kinds of generic views for
 different datatypes.
 
-Although we have built some small applications with the libraries, we think that
+Although we have built some small applications with the libraries, 
 building larger examples will be of great benefit to the practical applications
 of the libraries. We do not think that our libraries are finished yet, using
-them for real applications will give a good indication of what features are
+them for real applications gives a good indication of what features are
 lacking.
 
 \subsection{AJAX}
@@ -143,7 +143,7 @@ client-side scripting. In Haskell, this could be achieved using the YHC Compiler
 
 A different approach would be to build a domain-specific language that generates
 Javascript. However, this might lead to a compromise in expressiveness, as it
-will probably impossible to support arbitrary Haskell functions. Also, the
+is probably impossible to support arbitrary Haskell functions. Also, the
 Haskell evaluation model is very different from the Javascript evaluation model, which
 can lead to errors that are only detected at runtime.
 This might be particularly true if laziness and infinite structures are used.
@@ -170,7 +170,7 @@ three libraries that are used by that application. Together, they form a
 framework that can be used to build web applications in a type-safe way. Generic
 programming allows for rapid prototyping, but using lenses we can also change
 generic programs.
-We think that our work could form the basis of libraries that will be used in
+We think that our work could form the basis of libraries to be used in
 real applications. 
 
 %if not thesis

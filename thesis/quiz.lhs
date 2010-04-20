@@ -31,15 +31,16 @@
 
 \section{Introduction}
 
-In this chapter we will build an example application for creating and taking
+In this chapter we build an example application for creating and taking
 simple multiple-choice quizzes.
-All the code is available as literate Haskell.
-The application is built on top of the three libraries used in this thesis, and
-we will give references to libraries where necessary.
+All the code is available as literate
+Haskell\footnote{\url{http://github.com/chriseidhof/thesis/tree/master/thesis/quiz/}}.
+The application is built on top of the three libraries developed in this thesis, and
+we refer to parts of the libraries when the need arises.
 
-We will start by defining the data model for our quizzes in section
+We start by defining the data model for our quizzes in section
 \ref{sec:quizmodel}.
-Based on that data model we will build the controller and view code in section
+Based on that data model we build the controller and view code in section
 \ref{sec:quizcontroller}.
 
 \section{The Quiz model}

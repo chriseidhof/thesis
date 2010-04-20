@@ -30,64 +30,60 @@
 Web programming is a field that has been dominated by dynamic languages, because
 of their perceived expressivity, meta-programming abilities and flexibility. In
 this thesis, we show that the statically typed programming language Haskell
-forms a good basis to build a web development framework.
+forms an even better basis. We demonstrate this by building a web development framework.
 
 Statically typed languages have numerous advantages over dynamic languages.
-Type checking eliminates a large class of run-time errors and generally leads to
-code that can be optimized heavily. Haskell is a language that has type
-inferencing, removing the burden of annotating every variable explicitly. We
-see how we can leverage these properties to make web programming in Haskell
-a good alternative to dynamically typed languages.
+Type checking eliminates a large class of run-time errors and enables many
+compile-time optimizations. Statically typed languages have the perceived
+disadvantage of denoting all types explicitly, however: Haskell is a language that has type
+inferencing, this disadvantage does not arise.
 
-In this thesis, we build a web framework in Haskell based on the 
-\emph{model-view-controller} pattern \cite{krasner1988description}. We believe
-that this leads to a separation of concerns and achieves good modularity:
+The framework we develop in this thesis is based on the 
+\emph{model-view-controller} pattern \cite{krasner1988description}.
+This leads to a separation of concerns and achieves good modularity:
 
 \begin{itemize}
-\item The model layer takes care of the data storage.
-\item The view layer displays model data to the application user.
-\item The controller layer coordinates action between the model and view.
+\item The model layer takes care of the data model and persistence.
+\item The view layer displays model data to the end user.
+\item The controller layer mediates between the model and view and contains application logic.
 \end{itemize}
 
-For each of these layers, we have found abstractions.
-Therefore, we try to design three orthogonal libraries, one for each layer.
-We also show a larger example in chapter \ref{chap:quizexample} that describes how all
+For each of these layers, we design a library. The libraries are completely
+orthogonal but work very well together.
+We present an example in chapter \ref{chap:quizexample} that describes how all
 of the libraries designed in this thesis fit together.
-This thesis tries to answer the following questions:
+This thesis addresses the following questions:
 
 \begin{itemize}
 \item What is a good abstraction for representing data models?
 \item What is a good abstraction for representing interactions that span over multiple pages?
-\item How can we generate as much view code as possible, thus reducing the amount of boilerplate?
+\item How can we use the type system to reduce boilerplace code as much as possible?
 \end{itemize}
 
 To answer these questions, we have looked at both programming language research
-and web programming research. We try to answer each question by
-implementing a library.
+and web programming research.
 
-In chapter \ref{chap:quizexample} we show a sample application that we have built
-using the libraries described in this thesis.
-It describes a system for creating and taking multiple-choice quizzes, and
-describes the data model, the view and the controller.
+In chapter \ref{chap:quizexample} we show a sample application 
+using the libraries described in this thesis:
+a system for creating and taking multiple-choice quizzes.
 
-In chapter \ref{chap:ermodels} we describe a library for representing and
-working with ER models in Haskell.
-We believe they form a high-level abstraction of data models.
-We describe a library to represent ER models and describe the
-implementation of two different backends: one backend builds an in-memory
-database from the ER model, and the other backend builds an interface with a
-relational database.
+In chapter \ref{chap:ermodels} we describe how to represent and
+work with ER models in Haskell.
+ER models are a high-level abstraction of data models.
+We implement a library to represent ER models and describe the
+implementation of two backends: one is an in-memory
+database, and the other an interface with a relational database.
 
 Chapter \ref{chap:continuations} describes libraries for programming the web
-with continuations. They form the controller part of our application.
-We believe continuations are a good abstraction of interactions
-between multiple web pages: it adds a stateful layer on top of the stateless HTTP
-framework. We have built multiple libraries, and discuss their differences.
+using continuations to describe interactions.
+These libraries form the controller part of our application.
+Continuations add a stateful layer on top of the stateless HTTP
+protocol. We have built multiple libraries, and discuss their differences.
 
-Chapter \ref{chap:views} describes how we have used generic programming to
-reduce view boilerplate. We have built functions that generate view code based on
-the structure of the input data, and show how to customize the generated code
-in an elegant, functional way.
+In chapter \ref{chap:views} we describe how generic programming reduces
+view boilerplate. We have built functions that generate view code based on
+the structure of the input data, and we show how the generated code can be
+customized in an elegant, functional way.
 
 In chapter \ref{chap:conclusion}, we describe related and future work and conclude.
 

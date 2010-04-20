@@ -44,7 +44,7 @@ defined in the regular\footnote{\url{http://hackage.haskell.org/package/regular}
 > $(deriveAll ''QuizRoute "PFQuizRoute")
 > type instance PF QuizRoute = PFQuizRoute
 
-Finally, we provide a helper function that links to a |QuizRoute|. We will use
+Finally, we provide a helper function that links to a |QuizRoute|. We use
 this function to generate HTML that links to an action. Because the first
 argument is a |QuizRoute| value, we can only link to correct URLs.
 

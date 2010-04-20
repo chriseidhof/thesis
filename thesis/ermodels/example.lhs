@@ -41,7 +41,7 @@ Ultimately, this could be done using a Template Haskell function.
 > ixRelease   =   Suc (Suc Zero)
 
 We define the |contributes| and |releases| relationship sets. Note that we give
-an extra |String| parameter, which will be used in a later section, when we
+an extra |String| parameter, which is used in a later section, when we
 build an interface to a relational database.
 
 > type TContributes  = Rel  CompilerModel  Many  Compiler  Many  Person

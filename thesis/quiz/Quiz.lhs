@@ -43,7 +43,7 @@ type |Web i ()|.
 > handle (View i)  = Cont (Ref ixQuiz i)  viewQuiz
 > handle (Take x)  = Cont (Ref ixQuiz x)  takeQuiz
 
-From here one, we will make heavy use of Arrow notation
+From here one, we make heavy use of Arrow notation
 \cite{paterson2001new}. Using arrow notation, we can conveniently construct web
 programs on top of our continuations library from chapter
 \ref{chap:continuations}.
@@ -76,7 +76,7 @@ After the input |q| is entered, we add the quiz to the database, yielding a
 reference |ref| to the Quiz value. The database code is wrapped in the |basil|
 function. The |new| function takes an index into the ER model, the entity value
 and a list with all the necessary references. For quizzes, this is the empty
-list |PNil|, but we will see a more complicated example later on.
+list |PNil|, but we see a more complicated example later on.
 
 After the quiz is added to the database, we proceed to add questions to the
 quiz. We do this with the |addQuestions| function, which uses the reference to
@@ -104,7 +104,7 @@ The ER modeling library uses type-level functions that all relationships are
 correctly used. For example, in our data model, we have specified that each
 question belongs to exactly one |Quiz|. Therefore, we also need to supply a
 reference to a |Quiz| entity when adding a new |Question| entity to the
-database. If we forget to do this, the compiler will give a type-error.
+database. If we forget to do this, the compiler gives a type-error.
 
 > newQuestion :: Ref QuizModel Quiz -> Question -> M (Ref QuizModel Question)
 > newQuestion refQuiz question = new  ixQuestion 

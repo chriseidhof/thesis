@@ -94,8 +94,8 @@ counterpart, has no need for inventing superfluous names, and reflects the seque
 shorter way to express the solution without using libraries that  were
 specifically designed to solve this Arc Challenge.
 
-In section \ref{sec:monadic}, we will introduce the library that is used to
-implement the above example. We will show the main shortcoming of this approach:
+In section \ref{sec:monadic}, we introduce the library that is used to
+implement the above example. We show the main shortcoming of this approach:
 it is impossible to serialize Haskell functions.
 When we restart our server all
 client state is lost.
@@ -187,7 +187,7 @@ continuations and release it on hackage
 \footnote{\url{http://hackage.haskell.org}}. We want to extend the library to
 support more primitive actions that can also be user-defined.
 
-We hope that a new typed meta-programming language for Haskell will arise that
+We hope that a new typed meta-programming language for Haskell arises that
 enables us to do defunctionalization of monadic |Web| values. That way we can
 provide a very simple but powerful interface to the library users while being
 able to serialize functions.

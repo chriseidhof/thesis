@@ -18,7 +18,7 @@
 
 \label{sec:encoding}
 
-From now on, we will use a simplified version of the ER model. We only consider
+From now on, we use a simplified version of the ER model. We only consider
 relationships between exactly entities. There are no attributes on
 relationships.  Instead of letting the library user define a key to identify an
 entity, we automatically add an integer attribute \attrib{id} for every entity
@@ -123,7 +123,7 @@ constructor, so that we can ensure the entities are in the same ER Model:
 >        ->  Rel entities cardinalityL l cardinalityR r
 
 We could have changed the |Rel| constructor to have type-class constraints
-instead of adding these fields, but having the indexes explicit will be handy
+instead of adding these fields, but having the indexes explicit is handy
 for pattern-matching, as we will see later on.
 
 Our |contributes| relationship type has to change appropriately. We also define
@@ -141,7 +141,7 @@ We enumerate all relationship sets on the type-level.
 >                         :*:  Nil
 
 We define a typeclass with a functional dependency that links the relationships to
-the entity sets. For reasons that will become clear later on, we have used the
+the entity sets. For reasons that become clear later on, we have used the
 |TList4| type.
 
 > class ERModel entities rels | entities -> rels, rels -> entities where
@@ -154,7 +154,7 @@ the entity sets. For reasons that will become clear later on, we have used the
 
 We now achieved the goal stated in in the introduction: the ER
 model from the previous section is encoded in Haskell. In the next section,
-we will build a simple in-memory database from the ground up. If you are
+we build a simple in-memory database from the ground up. If you are
 interested in the implementation, continue reading. If you are just interested
 in using it, skip to section \ref{sec:inmemexample} on page
 \pageref{sec:inmemexample} for a complete example that defines an example and an
@@ -164,5 +164,5 @@ following sections and summarized in sections \ref{sec:ercoreif} and
 
 Instead of giving the witnesses and |Rel| values explicitly, we might have
 done everything implicitly and let the type-inferencer do the work. However, as
-we will see in section \ref{sec:erconclusion}, the type errors quickly become
+we we will in section \ref{sec:erconclusion}, the type errors quickly become
 unmanageable.

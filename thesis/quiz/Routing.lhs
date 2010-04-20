@@ -7,7 +7,7 @@
 > import Data.Char (toLower)
 > import Data.List (intercalate)
 
-From here on we will define the library. For now, we will use |String|s as our |URL|
+From here on we define the library. For now, we use |String|s as our |URL|
 types, but this should of course be a proper URL type.
 
 > type URL = [String]
@@ -15,7 +15,7 @@ types, but this should of course be a proper URL type.
 > renderURL  :: URL -> String
 > components :: String -> URL
 
-We will need two typeclasses. One for the generic functionality, |GToURL|, and one for the
+We need two typeclasses: one for the generic functionality, |GToURL|, and one for the
 normal datatypes, |ToURL|.
 
 > class GToURL f where

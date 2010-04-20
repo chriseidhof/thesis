@@ -9,8 +9,8 @@
 Defunctionalization is a technique to convert higher-order functional programs
 into first-order programs, i.e. programs without higher-order functions
 \cite{reynoldsdefunctionalization, danvy2001defunctionalization}.
-We will explain the technique by defunctionalizing an example program.
-After that, we will try to embed defunctionalization in the Haskell type system
+We explain the technique by defunctionalizing an example program.
+After that, we try to embed defunctionalization in the Haskell type system
 by using an index monad. However, the code is not finished.
 
 Consider the following example, written in monadic style:
@@ -42,7 +42,7 @@ numbered each lambda:
 >  {- 5 -} \()    -> return $ name ++ ", the sum is " ++ show num
 
 We can now do manual defunctionalization.
-First, will create a data structure with a constructor for each function.
+First, we create a data structure with a constructor for each function.
 That constructor contains a field for every free variable inside that function.
 For example, inside the last function both |name| and |l| are free variables.
 The datatype for our example program looks like this:
@@ -100,14 +100,14 @@ automatic defunctionalization.
 
 \subsection{A custom parameterized monad}
 
-The key idea is that we will use the type system to perform analysis of our
-code by building an indexed monad.
-This idea to encode a program analysis in the type system has been around for some time in the Haskell community
+The key idea is to use the type system for analysis of our
+code, by building an indexed monad.
+The idea to encode a program analysis in the type system has been around for some time in the Haskell community
 \cite{russo2008library, pucella2009haskell, fluet2006monadic}.
 
-We will start out with a very simple Monad, which is only parameterized over its result type.
-Then we will add another parameter for the free variable analysis.
-Finally, we will see that we need two additional parameters that are used to give unique identifiers to every |bind| construct.
+We start out with a very simple Monad, which is only parameterized over its result type.
+Then we add another parameter for the free variable analysis.
+Finally, we see that we need two additional parameters that are used to give unique identifiers to every |bind| construct.
 
 \begin{spec}
 data Cont a where
@@ -115,7 +115,7 @@ data Cont a where
   Bind   :: Cont a -> (a -> Cont b)  -> Cont b
 \end{spec}
 
-We can easily make |Cont| an instance of |Monad|. The |Cont| datatype makes the structure of the monadic expression explicit: the monadic binds are explicit in our |Cont| datatype. The first step we will take is extend the |Cont| datatype with an extra parameter |fV|, which stands for the free variables.
+We can easily make |Cont| an instance of |Monad|. The |Cont| datatype makes the structure of the monadic expression explicit: the monadic binds are explicit in our |Cont| datatype. The first step we take is extend the |Cont| datatype with an extra parameter |fV|, which stands for the free variables.
 
 \begin{spec}
 data Cont fv a where
@@ -127,7 +127,8 @@ However, the definition above is not done yet In the |Use| constructor, the |fv|
 
 $ fv_3 = fv_1 \cup (fv_2 - \{a\}) $
 
-An improvement would be to use a |Ref| datatype that refers to a free variable. The exact implementation is not important now, and it will have only one type parameter, the type of the value it refers to:
+An improvement would be to use a |Ref| datatype that refers to a free variable.
+The exact implementation is not important now. It has only one type parameter, the type of the value it refers to:
 
 \begin{spec}
  data Ref a
@@ -141,7 +142,7 @@ data Cont fv a where
 
 We can now see which variables are used. However, the type variable |fv3| in the |Bind| constructor is still not correct: it needs to be the union of the type variables |fv1| and |fv2|, where |a| is removed from |fv2|.
 
-First, we will change the |Use| constructor to return a list of references to free variables (even though, in our case, there is only one free variable). The |Singleton| type is a type synonym for a singleton heterogenerous list.
+First, we change the |Use| constructor to return a list of references to free variables (even though, in our case, there is only one free variable). The |Singleton| type is a type synonym for a singleton heterogenerous list.
 
 \begin{spec}
  data Cont fv a where

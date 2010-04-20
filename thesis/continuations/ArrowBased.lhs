@@ -37,11 +37,11 @@ monads.
 However, because the monadic approach stores functions inside the |Web| and
 |Result| datatypes, it is not possible to serialize these datatypes.
 If we change our library to an Arrow-based interface
-\cite{hughes2000generalising}, we can solve this. We will first show some
+\cite{hughes2000generalising}, we can solve this. We first show some
 examples, then implement the library in section \ref{sec:arrowimpl},
 and finally discuss how to serialize these continuations in \ref{sec:arrowserial}.
 
-First, we will show some example programs using our library. For the API used in
+First, we show some example programs using our library. For the API used in
 these examples see section \ref{sec:arrowinterface}.
 The solution to the Arc challenge stated the introduction of this chapter is
 written down in the following way:
@@ -116,7 +116,7 @@ class Category a => Arrow a where
 
 \end{figure}
 
-We will now redefine the |Web| datatype in such a way that we can make it an
+We now redefine the |Web| datatype in such a way that we can make it an
 instance of the |Arrow| typeclas. The |Arrow| typeclass is defined in figure
 \ref{fig:Arrow}, and the minimal definition consists of |arr| and |first|. As we
 can see, any |Arrow| instance needs to be of kind |* -> * -> *|, and the |Web|
@@ -126,7 +126,7 @@ Therefore, we add an extra type-parameter |i|, which captures the input of a
 |Web| computation, or in other words: its environment.
 The |o| type-parameter indicates the result of running a |Web| computation.
 Note that there are no functions stored in the |Web| type itself, which is
-essential for serialization, as we will see later on.
+essential for serialization, as we show later on.
 
 > data Web i o where
 
@@ -147,13 +147,14 @@ To compose two |Web| computations, we provide the |Seq| constructor.
 When we want to thread a value through a computation, we can use the |First|
 constructor. It takes a computation, and adds an extra |c| value to the input and
 the output.
-When running the |Web| computation, the |c| value will be passed around
-unchanged.
+When running the |Web| computation, the |c| input does not change.
 
 >   First   :: Web a b -> Web (a, c) (b, c)
 
-Finally, we provide a constructor |Choice| for making choices. We will see how
-to use this later on. \todo{Explain better.}
+Finally, we provide a constructor |Choice| for making choices. If the input is
+a type |a| wrapped in a |Left| constructor, the |Web| action is executed. If the
+input is a |c| value wrapped in the |Right| constructor, the output will be a
+value of type |Right c| too.
 
 >   Choice  :: Web a b -> Web (Either a c) (Either b c)
 
@@ -264,7 +265,7 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 
 Now we can define the function |handleRequest|, which takes a |Web| value and
 its input, a fresh URL that is used as link to the next page and a
-|RequestBody|. It will produce a |Result|, which is either |Done| or a
+|RequestBody|. It produces a |Result|, which is either |Done| or a
 continuation.
 
 > handleRequest :: Web i o -> i -> NextPage -> RequestBody -> Result o

@@ -87,7 +87,7 @@ for bidirectional programming. Our solution uses lenses to convert a model
 datatype into a view datatype. The generic program then operators on the view
 datatype, and uses lenses to update the original model.
 
-In section \ref{sec:ghtml} we will describe how to generate HTML using generic
+In section \ref{sec:ghtml} we describe how to generate HTML using generic
 programming.
 Section \ref{sec:gform} describes how to build type-safe forms based on the
 formlets\footnote{\url{http://hackage.haskell.org/package/formlets}} library
@@ -125,7 +125,7 @@ typeclass. The type |PFPerson|, which is called the \emph{pattern functor},
 describes the structure of the |Person| type in
 terms of basic combinators such as the product and sum datatype.
 
-We will use a function |ghtml| that generates HTML for any |a| that can be
+We use a function |ghtml| that generates HTML for any |a| that can be
 converted into a structural view:
 
 \begin{spec}
@@ -193,12 +193,12 @@ the separation of concerns while having full flexibility over the view.
 \section{Generic forms}
 \label{sec:gform}
 
-In this section, we will build type-safe, composable, error-checking forms using the formlets
+In this section, we build type-safe, composable, error-checking forms using the formlets
 library \cite{formlets}. A form with type |Form a| tries to construct values of |a|.
 Its input is automatically checked for mistakes and a user-friendly
-error-message is shown if a mistake was made. We will first introduce the
+error-message is shown if a mistake was made. First we introduce the
 formlets library and then show how to build formlets generically.
-Finally, to change the structure of the forms we will use bi-directional
+Finally, to change the structure of the forms we use bi-directional
 programming.
 
 The formlets library provides combinators to build forms. An important notion is that a
@@ -206,7 +206,7 @@ form always consists of two parts: one function generates the HTML of a form, th
 parses the data sent by that form. When we build a form manually, we always have
 to make sure that the field names in the HTML match the field names in the
 parser function. Using formlets, the HTML and the parser function are constructed
-at the same time so that field names will always match.
+at the same time so that field names always match.
 
 We first introduce some basic functions defined in the formlets library.
 The |input| function produces a form with just an input field:
@@ -216,7 +216,7 @@ input :: Form String
 \end{spec}
 
 The |<*>| operator combines two forms. The first form is of type |a -> b|, which
-means that when it is combined with a |Form a|, it will yield a |Form b|:
+means that when it is combined with a |Form a|, it yields a |Form b|:
 
 \begin{spec}
 (<*>) :: Form (a -> b) -> Form a -> Form b
@@ -318,7 +318,7 @@ projectedForm :: (Regular c, GFormlet (PF c)) => (a :-> c) -> a -> Form m a
 \end{spec}
 
 We now proceed do define such a lens that converts between |Person| and
-|PersonView|. Combined with the |projectedForm| function, this will yield a form
+|PersonView|. Combined with the |projectedForm| function, this yields a form
 that is rendered as a |PersonView| form but produces |Person| values.
 For a detailed explanation of how to construct lenses using the fclabels package, see \todo{TR fclabels}.
 
@@ -381,7 +381,7 @@ Use generic programming, we can derive an API automatically from our model
 datatypes.
 However, if we have other programs that access our API, it is important that our
 API is stable: the structure should not change very often.
-If we use generic programming, every change in our model will be reflected in
+If we use generic programming, every change in our model is reflected in
 the API.
 We show that by using our lenses library we can solve this problem.
 
@@ -402,7 +402,7 @@ If we convert an example |Person| value to JSON, we get the following result:
 \end{verbatim}
 
 We can use this as our API and provide the JSON to our end users. However, if
-the |Person| datatype changes, the API will change accordingly. Suppose we split
+the |Person| datatype changes, the API changes accordingly. Suppose we split
 the |name| field into |firstName| and |lastName|:
 
 > data Person'  = Person'  { firstName1  :: String
@@ -421,7 +421,7 @@ the |name| field into |firstName| and |lastName|:
 
 %endif
 
-Now the JSON output will change, and people who depend on our API will have to
+Now the JSON output changes, and people who depend on our API will have to
 rewrite their code. In order to solve this problem, we can use the fclabels
 package to provide a stable API. We define a |PersonAPI| datatype that is the
 same as our original |Person| datatype:
@@ -435,10 +435,10 @@ same as our original |Person| datatype:
 >                    <*> email'      `for`  lEmail
 
 If we now change the |Person| datatype to have the fields |firstName| and
-|lastName| instead of |name|, the compiler will give an error on the
+|lastName| instead of |name|, the compiler reports an error at the
 |personToPersonAPI| function: the |lName| label does not exist anymore.
 
-Therefore, we will first define a lens that splits a name into a first name
+Therefore, we first define a lens that splits a name into a first name
 and a last name.
 
 > fullName :: Person' :-> String

@@ -31,7 +31,7 @@
 
 Every computer program manipulates data. To describe the data model of a
 program, several techniques exist.
-In this chapter, we will look at one such technique: entity relationship
+In this chapter, we look at one such technique: entity relationship
 modeling \cite{chen1976entity}, a way to describe data models on a \emph{conceptual
 level}. A data model on the conceptual level, called a conceptual model, closely
 matches the way we think about data models.
@@ -43,15 +43,15 @@ various purposes: it is a means to communicate between designers and users of a
 system to verify the mutual understanding of a data model.
 Furthermore, because an ER model is a formal specification, it can be used for
 code generation.
-Although an ER model is often manually translated to a database schema, we will
+Although an ER model is often manually translated to a database schema, we 
 build a library that performs this translation automatically.
 
 In ER models, entities are elementary units, and are linked to each other using
 relationships.
 An ER model constrains which types of entities can occur in our data model, and
 which types of relations can occur.
-We will encode these constraints in Haskell, using the type system.
-The result of our work will be a library that allows us to describe an ER model
+We encode these constraints in Haskell, using the type system.
+The result of our work is a library that allows us to describe an ER model
 in Haskell, where all constraints are automatically checked by the type checker.
 
 From a data model on the conceptual level, we can derive a data model on the
@@ -59,9 +59,9 @@ From a data model on the conceptual level, we can derive a data model on the
 A logical model describes a data model in terms of a database system.
 For example, a schema of a relational database system is a logical model, and a
 schema of an in-memory database too.
-We will use our library that encodes ER models to derive logical models
+We use our library that encodes ER models to derive logical models
 automatically.
-For example, we will derive an in-memory database schema and a relational
+For example, we derive an in-memory database schema and a relational
 database schema from an encoded ER model.
 We leverage the type system to make sure the generated logical models are
 correct and have the same constraints as their conceptual counterparts.
@@ -92,7 +92,7 @@ level}.
 
 \todo{revised until here.}
 In section \ref{sec:ermodels}, we build an the definition of an ER model and introduce the
-vocabulary for ER modeling. We show an ER model that we will use as our running
+vocabulary for ER modeling. We show an ER model that we use as our running
 example.
 
 In section \ref{sec:encoding}, we encode an example ER model in Haskell. 
@@ -201,9 +201,9 @@ From the ER model we can build an in-memory database in Haskell. We want
 operations to create, read, update and delete an entity. We want to have the same
 operations on relationships. Additionally, we want to keep relationships sound. For
 example, consider the \relationship{contributes} relationship: we want to make sure that every
-\entset{Release} belongs to exactly one \entset{Compiler}. In section \ref{sec:entities} we will
-see how we can store entities and in section \ref{sec:inmemrels} we will see how
-we can store relationships. Finally, in section \ref{sec:inmeminterface} we will
+\entset{Release} belongs to exactly one \entset{Compiler}. In section \ref{sec:entities} we 
+see how we can store entities and in section \ref{sec:inmemrels} we see how
+we can store relationships. Finally, in section \ref{sec:inmeminterface} we 
 build the interface for a library by combining the relationship storage and
 entity storage.
 
@@ -250,7 +250,7 @@ Baars and Swierstra \cite{tttas}:
 \subsection{Saving relationships}
 \label{sec:inmemrels}
 
-In this section, we will store relationships in our in-memory database. 
+In this section, we store relationships in our in-memory database. 
 To do this, we have to compute the right data-structure based on the
 relationship type.
 
@@ -319,9 +319,9 @@ in Haskell. We use a typed approach that is inspired by Leijen
 In section \ref{sec:rdbentities} we show how we can store entities in a relational
 database, this is a simple translation.
 Section \ref{sec:rdbrels} describes how we can store relationships. In
-particular, we will show how to translate relationships to either foreign keys
+particular, we show how to translate relationships to either foreign keys
 or join tables.
-Finally, we will end with an easy to use interface for the user in section
+Finally, we end with an easy to use interface for the user in section
 \ref{sec:rdbinterface}.
 
 \subsection{Modeling a relational database}
@@ -336,7 +336,7 @@ Such a schema is a list of attributes, where an attribute consist of a name and 
 Every table stores a list of rows, where each row is a tuple with values for the
 attributes in the schema.
 A large difference with ER models is that there is no notion of relationships in a
-RDBMS, instead a relationship is encoded by adding tables, which we will expand upon in
+RDBMS, instead a relationship is encoded by adding tables, which we expand upon in
 section \ref{sec:rdbrels}.
 
 %include ../packages/Basil/src/Basil/Database/Relational/Core.lhs
@@ -368,10 +368,10 @@ for production use. The full interface is described in section
 \label{sec:query}
 
 In the previous sections, we saw how we can find all entities in an entity set
-or a single entity, by its |id|. In this section we will implement
+or a single entity, by its |id|. In this section we implement
 \emph{selection}, which gives us more advanced ways of finding entities. For
 example, we might want to find all |Person| entities with the name |"chris"|, or
-all compilers with a version larger than |1|. In this section, we will show how
+all compilers with a version larger than |1|. In this section, we show how
 we can construct such queries in a typed way, and perform them on both the
 in-memory database and the relational database.
 
@@ -395,7 +395,7 @@ for both the in-memory database and the relational database.
 \label{sec:erfuture}
 
 Our library provides a good starting point, but is far from complete. In this
-section we will discuss possible ways to extend our library.
+section we discuss possible ways to extend our library.
 
 \subsection{ER model extensions}
 
@@ -462,7 +462,7 @@ in-memory database is used as a scratchpad before commiting changes to the real
 database.
 
 For more complicated documents, we might use a lightweight database instead of a text-file.
-The user will expect the same behavior: she loads a file, makes some changes, and
+The user expects the same behavior: she loads a file, makes some changes, and
 only when she presses \emph{save} the changes are persisted.
 By combining our
 libraries for the relational database and the in-memory database we can achieve
