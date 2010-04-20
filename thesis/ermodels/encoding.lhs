@@ -124,7 +124,7 @@ constructor, so that we can ensure the entities are in the same ER Model:
 
 We could have changed the |Rel| constructor to have type-class constraints
 instead of adding these fields, but having the indexes explicit is handy
-for pattern-matching, as we will see later on.
+for pattern-matching, as we show later on.
 
 Our |contributes| relationship type has to change appropriately. We also define
 the \relationship{releases} relationship.
@@ -163,6 +163,6 @@ following sections and summarized in sections \ref{sec:ercoreif} and
 \ref{sec:inmemif}.
 
 Instead of giving the witnesses and |Rel| values explicitly, we might have
-done everything implicitly and let the type-inferencer do the work. However, as
-we we will in section \ref{sec:erconclusion}, the type errors quickly become
+done everything implicitly and let the type-inferencer do the work. In section
+\ref{sec:erconclusion} we see however that the type errors quickly become
 unmanageable.

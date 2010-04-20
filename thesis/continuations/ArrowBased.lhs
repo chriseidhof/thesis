@@ -153,7 +153,7 @@ When running the |Web| computation, the |c| input does not change.
 
 Finally, we provide a constructor |Choice| for making choices. If the input is
 a type |a| wrapped in a |Left| constructor, the |Web| action is executed. If the
-input is a |c| value wrapped in the |Right| constructor, the output will be a
+input is a |c| value wrapped in the |Right| constructor, the output is a
 value of type |Right c| too.
 
 >   Choice  :: Web a b -> Web (Either a c) (Either b c)

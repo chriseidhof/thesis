@@ -421,7 +421,7 @@ the |name| field into |firstName| and |lastName|:
 
 %endif
 
-Now the JSON output changes, and people who depend on our API will have to
+Now the JSON output changes, and people who depend on our API have to
 rewrite their code. In order to solve this problem, we can use the fclabels
 package to provide a stable API. We define a |PersonAPI| datatype that is the
 same as our original |Person| datatype:
@@ -456,8 +456,8 @@ Now we can write the conversion function that uses the new |fullName| lens.
 >                   <*> birthDate' `for` lBirthDate1
 >                   <*> email'     `for` lEmail1
 
-If we generate JSON for the |PersonAPI| values, the API will not change, even
-though our internal model can change. If the changes to the |Person| datatype
+If we generate JSON for the |PersonAPI| values, the API does not change when 
+our internal model changes. If the changes to the |Person| datatype
 are conflicting (for example, a field is removed), we get a compile-time error.
 
 Note that we did not write any JSON code manually. This means that our view
