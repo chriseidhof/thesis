@@ -32,13 +32,12 @@
 Every computer program manipulates data. To describe the data model of a
 program, several techniques exist.
 In this chapter, we look at one such technique: entity relationship
-modeling \cite{chen1976entity}, a way to describe data models on a \emph{conceptual
-level}. A data model on the conceptual level, called a conceptual model, closely
-matches the way we think about data models.
+modeling \cite{chen1976entity}, a way to describe data models on the \emph{conceptual
+level}, which closely matches the way we think about data models.
 
 An entity-relationship model, or \emph{ER model}, is the result of entity relationship
-modeling. An entity-relationship model is a conceptual model.
-It is a formal description of a data model, which can be used for
+modeling. Such a model
+is a formal description of a data model, which can be used for
 various purposes: it is a means to communicate between designers and users of a
 system to verify the mutual understanding of a data model.
 Furthermore, because an ER model is a formal specification, it can be used for
@@ -46,36 +45,33 @@ code generation.
 Although an ER model is often manually translated to a database schema, we 
 build a library that performs this translation automatically.
 
-In ER models, entities are elementary units, and are linked to each other using
+In ER models, entities are elementary units which are linked to each other using
 relationships.
-An ER model constrains which types of entities can occur in our data model, and
+An ER model constrains which types of entities can occur, and
 which types of relations can occur.
-We encode these constraints in Haskell, using the type system.
-The result of our work is a library that allows us to describe an ER model
-in Haskell, where all constraints are automatically checked by the type checker.
+We encode these constraints in the Haskell type system.
+The result of our work is a library that allows us to describe ER models
+in Haskell, with all constraints automatically checked by the type checker.
 
-From a data model on the conceptual level, we can derive a data model on the
+From a data model at the conceptual level, we can derive a data model at the
 \emph{logical level}.
-A logical model describes a data model in terms of a database system.
-For example, a schema of a relational database system is a logical model, and a
-schema of an in-memory database too.
+Logical models describe the data models in terms of a database system.
+Examples of such logical models are the actual schemas used by a relational
+database management system or the data structures of an in-memory database.
 We use our library that encodes ER models to derive logical models
-automatically.
-For example, we derive an in-memory database schema and a relational
-database schema from an encoded ER model.
-We leverage the type system to make sure the generated logical models are
-correct and have the same constraints as their conceptual counterparts.
+automatically. We show how the logical models can be derived from the 
+Haskell descriptions of ER models.
+We leverage the type system to guarantee that the generated logical models are
+correct and encode the same constraints as their conceptual counterparts.
 
 The conceptual and logical models are two categories. In \citet{chen1976entity},
 three categories for data models are defined:
 
 \begin{itemize}
 \item \emph{Conceptual models}, where entities and their relationships are
-described on a conceptual level, which matches the way we think about data
-models. A conceptual model can be used for both communication as well as a
-formal method to describe data models.
+described closely to the way we think about data models. 
 \item \emph{Logical models}, which are expressed in terms of the database
-management system. A logical model is often derived from the conceptual model.
+management system.
 \item \emph{Physical models}, which describe how logical models are stored on
 disk or in hardware memory. A physical model describes the arrangement of the
 data on disk.
