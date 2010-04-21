@@ -64,8 +64,8 @@ Haskell descriptions of ER models.
 We leverage the type system to guarantee that the generated logical models are
 correct and encode the same constraints as their conceptual counterparts.
 
-The conceptual and logical models are two categories. In \citet{chen1976entity},
-three categories for data models are defined:
+The conceptual and logical models are two groups of data models. In \citet{chen1976entity},
+three groups for data models are defined:
 
 \begin{itemize}
 \item \emph{Conceptual models}, where entities and their relationships are
@@ -80,66 +80,67 @@ designer might add indexes on keys, which directly corresponds to changes in the
 physical layer.
 \end{itemize}
 
-If we look at related work in Haskell, we are not aware of other work that
-operates on the conceptual level. On the logical level, HaskellDB 
-\cite{bringert2004student, leijen2000domain} is a typed interface to relational
-databases. Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical
-level}.
+We are not aware of other work in Haskell that operates on the conceptual level.
+There exist libraries on the other levels:
+HaskellDB \cite{bringert2004student, leijen2000domain} is a typed interface to relational
+databases and operates on the \emph{logical level}.
+Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical level}.
 
-\todo{revised until here.}
-In section \ref{sec:ermodels}, we build an the definition of an ER model and introduce the
-vocabulary for ER modeling. We show an ER model that we use as our running
-example.
+In section \ref{sec:ermodels}, we build an example ER model and introduce the
+vocabulary for ER modeling.
 
-In section \ref{sec:encoding}, we encode an example ER model in Haskell. 
-We do this in a type-safe way: entities can only have relationships with
-entities in the same ER model, and relationships can only relate between two
-entities in the ER model.
+In section \ref{sec:encoding}, we encode the example ER model in Haskell. 
+We encode the entities as Haskell datatypes, and encode relationships in such 
+a way that they can only relate between entities in the same ER model.
 
-In section \ref{sec:inmem}, we build an in-memory database, which is a
-\emph{logical model}. We show how to use type-level programming in order to enforce the constraints
-defined in the ER model.  The in-memory database is derived from the ER model.
+In section \ref{sec:inmem} we implement an in-memory database and show how to
+translate the ER models described in section \ref{sec:encoding} are
+automatically translated to an in-memory database schema. We use type-level
+programming to enforce the constraints in the ER model.
 
 In section \ref{sec:relationaldb} we build an interface to a relational database.
-Again, we use the ER model to derive the relational database schema.
+We show how to translate an ER model into a relational database schema and
+provide an interface that is similar to the interface of the in-memory database.
 
 Section \ref{sec:query}
-describes a query language for ER models and how that is translated into queries
-for the in-memory database and SQL queries for the relational database.
+describes a query language for ER models, and how these queries are translated into queries
+for the in-memory database and queries for the relational database.
 
-Finally, in section \ref{sec:erfuture} we describe future work, and in section
-\ref{sec:erconclusion} we conclude. To be complete, we have included all the
+Finally, in section \ref{sec:erfuture} we describe future work and in section
+\ref{sec:erconclusion} we conclude. For completeness we have included the
 interfaces of the libraries in section \ref{sec:erinterfaces}.
 
 This chapter provides the following contributions:
 
 \begin{itemize}
-\item We give an encoding of ER models in Haskell.
-\item We translate ER models into an in-memory database.
-\item We translate ER models into a relational databes.
-\item We show how we can layer different logical models on top of each other.
+\item We encode ER models in Haskell.
+\item We translate encoded ER models into an in-memory database schema.
+\item We translate encoded ER models into a relational database schema.
 \item We define a query language that works on conceptual models and translates
 to logical models.
-\item Finally, we provide a large example of type-level programming.
+\item We provide a large example of type-level programming.
 \end{itemize}
 
 \section{ER models}
 \label{sec:ermodels}
 
-An \emph{entity} is an object in a specific problem domain. Examples of an entity are:
+In this section we introduce the vocabulary for ER modeling and build an example
+ER model for Haskell compilers. We use this ER model throughout the rest of
+this chapter as the running example.
+
+An \emph{entity} is an object in a specific problem domain. Examples of entities are:
 the UHC Haskell compiler, the Haskell website or the manager of the Haskell
-website. Similar entities are grouped into \emph{entity sets}. Example entity sets
+website. Entities are grouped into \emph{entity sets}. Example entity sets
 include: the collection of Haskell compilers, the collection of websites and the
 collection of people working on Haskell.
 
 An entity is described using \emph{attributes}, which map from an entity to a value. Attributes of a
-Haskell compiler might be \attrib{name} and \attrib{homepage}. All
+Haskell compiler are \attrib{name} and \attrib{homepage}. All
 entities in an entity set have the same attributes. Every attribute has a
 domain, for example: the domain of a compiler's \attrib{name} is the set of all
 strings, the domain of a \attrib{release date} is the set of all dates.  For
-each entity set, there is a \emph{primary key}, which uniquely identifies an
-entity. In Figure \ref{fig:compilers}, we see an example of the Haskell Compiler
-entity set.
+each entity set there is a \emph{primary key}, which uniquely identifies an
+entity. Figure \ref{fig:compilers} shows the Haskell Compiler entity set.
 
 \begin{figure}
 \includegraphics[width=5cm]{ermodels/compiler}
@@ -147,19 +148,18 @@ entity set.
 \label{fig:compilers}
 \end{figure}
 
-A relationship is an association between two or more entities. For example: Atze is a
-contributer to the UHC Haskell compiler. 
-A relationship can also have attributes, for example, it might be that the
-relationship \relationship{contributes} has an attribute \attrib{since} that
-records when the author started working on a compiler. A relationship can be
-modeled as a tuple, containing an element for every entity and an element for
-every attribute.
+A relationship is an association between two or more entities. For example:
+\emph{Atze is a contributor to the UHC Haskell compiler} relates the entity
+\emph{Atze} to the entity {the UHC Haskell compiler}.
+A relationship can also have attributes. For example: the
+relationship \relationship{contributes} can have an attribute \attrib{since} that
+stores when the author started working on a compiler.
 
-Like entities, relationships can be
-grouped into relationship sets. All relationships in a relationship set have the
-same structure, i.e. they relate between the same entity sets and have the same
-attributes. Figure \ref{fig:contributes} shows an example of the
-\relationship{contributes} relationship set.
+Like entities, relationships are grouped into relationship sets.
+All relationships in a relationship set have the
+same structure: they relate between the same entity sets and have the same
+attributes. Figure \ref{fig:contributes} shows the \relationship{contributes}
+relationship set, which relates |Compiler| entities to |Person| entities.
 
 \begin{figure}
 \includegraphics[width=10cm]{ermodels/contributes}
@@ -167,12 +167,14 @@ attributes. Figure \ref{fig:contributes} shows an example of the
 \label{fig:contributes}
 \end{figure}
 
-A relationship between two items can be one-to-one, one-to-many or many-to many.
-For example, a person might contribute to many compilers, and a compiler might
-have many such contributors. This is an example of a many-to-many relationship. On
-the other hand, a compiler might have multiple releases, but every release
-belongs to exactly one compiler. This is an example of a one-to-many
-relationship. We call this property the \emph{cardinality} of the relationship.
+In the \relationship{contributes} relationship each person works on zero or more
+compilers, and each compiler has zero or more contributors. This property of the
+relationship is called the \emph{cardinality}, and states how many entities are related
+to each other. In the \relationship{contributes} relationship the cardinality is
+\emph{many-to-many}. Each compiler has multiple releases, but every release
+belongs to exactly one compiler. This is an example of a \emph{many-to-one}
+relationship. The other cardinalities are \emph{one-to-one} and
+\emph{one-to-many}.
 
 \begin{figure}
 \includegraphics[width=16cm]{ermodels/erdiagram}
@@ -180,10 +182,9 @@ relationship. We call this property the \emph{cardinality} of the relationship.
 \label{fig:ermodel}
 \end{figure}
 
-
 ER modeling is done graphically, and describes the entity sets, their
 attributes and the relationship sets.  Figure \ref{fig:ermodel} is a sample ER
-model that represents information about Haskell compilers. 
+model that describes Haskell compilers. 
 
 \section{Encoding an ER model in Haskell}
 \label{sec:erencoding}

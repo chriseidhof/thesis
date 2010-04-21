@@ -18,20 +18,30 @@
 
 \label{sec:encoding}
 
-From now on, we use a simplified version of the ER model. We only consider
-relationships between exactly entities. There are no attributes on
-relationships.  Instead of letting the library user define a key to identify an
-entity, we automatically add an integer attribute \attrib{id} for every entity
-set. While these constrains might look tight, in practice they often work very
-well. We have not yet looked at supporting full ER models, but we think our
-approach forms a solid basis that can be extended.
+In this section, we will encode an ER model in Haskell.
+We capture the following constraints in the type system:
 
-To encode an ER model in Haskell, we start by
-encoding the entity sets. We can encode an entity set $E_1$ as a Haskell type |T_1|. For
-example, the entity set Haskell Compilers might be encoded as the datatype
-|Compiler|. We call such a datatype an \emph{entity datatype}. Every entity
-datatype has a single constructor with a field for every attribute. As an
-example, we have encoded the entity sets from figure \ref{fig:ermodel}:
+\begin{itemize}
+\item Each entity in an entity set has the same attributes.
+\item The cardinality of a relationship is one-to-one, one-to-many, many-to-one
+or many-to-many.
+\item Each relationship is between two entities in the same ER model
+\end{itemize}
+
+From here on, we use a simplified version of the ER model. We only consider
+relationships with no attributes that relate exactly two entities.
+We automatically add an integer attribute \attrib{id} as the primary key for
+each entity.
+In the section on future work we discuss these simplifications and how to extend
+our approach to support full ER models.
+
+We start with encoding entity sets.
+An entity set $E_1$ is encoded as a Haskell datatype |T_1|. For
+example, the entity set \emph{Haskell Compilers} is encoded as the datatype
+|Compiler|. We call such a datatype an \emph{entity datatype}.
+Each entity
+datatype has exactly one constructor and a field for each attribute.
+We have encoded the entity sets from figure \ref{fig:ermodel}:
 
 
 > data Compiler  = Compiler  {name :: String, homepage :: URL}
@@ -44,76 +54,93 @@ An entity in the Haskell Compiler set is encoded as a Haskell value of type
 > uhc :: Compiler
 > uhc = Compiler "UHC" (URL "http://www.cs.uu.nl/wiki/UHC")
 
-Before we show how to encode relationship sets, consider the
-\relationship{contributes} relationship set in Figure \ref{fig:contributes}.
-Ultimately, when interfacing to a database, we might want to query the database
-for the contributors of a compiler entity.  We then want to make sure that we get
-a collection of contributors, not just one contributor. Also, we want to make sure that
-every element in the collection is of the \entset{Person} entity datatype.
-This can be achieved by storing both the entitity types and the cardinality of the
-relationship set on the type level. For example, we could encode the
-\relationship{contributes} relationship set by constructing a value of the
-datatype |Rel|:
+At this point, we have encoded entities and entity sets in Haskell. By using a
+Haskell datatype to encode entity sets, we have encoded the first constraint:
+each entity in an entity set has the same attributes.
+
+To encode relationships we will give a first version of the datatype |Rel|,
+which has four type parameters: one for each entity and two for the cardinality
+of the relationship. As we will see later on, it is essential to encode the
+entity types and cardinality on the type level if we want to get help from the
+type checker to guarantee that the operations on entities and relationships are
+correct.
 
 \begin{spec}
 data Rel cardL entityL cardR entityR where
   Rel :: Rel cardL entitityL cardR entityR
+\end{spec}
 
-contributes :: Rel Many Compiler Many Person
-contributes = Rel
+To encode the cardinality, we introduce two datatypes which are solely used on
+the type level, hence they have no constructors:
 
+\begin{spec}
 data One
 data Many
 \end{spec}
 
-The |One| and |Many| types are datatypes without constructors, and are used as
-type-level values. However, in order to program with them in Haskell, we need a
-way to pattern-match on them. Also, we want to restrict the kinds of |cardL| and
-|cardR| so that only values of |One| and |Many| can be provided. In order to do
-this, we change |Rel| as following:
+Using the |Rel|, |One| and |Many| datatypes, we can encode the |contributes| relationship:
+
+\begin{spec}
+contributes :: Rel Many Compiler Many Person
+contributes = Rel
+\end{spec}
+
+However, the |contributes| relationship is not constrained in one of the two
+ways stated in beginning of this section: it does not guarantee that both
+entities are in the same ER model and it does not put any restriction on the
+cardinality.
+
+We start by restricting the cardinality. We introduce a datatype |Cardinality|,
+which has a constructor for both cardinalities. This way, we can construct a value
+of |Cardinality One| and |Cardinality Many|, but no other values. 
+
+\begin{spec}
+data Cardinality a where
+  One   :: Cardinality One
+  Many  :: Cardinality Many
+\end{spec}
+
+We add two fields to our |Rel| constructor, one for each cardinality. This
+restricts the cardinality: it is only possible to construct relationships that
+have the cardinality one-to-one, one-to-many, many-to-one or many-to-many.
 
 \begin{spec}
 data Rel entities cardinalityL cardinalityR l r where
   Rel  ::  Cardinality cardinalityL 
        ->  Cardinality cardinalityR
        ->  Rel entities cardinalityL l cardinalityR r
-
-data Cardinality a where
-  One   :: Cardinality One
-  Many  :: Cardinality Many
 \end{spec}
-
 
 At this point, we can define entities, entity sets and
 relationship sets (note that \relationship{contributes} is a relationship set,
-not a relation). In order to define an ER model, we have to combine the entity
-sets and the relationship sets. Before we can do that, we change the type |Rel| to be
-more restricted: we make sure that we 
-only encode relationships between entities in the same ER model.
-
-Therefore, we first define a type-level list, in a style similar to |HList|
-\cite{kiselyov2004strongly},
-that contains every entity type in the ER model.
-We have experimented with other approaches such as multirec's |phi| datatype
-\cite{rodriguez2009generic} to represent a fixed number of types.
-However, multirec's approach does not allow for easy enumeration of the types,
-whereas an |HList| does.
+not a relation). We have one more constraint that we want to guarantee:
+relationships have to be between entities in the same ER model.
+To add this constraint, we need a way to reason about all the entities in an ER
+model.
+As a solution, we define a type-level list, in a style similar to |HList|
+\cite{kiselyov2004strongly} that contains an element for each entity type in the ER model.
 
 > type CompilerModel = Compiler :*: Person :*: Release :*: Nil
 
-To refer to an element of the list, we can provide some indexes by hand:
+The interface of the type-level list library is described in section
+\ref{sec:erhlist}. It allows us to construct typed references into the
+list, for example: these are the typed references for the |CompilerModel|. Each
+reference is indexed on the type level by the list of entities and the entity it
+points to:
 
 > ixCompiler  ::  Ix CompilerModel Compiler
 > ixCompiler  =   Zero
+>
 > ixPerson    ::  Ix CompilerModel Person
 > ixPerson    =   Suc (Zero)
+>
 > ixRelease   ::  Ix CompilerModel Release
 > ixRelease   =   Suc (Suc Zero)
 
-
-We now
-add an additional type-parameter to |Rel|, and two parameters to its
-constructor, so that we can ensure the entities are in the same ER Model:
+We can now change |Rel| to guarantee the final constraint. By storing typed
+references in the |Rel| constructor that point into the same type-level list, we
+encode that both entities are in the same ER model. We also add a type-parameter
+|entities| to |Rel|, to encode that |Rel| is a relationship in that ER model.
 
 > data Rel entities cardinalityL l cardinalityR r where
 >   Rel  ::  Cardinality cardinalityL 
@@ -123,26 +150,30 @@ constructor, so that we can ensure the entities are in the same ER Model:
 >        ->  Rel entities cardinalityL l cardinalityR r
 
 We could have changed the |Rel| constructor to have type-class constraints
-instead of adding these fields, but having the indexes explicit is handy
-for pattern-matching, as we show later on.
+instead of adding these fields, but having the references on the value level is handy
+for pattern-matching, as we see later on.
 
-Our |contributes| relationship type has to change appropriately. We also define
+Our \relationship{contributes} relationship type has to change appropriately. We also define
 the \relationship{releases} relationship.
 
 > contributes ::  Rel  CompilerModel  Many  Compiler  Many  Person
-> releases    ::  Rel  CompilerModel  One   Compiler  Many  Release
 > contributes  = Rel  Many  Many  ixCompiler  ixPerson
+>
+> releases    ::  Rel  CompilerModel  One   Compiler  Many  Release
 > releases     = Rel  One   Many  ixCompiler  ixRelease
 
-We enumerate all relationship sets on the type-level.
+To reason about an ER Model, we add a type-class |ERModel| that relates the
+entities and the relationships. First, we enumerate all relationship sets in a
+type-level list:
 
 > type CompilerRelations  =    Rel CompilerModel  Many  Compiler  Many  Person
 >                         :*:  Rel CompilerModel  One   Compiler  Many  Release
 >                         :*:  Nil
 
-We define a typeclass with a functional dependency that links the relationships to
-the entity sets. For reasons that become clear later on, we have used the
-|TList4| type.
+Now we can define the type-class |ERModel| which is indexed by both the
+type-level list of entities and the type-level list of relationships. The
+entities and the relationships uniquely determine each other. We will explain
+the |TList4| type in a later section.
 
 > class ERModel entities rels | entities -> rels, rels -> entities where
 >   relations  :: TList4 Rel rels
@@ -152,17 +183,6 @@ the entity sets. For reasons that become clear later on, we have used the
 >              $  TCons4 releases
 >              $  TNil4 
 
-We now achieved the goal stated in in the introduction: the ER
-model from the previous section is encoded in Haskell. In the next section,
-we build a simple in-memory database from the ground up. If you are
-interested in the implementation, continue reading. If you are just interested
-in using it, skip to section \ref{sec:inmemexample} on page
-\pageref{sec:inmemexample} for a complete example that defines an example and an
-in-memory database. It makes uses of the library interface that is built in the
-following sections and summarized in sections \ref{sec:ercoreif} and
-\ref{sec:inmemif}.
-
-Instead of giving the witnesses and |Rel| values explicitly, we might have
-done everything implicitly and let the type-inferencer do the work. In section
-\ref{sec:erconclusion} we see however that the type errors quickly become
-unmanageable.
+We now achieved the goal stated in in the introduction: the ER model from the
+previous section is encoded in Haskell, and the constraints are guaranteed by
+the typechecker.
