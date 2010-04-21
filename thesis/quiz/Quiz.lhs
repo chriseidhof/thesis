@@ -34,25 +34,30 @@
 
 The next step is to define a |handle| function that takes a |QuizRoute| and
 returns a handler. Our handlers are represented as continuations.
-The continuations are a combination of an input value of type |i| and a value of
-type |Web i ()|.
+The continuations combine an input value of type |i| and a value of
+type |Web i ()|. When we add or list a quiz, there is no input. However, when we
+|View| or |Take| a quiz, we provide a reference to the |Quiz|. This reference is
+constructed from the information in the |QuizRoute| datatype.
 
 > handle :: QuizRoute -> Continuation (MVar St) IO ()
-> handle Add       = Cont ()                      addQuiz
-> handle List      = Cont ()                      listQuizzes
+> handle Add       = Cont ()              addQuiz
+> handle List      = Cont ()              listQuizzes
 > handle (View i)  = Cont (Ref ixQuiz i)  viewQuiz
-> handle (Take x)  = Cont (Ref ixQuiz x)  takeQuiz
+> handle (Take i)  = Cont (Ref ixQuiz i)  takeQuiz
 
-From here one, we make heavy use of Arrow notation
-\cite{paterson2001new}. Using arrow notation, we can conveniently construct web
-programs on top of our continuations library from chapter
-\ref{chap:continuations}.
+From here one, we make heavy use of arrow notation
+\cite{paterson2001new}. Using the arrow notation, we can conveniently construct web
+programs on top of our continuations library from chapter \ref{chap:continuations}.
 
-\subsection{Adding a Quiz}
+\subsection{Adding a new Quiz}
 
 To add a quiz, we first show the form for entering values of type |Quiz|, we then
 add it to the database and proceed by adding questions to the quiz. Finally, we
-display a message that it was successfully added.
+display a message that it was successfully added. 
+The type |Web () ()| means that the input of this function is a value of type
+|()|, and the output is also a value of type |()|. In general, a function of
+type |Web a b| has a value of type |a| as it input and produces a value of type
+|b|.
 
 > addQuiz :: Web () ()
 > addQuiz = proc () -> do
@@ -61,10 +66,11 @@ display a message that it was successfully added.
 >   _    <-  addQuestions                                    -< ref
 >   display (const $ X.toHtml "added quiz with questions.")  -< ()
 
-To add a quiz, we let the user input a form using the |input| function. The
-|input| function is overloaded using type-classes. Because we use the result of
+To add a quiz, we let the user input a form using the overloaded |input| function:
+because we use the result of
 the |input| value later in the program as a |Quiz| value, the type inferencer
-helps us to construct a form that is rendered as a |Quiz| form, displayed in figure \ref{fig:addQuiz}.
+constructs a form that is rendered as a |Quiz| form (see figure
+\ref{fig:addQuiz}).
 
 \begin{figure}[hb]
 \includegraphics[width=15cm]{quiz/screenshots/add-quiz}
@@ -72,22 +78,23 @@ helps us to construct a form that is rendered as a |Quiz| form, displayed in fig
 \label{fig:addQuiz}
 \end{figure}
 
-After the input |q| is entered, we add the quiz to the database, yielding a
-reference |ref| to the Quiz value. The database code is wrapped in the |basil|
-function. The |new| function takes an index into the ER model, the entity value
-and a list with all the necessary references. For quizzes, this is the empty
-list |PNil|, but we see a more complicated example later on.
+After the input |q| is entered and bound to variable |q|, we add the quiz to the database, yielding a
+reference |ref| to the Quiz value.
+The database code is wrapped in the |basil|
+function. The |new| function takes as its first paramater an index into the ER
+model, which refers to the type of the entity that is created.
+The second parameter is the the entity, and the third parameter is a list with all the necessary references.
+For quizzes, the third argument is the empty list |PNil|, we show a more complicated example later on.
 
 After the quiz is added to the database, we proceed to add questions to the
-quiz. We do this with the |addQuestions| function, which uses the reference to
-the |Quiz| value.  Finally, we display a message
-that the quiz was successfully added.
+quiz. We do this with the |addQuestions| function, using the reference to the |Quiz| value.
+Finally, we display a message that the quiz was successfully added.
 
-The function |addQuestions| uses the |inputMany| combinator, which is similar to |input|,
-but instead shows the form many times, until the user presses |Done|.
-An example is rendered in figure \ref{fig:addQuestion}.
-After the user is done adding questions, it maps the |newQuestion| function to
-each entered question, which stores the question in the database.
+The function |addQuestions| uses the |inputMany| combinator, which differs from |input|:
+it shows a form many times, until the user presses \emph{Done} (see figure
+\ref{fig:addQuestion}).
+The function |newQuestion| stores a |Question| in the database, and it is
+applied on each entered question.
 
 > addQuestions :: Web (Ref QuizModel Quiz) ([Ref QuizModel Question])
 > addQuestions = proc q -> do
@@ -100,10 +107,11 @@ each entered question, which stores the question in the database.
 \label{fig:addQuestion}
 \end{figure}
 
-The ER modeling library uses type-level functions that all relationships are
-correctly used. For example, in our data model, we have specified that each
-question belongs to exactly one |Quiz|. Therefore, we also need to supply a
-reference to a |Quiz| entity when adding a new |Question| entity to the
+The ER modeling library uses type-level functions which enforces all relationships are
+correctly used and initialized.
+For example, in our data model, we have specified that each
+question belongs to exactly one |Quiz|.
+Therefore, we need to supply a reference to a |Quiz| entity when adding a new |Question| entity to the
 database. If we forget to do this, the compiler gives a type-error.
 
 > newQuestion :: Ref QuizModel Quiz -> Question -> M (Ref QuizModel Question)
@@ -113,10 +121,8 @@ database. If we forget to do this, the compiler gives a type-error.
 
 \subsection{Listing Quizzes}
 
-To list all quizzes, we first fetch all quizzes from the database. If there are
-no entries yet, we show a warning, and otherwise we map the |quizWithLink|
-function on every quiz. The result of viewing quizzes is show in figure
-\ref{fig:listQuiz}
+To list all quizzes (see figure \ref{fig:listQuiz}), we fetch all quizzes from the database. If there are
+no quizzes yet, we show a warning, otherwise we apply the |quizWithLink| function on every quiz.
 
 > listQuizzes :: Web () ()
 > listQuizzes = proc () -> do
@@ -125,9 +131,10 @@ function on every quiz. The result of viewing quizzes is show in figure
 >     []  -> display X.toHtml                           -< "No quizzes yet."
 >     _   -> display (X.concatHtml . map quizWithLink)  -< qs
 
-The |quizWithLink| takes a |Quiz| and its reference and produces the Html for
-that quiz. It uses the |ghtml| function to show the Html for a quiz and
-concatenates a link to either view or take the quiz.
+The |quizWithLink| takes a |Quiz| and its reference and produces HTML for
+that quiz. Recall that we defined |Quiz| as a record type: the |ghtml| displays
+a line with each record field and its value.
+Finally, we add links to view or take the quiz.
 
 > quizWithLink :: (Ref QuizModel Quiz, Quiz) -> X.Html
 > quizWithLink (Ref _ i, q) = X.concatHtml
@@ -137,16 +144,17 @@ concatenates a link to either view or take the quiz.
 >   ]
 
 \begin{figure}[hb]
-\includegraphics[width=15cm]{quiz/screenshots/adding-choices}
+\includegraphics[width=15cm]{quiz/screenshots/list-quizzes}
 \caption{Listing |Quiz| entities}
 \label{fig:listQuiz}
 \end{figure}
 
 \subsection{Viewing Quizzes}
 
-Viewing a quiz looks up the quiz in the database using the |find| function.
-It also finds the corresponding questions and displays them. The |findRels|
-finds all relations and results in a list of |Ref| values, and the corresponding
+To view a quiz, the function |viewQuiz| starts by looking up the 
+quiz in the database, using the |find| function, followed by locating the
+corresponding questions and displaying them. The |findRels|
+finds all relations and results in a list of |Ref| values. The corresponding
 entities can be found using the |find| function. Finally, the |display
 quizWithQuestions| shows a quiz with its question.
 
@@ -196,35 +204,42 @@ The form for getting a single answer is rendered as in figure \ref{fig:takeQuiz2
 >     Nothing   -> display (const "Not Found") -< ()
 
 Note how we used the |form'' responseForm| method to ask for the user's
-response. It is rendered in figure \ref{fig:takeQuiz1}. However, the form does not
-match the structure of the |Response| entity. Yet its result is a value of type
-|Response|. We have used the |form''| combinator to customize the
-output of a generic program. In this example, we have written a |responseForm|
-function that converts between a |Response| and a |ResponseView| value. The
-|ResponseView| datatype is defined as following:
+response. In the |Response| type, there is a |date| field that stores when the
+response was added. However, we do not present the date field to the user, it is
+filled in programmatically. To do this, we first introduce a new datatype
+|ResponseView|:
 
 > data ResponseView  = ResponseView  {  _name   :: String
 >                                    ,  _email  :: Email
 >                                    } 
 
-We also define a function for converting between a |Response| and
-|ResponseView|. This function is a \emph{lens}, and allows us to convert a
+Second, we define a function for converting between a |Response| and
+|ResponseView|. This function is called a \emph{lens} \cite{relationallenses}, and allows us to convert a
 |Response| to a |ResponseView|, but also allows us to take an edited
-|ResponseView|, and update the original |Response| with the new value. In web
-programming, this happens very often: the form presented only shows fields for
-entering a subset of the datatype.
+|ResponseView|, and update the original |Response| with the new value. We have
+constructed the lens using the fclabels package \footnote{\url{http://hackage.haskell.org/package/fclabels}}.
 
 > responseProj :: Response :-> ResponseView
 > responseProj = Lens $ ResponseView <$> _name `for` lName <*> _email `for` lEmail
 
-Now we can define the |responseForm|, which uses the |projectedForm| function to
-display a |ResponseView| form that results in a |Response| value.
+Now we can define the function |responseForm| that is used in |takeQuiz|. We
+define it using the function |projectedForm|, which takes two parameter. The
+first parameter is the lens between |Response| and |ResponseForm|. The second
+parameter is an empty value of type |Response|. After the form is filled in,
+the empty value is updated with the new values from |ResponseView|:
 
-> responseForm = projectedForm responseProj newResponse
->  where newResponse  = Response "" (Email "") (Date "now") []
+> responseForm :: Form Response
+> responseForm = projectedForm responseProj emptyResponse
+>  where emptyResponse :: Response
+>        emptyResponse  = Response "" (Email "") (Date "now") []
 
-Finally, the function |getAnswer| shows the question and asks the user for
-input. It uses a manual form |answerForm| that is written using the formlets
+We have now changed a generic form by introducing a new datatype and a
+function to convert between the original datatype (the \emph{model datatype}) and
+the new datatype (the \emph{view datatype}). This is a powerful technique for
+customizing the code generated by generic programming.
+
+The function |getAnswer| displays the question and asks the user for
+an answer. It uses a manual form |answerForm| that is written using the formlets
 library\footnote{\url{http://hackage.haskell.org/package/formlets}}.
 
 > getAnswer :: Web Question Answer
@@ -234,6 +249,9 @@ library\footnote{\url{http://hackage.haskell.org/package/formlets}}.
 > answerForm q   = F.plug ((title q +++ X.br) +++) 
 >                $ F.enumRadio  [(QA, choiceA q),(QB, choiceB q),(QC, choiceC q)]
 >                               Nothing
+
+At this point, we have defined the quiz model, the URL routing and the URL
+handlers.
 
 \begin{figure}
 \includegraphics[width=15cm]{quiz/screenshots/taking-quiz}
@@ -250,41 +268,59 @@ library\footnote{\url{http://hackage.haskell.org/package/formlets}}.
 \subsection{Miscellaneous functions}
 
 We can run the server using the |runServer| function, which takes the port, a
-static homepage, the dispatch function |handle| and an environment.
+homepage, the dispatch function |handle| and an environment:
 
 > main = do
 >   ref <- newMVar emptyBasilState :: IO (MVar St)
->   runServer 8080 homePage template handle (Env ref M.empty)
+>   runServer 8080 homepage template handle (Env ref M.empty)
 
-The |homePage| is a static Html page that shows a welcome message.
+The |homePage| is a static HTML page that shows a welcome message.
 
-> homePage = X.toHtml "Welcome to the quiz system."
+> homepage = X.toHtml "Welcome to the quiz system."
 
 Recall that a |Quiz| and |Question| were rendered using the |input| and
 |inputMany| combinator. To do this, we need to make |Quiz| and |Question| an
 instance of the |DefaultForm| typeclass.
 
-Recall that the |Quiz| datatype consists of a |subject| and a |description|
-field, which both have type |String|. However, we want to render the description
-as a multiline input field. This can be used by building a custom view datatype
-|QuizForm| and a lens between the view datatype and the |Quiz| datatype. The
-view datatype uses the |TextArea| type, which is provided by the generic
-programming library.
-
-> instance DefaultForm Quiz     where form = projectedForm quizProj (Quiz "" "")
+We start by providing the |DefaultForm| instance for |Quiz|.
+Recall that the |Quiz| datatype constists of a |subject| and a |description|
+field, which are both of type |String|.
+The default form component for a |String| is a single line input field,
+However, we want to render the description as a multiline input field (see
+figure \ref{fig:addQuiz}).
+We achieve this by again building a custom view datatype
+|QuizForm|.
+The |_description| field of the |QuizForm| type has type |TextArea|, which is
+provided by the generic programming library, and is rendered as a multiline
+input field.
 
 > data QuizForm = QuizForm {_subject :: String, _description :: TextArea}
->
+
+Again, we write a lens between |Quiz| and |QuizForm|. Because the types of
+|lDescription| and |_description| differ, we need a way to convert between
+values of the different types. This is done by the |textAreaToString|, which
+provides an isomorphism between |TextArea| and |String|. This function is also
+provided by the generic programming library. The |%| operator takes an
+isomorphism as its left operand, a lens as its right operand, and produces a new
+lens with a changed output type:
+
 > quizProj :: Quiz :-> QuizForm
 > quizProj = Lens $ QuizForm  <$>  _subject      `for` lSubject 
 >                             <*>  _description  `for` (textAreaToString % lDescription)
 
+The instance for |DefaultForm| now again uses the |projectedForm| function:
+
+> instance DefaultForm Quiz     where form = projectedForm quizProj (Quiz "" "")
+
 For |Question|s, we use the normal generic forms provided by the generic
-programming library.
+programming library:
 
 > instance DefaultForm Question where form = gform Nothing
 
-We also have used some helper types and functions.
+We also have used some convenient helper types. The |M a| is the monad in which
+our database computations will run, and the |St| type is the type of the global
+state. Finally, the |Web| type is the type of our handler functions. It
+instantiates the |WebT| type with an |MVar| that holds the in-memory database.
 
 > type M a     = Basil QuizModel QuizRelations a
 > type St      = BasilState QuizModel QuizRelations
@@ -292,8 +328,8 @@ We also have used some helper types and functions.
 
 The |basil| function lifts a database action into a |Web| value. It uses the
 in-memory database features provided by the data modeling library. The in-memory
-database is stored in an |MVar|. Therefore, performing a database action
-involves performing a change on the |MVar|.
+database is stored in an |MVar|. Therefore, a database action results in a
+change of the |MVar|'s value.
 
 > basil  :: (a -> M b) -> Web a b
 > basil  f = proc a -> do

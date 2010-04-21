@@ -25,13 +25,13 @@
 
 %endif
 
-We define our data model as an ER model, which is a formalism for building data
-models. In figure \ref{fig:quizermodel} you can see its graphical representation.
-Every quiz has a subject and a longer description, and can have many questions,
-but every question belongs to exactly one quiz.
+We define our data model as an Entity Relationship model \cite{chen1976entity}, or \emph{ER model}, a formalism for building data
+models. In figure \ref{fig:quizermodel} you can see the graphical representation.
+Each quiz has a subject and a longer description, and consists of a sequence of
+questions. Each question belongs to exactly one quiz.
 A response to a quiz contains the name and email-address of the respondant, as well as
-the date on which the quiz was taken, and a list of answers. A quiz has many
-responses, but every response belongs to exactly one quiz.
+the date on which the quiz was taken, and the list of answers. A quiz has many
+responses, but every response belongs to a single quiz.
 
 \begin{figure}
 \includegraphics[width=15cm]{quiz/ermodel}
@@ -40,7 +40,10 @@ responses, but every response belongs to exactly one quiz.
 \end{figure}
 
 All the entities (represented by rectangles) are encoded as Haskell datatypes,
-with a record field for each attribute (represented by ovals).
+with a record field for each attribute (represented by ovals). We have encoded
+the |answers| as a list. Instead, we could have chosen to add a separate
+|Answer| entity and add a relationship. For simplicity, we have chosen not do
+this.
 
 > data Quiz      = Quiz      { subject :: String, description :: String}
 > data Question  = Question  { title :: String, choiceA, choiceB, choiceC :: String}
@@ -65,14 +68,14 @@ We also enumerate the entities of a |QuizModel| in a type-level list.
 For both relationships (the diamonds in the figure) we add a type. Note that the
 in the diagram, there is a |*| and a |1|
 annotation on the lines connecting the relationship with its entities. This is
-called the cardinality: ever |Question| entity belongs to exactly one |Quiz|
-entity and every |Quiz| entity can have zero or more |Question| entities. We encode
+called the cardinality: ever |Question| entity belongs to a single |Quiz|
+entity and every |Quiz| entity has several |Question| entities. We encode
 this using the |One| and |Many| types, respectively.
 
 > type Questions  = Rel  QuizModel  One   Quiz  Many  Question
 > type Responses  = Rel  QuizModel  One   Quiz  Many  Response
 
-We also provide information on the value level for both relationships:
+We also provide information at the value level for both relationships:
 
 > questions   :: Questions
 > questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  "questions"
@@ -86,7 +89,9 @@ And we enumerate the relationships in a type-level list:
 
 Now we can make |QuizModel| and |QuizRelations| an instance of the |ERModel|
 class. We need to provide some information on the value level, which is
-explained in more detail in chapter \ref{chap:ermodels}.
+explained in more detail in chapter \ref{chap:ermodels}. We plan to write
+Template Haskell code for this, because the instance declaration below can be
+constructed mechanically.
 
 > instance ERModel QuizModel QuizRelations where
 >   relations  =  TCons4 questions
@@ -95,7 +100,7 @@ explained in more detail in chapter \ref{chap:ermodels}.
 >   witnesses  =  WCons ixQuiz $  WCons ixQuestion $  WCons ixResponse $  WNil
 
 Finally, we provide indexes into the type-level lists for all entities 
-. These are constructed mechanically using Template Haskell, and serve as proof that a
+. These are constructed using Template Haskell, and serve as proof that a
 given entity is in the list of entities described by the ER model.
 
 \begin{spec}
@@ -104,7 +109,7 @@ ixQuestion  :: Ix QuizModel Question
 ixResponse  :: Ix QuizModel Response
 \end{spec}
 
-The following Template Haskell generates the indexes above:
+The following Template Haskell code generates the indexes above:
 
 > $(mkIndexes ''QuizRelations [''Questions, ''Responses])
 
