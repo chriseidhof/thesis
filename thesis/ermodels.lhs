@@ -191,6 +191,8 @@ model that describes Haskell compilers.
 
 %include ermodels/encoding.lhs
 
+\todo{herschreven tot hier.}
+
 \section{Building an in-memory database in Haskell}
 \label{sec:inmem}
 
