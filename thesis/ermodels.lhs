@@ -52,6 +52,9 @@ which types of relations can occur.
 We encode these constraints in the Haskell type system.
 The result of our work is a library that allows us to describe ER models
 in Haskell, with all constraints automatically checked by the type checker.
+The purpose of embedding ER models in Haskell is twofold: first, it allows for a
+high-level description of data models that closely maps to Haskell. Second, it
+abstracts over the logical layer, allowing multiple underlying database systems.
 
 From a data model at the conceptual level, we can derive a data model at the
 \emph{logical level}.
@@ -191,40 +194,44 @@ model that describes Haskell compilers.
 
 %include ermodels/encoding.lhs
 
-\todo{herschreven tot hier.}
-
 \section{Building an in-memory database in Haskell}
 \label{sec:inmem}
 
-From the ER model we can build an in-memory database in Haskell. We want
-operations to create, read, update and delete an entity. We want to have the same
-operations on relationships. Additionally, we want to keep relationships sound. For
-example, consider the \relationship{contributes} relationship: we want to make sure that every
-\entset{Release} belongs to exactly one \entset{Compiler}. In section \ref{sec:entities} we 
-see how we can store entities and in section \ref{sec:inmemrels} we see how
-we can store relationships. Finally, in section \ref{sec:inmeminterface} we 
+We have encoded a conceptual model in Haskell, and in this section we 
+derive an in-memory database schema from the conceptual model. Also, we 
+provide an interface to manipulate the database schema that enforces the
+constraints encoded in the previous section.
+In particular, when creating a new entity, we add \emph{initial relationships}.
+If we consider the ER model from figure \ref{fig:ermodel}, we see that each
+|Release| entity belongs to a |Compiler| entity. We design the interface for the
+in-memory database in such a way that the initial relationships are included
+when creating a new entity, and encode this in the type system.
+
+First, we shortly introduce a library for programming with heterogenous lists in
+section \ref{sec:hlist}. In section \ref{sec:entities} we see how to store entities and in section
+\ref{sec:inmemrels} we see how to store relationships.
+Finally, in section \ref{sec:inmeminterface} we 
 build the interface for a library by combining the relationship storage and
 entity storage.
 
 \subsection{Using type-level programming libraries}
+\label{sec:hlist}
 
-We have experimented with using the |HList| library for this module, but that
-turns out to be quite inconvenient. It is especially different to compose
-functions such as |hMap| and |hLookupByHNat|.
-From our own experience, and by talking to other people that use type-level
-programming libraries, it turns out that almost everybody uses their own
-type-level programming library.
-We think this is not a deficit of the libraries, but a language problem.
-The first problem is that a library is sometimes not expressive enough.
-A second, more general problem, is that type errors become very large.
-Unfortunately, we cannot always hide the type errors from our library users, so
-they have to deal with the internals of the libary too.
+As an aside, we first introduce our library for building heterogenous lists
+\cite{kiselyov2004strongly}.
+We have experimented with using the |HList| library, but that
+turns out to be inconvenient: composition of |HList| functions can be quite
+difficult. Therefore, we have provided an alternative |HList| library that fits
+our needs. It allows for easy mapping over lists and provides typed references
+into the list. The full interface is defined in section \ref{sec:erhlist}.
 
-Therefore, we implement our own heterogenous lists. An |Hlist| is simply defined
-as either a |Nil| or a |Cons| value. They produce an index that is either |Nil|
-or |:*:|, which are both defined as empty datatypes because they are only used
-as type-level values. The full interface for our |HList| library is defined in
-section \ref{sec:erhlist}.
+An |HList| is defined as either a |Nil| or a |Cons| value. The |HList| datatype
+has a type parameter |a| that is used to keep track of the elements in the list.
+If we produce an empty list with the |Nil| constructor, |a| is |Nil|. If we
+construct a list by combining an elemenent of type |a| and an existing list of
+type |b|, the result will be a list of type |a :*: b|. Both the |Nil| datatype
+and the |:*:| datatype are types without constructors, they exist only at the
+type-level:
 
 > data HList a where
 >   Nil  :: HList Nil
@@ -233,8 +240,12 @@ section \ref{sec:erhlist}.
 > data (:*:) a b
 > data Nil
 
-We can also provide typed indexes into the |HList|, which are inspired by
-Baars and Swierstra \cite{tttas}:
+We can also provide typed references into the |HList|, which are inspired by
+Baars and Swierstra \cite{tttas}.
+The first element in an |HList| of type |a :*: b| is of type |a|. To refer to
+it, we provide the |Zero| constructor. 
+If we have a reference to an element |a| in a list |xs|, we can use the |Suc|
+constructor to refer to the same element in a larger list.
 
 > data Ix ls ix where
 >   Zero  :: Ix (a :*: b) a
@@ -249,22 +260,11 @@ Baars and Swierstra \cite{tttas}:
 \subsection{Saving relationships}
 \label{sec:inmemrels}
 
-In this section, we store relationships in our in-memory database. 
-To do this, we have to compute the right data-structure based on the
-relationship type.
-
 %include ../packages/Basil/src/Basil/InMemory/Relations/Storage.lhs
 
 \subsubsection{Initial Values}
 
 \label{sec:initialvalues}
-
-When we create a new entity, we want to be sure that all the corresponding
-relationships are initialized. For example, in our compilers ER model, whenever
-we create a new |Release| entity, we want to be sure that a relationship between
-|Compiler| and |Release| is added, because the relationship set
-\relationship{releases} describes that every |Release| should be related to
-exactly one |Compiler|.
 
 %include ../packages/Basil/src/Basil/Relations/InitialValues.lhs
 
@@ -316,12 +316,12 @@ In section \ref{sec:rdbschema} we show how we can model a relational database
 in Haskell. We use a typed approach that is inspired by Leijen
 \cite{leijen2000domain}, and Oury and Swierstra \cite{oury2008power}.
 In section \ref{sec:rdbentities} we show how we can store entities in a relational
-database, this is a simple translation.
+database by translating entity types to relational database tables.
 Section \ref{sec:rdbrels} describes how we can store relationships. In
 particular, we show how to translate relationships to either foreign keys
 or join tables.
-Finally, we end with an easy to use interface for the user in section
-\ref{sec:rdbinterface}.
+Finally, in section \ref{sec:rdbinterface} we show the library interface that is very similar to the in-memory
+interface.
 
 \subsection{Modeling a relational database}
 \label{sec:rdbschema}
@@ -329,14 +329,12 @@ Finally, we end with an easy to use interface for the user in section
 A relational database management system (RDBMS) is a widely used type of database
 systems.
 In an RDBMS, all data is stored in tables.
-Every table has a schema, which
-describes the structure of the data.
+Each table has a schema, which describes the structure of the data.
 Such a schema is a list of attributes, where an attribute consist of a name and a type.
-Every table stores a list of rows, where each row is a tuple with values for the
+Each table stores a list of rows, where each row is a tuple with values for the
 attributes in the schema.
-A large difference with ER models is that there is no notion of relationships in a
-RDBMS, instead a relationship is encoded by adding tables, which we expand upon in
-section \ref{sec:rdbrels}.
+In a RDBMS there exists no notion of relationships: instead, 
+a relationship is encoded by adding tables, which we show in section \ref{sec:rdbrels}.
 
 %include ../packages/Basil/src/Basil/Database/Relational/Core.lhs
 %include ../packages/Basil/src/Basil/Database/Relational/CoreExample.lhs
@@ -363,21 +361,18 @@ and test it using the in-memory database, and switch to a relational database
 for production use. The full interface is described in section
 \ref{sec:reldbinterface}.
 
-\section{Querying the database}
+\section{Querying the databases}
 \label{sec:query}
 
 In the previous sections, we saw how we can find all entities in an entity set
-or a single entity, by its |id|. In this section we implement
-\emph{selection}, which gives us more advanced ways of finding entities. For
-example, we might want to find all |Person| entities with the name |"chris"|, or
-all compilers with a version larger than |1|. In this section, we show how
-we can construct such queries in a typed way, and perform them on both the
-in-memory database and the relational database.
-
-Querying databases is a a separate aspect: not every logical layer might support it.
-For example, we could use ER models to model a remote XML-based webservice, but
-most webservices do not support any queries at all. We have implemented querying
-for both the in-memory database and the relational database.
+or a single entity, by its |id|. We have constructed interfaces for both
+an in-memory database and a relational database.
+In this section we implement \emph{querying}, which gives us more advanced ways of finding entities.
+For example, we might want to find all |Person| entities with the name |"chris"|, or
+all compilers with a version larger than |1|. We show how
+we can construct such queries and perform them on both the
+in-memory database and the relational database. By constructing them in a typed
+way we guarantee that all queries are valid.
 
 \subsection{Representing queries}
 
@@ -402,7 +397,7 @@ Our way of representing ER models is quite limited. We can extend our approach
 in a couple of directions:
 
 \begin{itemize}
-\item \emph{Extend relationships to have attributes}. At the moment,
+\item \emph{Extend relationships to have attributes}: at the moment,
 relationships do not have attributes. By adding support for this we can express
 more relationships. Most attributes on relationships can be expressed by moving
 the attribute to one of the entities. However, in a many-to-many relationship
@@ -414,19 +409,19 @@ For example, consider a |Person| who has been working on a
 only has a date attribute, and introduce a one-to-many relationship between 
 |V| and |Compiler| and a one-to-many relationship between |V| and |Person|. 
 
-\item \emph{Extend relationships to be between more than two entities}. 
-In our current library, we can create a virtual entity to simulate relationships
+\item \emph{Extend relationships to relate more than two entities}: 
+in our current library, we can create a virtual entity to simulate relationships
 between more than two entities, but this is cumbersome and requires more work
 from the user of the library.
 
-\item \emph{More support for (primary) keys}
-Our primary keys are implicit: we add an |id| attribute of type |Int| for each
+\item \emph{More support for (primary) keys}:
+our primary keys are implicit: we add an |id| attribute of type |Int| for each
 entitity.
 In practice this works well, but more control over primary
 keys is sometimes necessary. 
 
-\item \emph{More control over the logical layer}
-It can be useful to provide more control over the logical layer. For
+\item \emph{More control over the logical layer}:
+it can be useful to provide more control over the logical layer. For
 example: it is not possible to use our library with legacy databases. When a
 schema does not exactly match the schema we generate, our approach does not work
 anymore.
@@ -436,12 +431,23 @@ efficient \texttt{JOIN} statements, but naively joins tables, resulting in
 performance loss. Compiling queries more efficiently would possibly lead to
 large performance gains, but in our current implementation this is not possible.
 
-\item \emph{More control over the physical layer}
-When building a high-performance application it can be useful to have control
+\item \emph{More control over the physical layer}:
+when building a high-performance application it can be useful to have control
 over the physical layer. For example, when a |Person| is often found by
 searching for an e-mailaddress, adding a |Trie| datastructure that maps
 emailadresses to |Person| values increases performance. Our library could be
 extended with configuration options similar to performance pragmas.
+
+\item \emph{Extend the query language}: our query language only allows us to
+construct simple expressions that query one entity type. We can extend the
+language to support more advanced queries and support queries between more than
+one entity type.
+
+\item \emph{More constraints on attributes}: attributes in our system have
+simple types: |String|, |Int| and |Bool|. We can envision attributes that are
+more complicated: a |String| of at least length 5, an |Int| between 10 and 100.
+One way to encode this is by implementing our library in a dependently typed
+language where these kind of properties can be expressed more easily.
 
 \end{itemize}
 

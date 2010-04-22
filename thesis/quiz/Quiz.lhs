@@ -318,7 +318,7 @@ programming library:
 > instance DefaultForm Question where form = gform Nothing
 
 We also have used some convenient helper types. The |M a| is the monad in which
-our database computations will run, and the |St| type is the type of the global
+our database computations run, and the |St| type is the type of the global
 state. Finally, the |Web| type is the type of our handler functions. It
 instantiates the |WebT| type with an |MVar| that holds the in-memory database.
 

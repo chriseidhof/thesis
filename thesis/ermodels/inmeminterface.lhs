@@ -1,8 +1,8 @@
 \begin{spec}
 data BasilState entities rels
 
-type Basil entities rels a =   ERModel entities rels 
-                           =>  ST.State (BasilState entities rels) a
+type Basil entities rels a  =   ERModel entities rels 
+                            =>  ST.State (BasilState entities rels) a
 
 find :: Ref entities entity -> Basil entities rels (Maybe entity)
 

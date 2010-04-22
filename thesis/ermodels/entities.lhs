@@ -10,91 +10,87 @@
 > import Basil.Data.TList hiding (TMap, modTList)
 > import Basil.Data.TList4
 > import Basil.Core (One, Many, Cardinality (..))
-> import Basil.References (Ident)
 > import Encoding (Compiler, Release, Person)
 > import qualified Data.Map as M
 
 
 %endif
 
+In this section we will store entities in an internal datatype. We will show how
+to construct such a datatype for each entity in our model. We will also define a
+datatype that we can use to refer to entities. 
+
 To store entities, we use a |Map| for each entity datatype. The |Map| uses integers
-(the primary keys) as keys, and the entities as values. When we create an
-entity, the integer key is returned as a reference to that entity. However,
-returning just an integer value is a bit too untyped: we also want to encode the
-type that we are dealing with. Therefore, we create the a datatype for
-references. It is indexed with |a|, which is the type of the entity it refers
-to. To be sure |a| is an entity in our model, we ask for the index |pr| into our
-model, and add |entities| as an additional type parameter.
+as keys, and the entities as values. When we create an
+entity, the integer key is returned as a reference to that entity.
+However, an integer value does not indicate the type of the reference. For
+example: does the integer |5| refer to a |Person| or a |Compiler| entity?
+Therefore, we create the a datatype for entity references.
+It is indexed with |a|, which is the type of the entity it refers
+to. It is also indexed with |entities|, the type-level list of all entities in
+our ER model. To guarantee that the entity |a| is in the list of entities, we
+include a typed reference to the entity in the list |entities|:
 
 > data Ref entities a where
->   Ref { pr :: Ix entities a, pKey :: Ident } ::  Ref entities a
+>   Ref { pr :: Ix entities a, pKey :: Int } ::  Ref entities a
 
-For a given entity datatype |e| we can create a map. Here, we do not need to
-store additional type information, we just store the key.
+For an entity type |a| we create a map with |Int| as the keys, and |a| as the
+values.
 
-\begin{spec}
-type TypeCache a = TypeCache {_cached :: M.Map Ident a} deriving Show
-\end{spec}
+> newtype TypeCache a = TypeCache {_cached :: M.Map Int a} deriving Show
 
-We need an |EntityMap| for every entity datatype in our model. Consider the
-list of entity datatypes in our ER model:
+If we look at the list of entities in the ER model for compilers, we need a
+|TypeCache| structure for each entity in our model:
 
 > type CompilerModel = Compiler :*: Person :*: Release :*: Nil
 
-To store all the |TypeCache| maps for all the entities, we ask for a |HList|
-with a |TypeCache| for every element in |model|. The |TMap| function is defined
-as following:
+To do this, we use the type-level function |TMap| from our |HList| library,
+which takes a type-level list (such as |CompilerModel|), and wraps each element
+in a container type |f|. For example, the result of |TMap TypeCache
+CompilerModel| will be |TypeCache Compiler :*: TypeCache Person :*: TypeCache
+Release :*: Nil|. The function |TMap| is defined as a type family:
 
 > type family    TMap  (f :: * -> *)  ls        ::  *
 > type instance  TMap  f              Nil        =  Nil
 > type instance  TMap  f              (a :*: b)  =  f a :*: TMap f b
 
-Now we can write down the type of our storage:
+Now we can write down the type of our storage, which is a heterogenous list
+containing a |TypeCache| for each entity in our ER model:
 
-> type EntityStorage model = HList (TMap TypeCache model)
+> type EntityStorage entities = HList (TMap TypeCache entities)
 
-However, |TypeCache| is a type synonym, and type synonyms can only be passed to
-type-level functions if they are fully applied. Therefore, we need to redefine
-|TypeCache| as a |newtype|:
-
-> newtype TypeCache a = TypeCache {_cached :: M.Map Ident a} deriving Show
-
-If we now get an |index| that points into |entities|, we can use the
-|lookupMapHList| function from our |HList| library to look up the corresponding
-|TypeCache| value. The |lookupMapHList| has the following type:
+To lookup a |TypeCache| for an entity type, we can use the |lookupMapHList|
+function, which is defined in the |HList| library and has the following type:
 
 > lookupMapHList :: Ix entities a -> HList (TMap f entities) -> f a
 
-We can define |lookupEntity| in terms of |lookupMapHList|. It takes an |Ix|
-pointing to a type |a|, a reference to |a| and fetches a |Maybe a| value from
-the |EntityStorage|.
+We can define |lookupEntity| in terms of |lookupMapHList|. It looks up the
+|TypeCache|, unwraps the |newtype| and looks up the integer key of the entity in
+the |Map|.
 
-> lookupEntity :: Ix entities a -> Ref entities a -> EntityStorage entities -> Maybe a
-> lookupEntity ix ref storage = M.lookup (pKey ref)  (_cached $ lookupMapHList ix storage)
+> lookupEntity :: Ref entities a -> EntityStorage entities -> Maybe a
+> lookupEntity (Ref ix key) storage = M.lookup key (_cached $ lookupMapHList ix storage)
 
-We now are finally ready to construct our datastructure, containing an empty |Map| for
-every entity datatype. To enumerate all entities we use the |Witnesses| type,
-which can be found in our library. A witnesses value simply consists of a
-|WCons| for every type-level |:*:| and a |WNil| for a type-level |Nil|, and
-allows us to construct values from scratch. \todo{Explain witnesses better}
+To construct an empty |Map| for each entity, we use a |Witnesses| type. The
+|Witnesses| type is constructed mechanically, and provides a |WCons| for each
+value in a type-level list. It is useful because it allows us to define the
+function |emptyState| recursively by deconstructing the |Witnesses| type.
 
 > emptyState :: Witnesses entities entities -> EntityStorage entities
 > emptyState WNil         = Nil
 > emptyState (WCons _ xs) = TypeCache M.empty .*. emptyState xs
 
 Our next task is to create entities and add them to the storage. For this, we
-need to update the corresponding |EntityMap| for an entity. In order to do this,
-we need an |Ix| that points to the right entity type, a fresh |Ref| value and
-the entity value itself.
+need to update the corresponding |EntityMap| for an entity. The function looks
+up the right |TypeCache| structure and inserts the entity.
 
-> newEntity  ::  Ix entities ent 
->            ->  Ref entities ent 
->            ->  ent 
+> newEntity  ::  Ref entities a 
+>            ->  a 
 >            ->  (EntityStorage entities -> EntityStorage entities)
-> newEntity ix newRef ent = modTList (insertEntity (pKey newRef) ent) ix
+> newEntity (Ref ix key) ent = modTList (insertEntity key ent) ix
 >  where insertEntity key ent (TypeCache m) = TypeCache (M.insert key ent m)
 
-The function |modTList| takes a modifier function and an index, and modifies the given |HList|.
+The function |modTList| is defined in the takes a modifier function and an index, and modifies the given |HList|.
 It has the following type:
 
 > modTList    ::  (f ix -> f ix)
@@ -102,5 +98,7 @@ It has the following type:
 >             ->  HList (TMap f entities)
 >             ->  HList (TMap f entities)
 
-We have now seen |lookupEntity| and |newEntity|. Of course, |deleteEntity| and
-|modifyEntity| are defined in a similar way.
+We have now created a structure for storing entities in an ER model. The
+structure creates a |Map| for each entity in the list of entities, and we have
+provided functions to create new entities, to find entities and to create an
+empty datastructure.

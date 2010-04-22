@@ -53,12 +53,9 @@ build an interface to a relational database.
 
 Now we also need to enumerate the relationship sets on the type level:
 
-> type CompilerRelations  =    TContributes
->                         :*:  TReleases
->                         :*:  Nil
+> type CompilerRelations  =    TContributes :*:  TReleases :*:  Nil
 
-For each relationship we create an index (again, this could be done using
-Template Haskell):
+For each relationship we create an index:
 
 > ixContributes  ::  Ix CompilerRelations TContributes
 > ixContributes  =   Zero
@@ -66,7 +63,7 @@ Template Haskell):
 > ixReleases  ::  Ix CompilerRelations TReleases
 > ixReleases  =   Suc Zero
 
-We can give the instance for |ERModel| that links |CompilerModel| and
+We give the instance for |ERModel| that links |CompilerModel| and
 |CompilerRelations|:
 
 > instance ERModel CompilerModel CompilerRelations where
@@ -75,8 +72,8 @@ We can give the instance for |ERModel| that links |CompilerModel| and
 >              $  TNil4 
 >   witnesses  =  WCons ixCompiler $  WCons ixPerson $  WCons ixRelease $  WNil
 
-Finally, we need some boilerplate code that is used to check if types are equal.
-Again, we have not yet written the Template Haskell code for this.  
+Finally, we need some boilerplate code that is used to check if two types are equal.
+We have written Template Haskell that generates this, but it is instructive to do it by hand.
 
 > type instance TypeEq Compiler     Compiler  = True 
 > type instance TypeEq Compiler     Person    = False
@@ -88,7 +85,7 @@ Again, we have not yet written the Template Haskell code for this.
 > type instance TypeEq Release      Person    = False
 > type instance TypeEq Release      Release   = True
 
-Now we can construct a |Compiler| entity and two |Release| entities:
+Now we construct a |Compiler| entity and two |Release| entities:
 
 > ghc :: Compiler
 > ghc = Compiler "GHC" (URL "http://haskell.org/ghc")
@@ -109,12 +106,12 @@ of the relationship and a pointer to the relationship.
 
 > type M a = Basil CompilerModel CompilerRelations a
 
-To create a new |Compiler| and two new |Release|, we can write the following code:
+To create a new |Compiler| and add two new |Release|s to it, we write the following code:
 
 > example0 :: M (Ref CompilerModel Compiler)
 > example0  = do  cId   <- new  ixCompiler  ghc     PNil
->                 _     <- new  ixRelease   ghc612  (PCons (release cId) PNil)
->                 _     <- new  ixRelease   ghc610  (PCons (release cId) PNil)
+>                 rId1  <- new  ixRelease   ghc612  (PCons (release cId) PNil)
+>                 rid2  <- new  ixRelease   ghc610  (PCons (release cId) PNil)
 >                 return cId
 
 Note that the third argument is based on the |InitialValues| function from
@@ -122,14 +119,13 @@ section \ref{sec:initialvalues}. If we forget to include a |PList| with a
 reference to the compiler, we get a type error. This way, the type system
 ensures that we always provide the right initial relationships.
 
-This creates a |Compiler| entity and adds two releases to it. We now write a
-function that, given a reference to a |Compiler|, finds all releases:
+To find all releases that belong to a |Compiler| entity, we write the following code:
 
 > example1  ::  Ref CompilerModel Compiler 
 >           ->  M (Maybe (S.Set (Ref CompilerModel Release)))
 > example1 cId = findRels DL ixReleases cId
 
-We can test the first example:
+To test the first example, we can use the |runBasil| function:
 
 > runIt0 :: Ref CompilerModel Compiler
 > runIt0  = fst (runBasil example0)
@@ -150,3 +146,6 @@ And evaluating |runIt2| yields the following result:
 \begin{spec}
 Just (fromList [Ref 1,Ref 2])
 \end{spec}
+
+We have now written an in-memory database that generates its schema from the ER model described in section \ref{sec:encoding}.
+The in-memory database guarantees that all relationships are correctly initialized when creating a new entity, and by encoding entities as Haskell record datatypes we guarentee that all attributes of an entity are provided.
