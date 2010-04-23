@@ -170,6 +170,8 @@ relationship set, which relates |Compiler| entities to |Person| entities.
 \label{fig:contributes}
 \end{figure}
 
+\label{sec:cardinality}
+
 In the \relationship{contributes} relationship each person works on zero or more
 compilers, and each compiler has zero or more contributors. This property of the
 relationship is called the \emph{cardinality}, and states how many entities are related

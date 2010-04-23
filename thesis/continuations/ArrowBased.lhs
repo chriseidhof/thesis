@@ -51,6 +51,8 @@ written down in the following way:
 >     &&&   link "Click Here"
 >     >>>   display (\x -> X.toHtml $ "Hello, " ++ fst x)
 
+\label{sec:arrownotation}
+
 Using arrow notation \cite{paterson2001new}, we can write down our example in a
 style that is reminiscent of monadic do-notation. Arrow notation can save a lot
 of code, especially when dealing with variables that are used multiple times.
@@ -127,6 +129,7 @@ Therefore, we add an extra type-parameter |i|, which captures the input of a
 The |o| type-parameter indicates the result of running a |Web| computation.
 Note that there are no functions stored in the |Web| type itself, which is
 essential for serialization, as we show later on.
+\label{sec:dataweb}
 
 > data Web i o where
 
@@ -188,6 +191,8 @@ constructor |Fun| that can contain any Haskell function.
 >   Form     :: X.Html -> (RequestBody -> Failing o)  -> Page a o
 >   Display  :: (a -> X.Html)                         -> Page a ()
 >   Link     :: String                                -> Page a ()
+
+\label{sec:inputfunction}
 
 We also provide smart constructors that lift a |Page| type into the |Web| type:
 

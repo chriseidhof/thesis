@@ -22,8 +22,6 @@
 
 %endif
 
-\todo{Define entire interface in last section.}
-
 In this section we build a monadic continuation-based
 web programming library. The full interface of the library is in Section
 \ref{sec:monadinterface}.
@@ -273,4 +271,3 @@ We expand on this approach in section \ref{sec:arrowbased}
 \emph{defunctionalize} it. We look further into this approach in section
 \ref{sec:defunctionalization}.
 \end{itemize}
-\todo{more approaches?}

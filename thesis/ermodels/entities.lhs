@@ -31,6 +31,8 @@ to. It is also indexed with |entities|, the type-level list of all entities in
 our ER model. To guarantee that the entity |a| is in the list of entities, we
 include a typed reference to the entity in the list |entities|:
 
+\label{sec:dataref}
+
 > data Ref entities a where
 >   Ref { pr :: Ix entities a, pKey :: Int } ::  Ref entities a
 

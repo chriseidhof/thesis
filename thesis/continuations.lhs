@@ -110,7 +110,6 @@ In the last sections, we provide future work and conclude. There is an appendix
 with the interfaces for both the monadic and arrow-based library on page 
 \pageref{sec:interfaces}.
 
-\todo{contributions}
 
 \newpage
 \section{A monadic approach}

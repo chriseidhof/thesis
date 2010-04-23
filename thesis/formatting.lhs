@@ -5,4 +5,7 @@
 \newcommand{\change}[2]{\item {\tiny #1} #2}
 \newcommand{\library}[1]{\texttt{#1}}
 
+\newcommand{\more}[1]{\marginpar{\small{See page \pageref{#1}}}}
+
+
 \hypersetup{colorlinks=true}

@@ -34,9 +34,10 @@
 
 The next step is to define a |handle| function that takes a |QuizRoute| and
 returns a handler. Our handlers are represented as continuations.
+\more{chap:continuations}
 The continuations combine an input value of type |i| and a value of
 type |Web i ()|. When we add or list a quiz, there is no input. However, when we
-|View| or |Take| a quiz, we provide a reference to the |Quiz|. This reference is
+|View| or |Take| a quiz, we provide a reference to the |Quiz| \more{sec:dataref}. This reference is
 constructed from the information in the |QuizRoute| datatype.
 
 > handle :: QuizRoute -> Continuation (MVar St) IO ()
@@ -45,19 +46,20 @@ constructed from the information in the |QuizRoute| datatype.
 > handle (View i)  = Cont (Ref ixQuiz i)  viewQuiz
 > handle (Take i)  = Cont (Ref ixQuiz i)  takeQuiz
 
-From here one, we make heavy use of arrow notation
-\cite{paterson2001new}. Using the arrow notation, we can conveniently construct web
-programs on top of our continuations library from chapter \ref{chap:continuations}.
 
 \subsection{Adding a new Quiz}
 
 To add a quiz, we first show the form for entering values of type |Quiz|, we then
 add it to the database and proceed by adding questions to the quiz. Finally, we
 display a message that it was successfully added. 
-The type |Web () ()| means that the input of this function is a value of type
+The type |Web () ()| \more{sec:dataweb} means that the input of this function is a value of type
 |()|, and the output is also a value of type |()|. In general, a function of
 type |Web a b| has a value of type |a| as it input and produces a value of type
 |b|.
+From here on, we make heavy use of arrow notation. \more{sec:arrownotation}
+Using the arrow notation, we can conveniently construct web
+programs on top of our continuations library from chapter \ref{chap:continuations}. Arrow notation is very similar to monad notation: on the left of the |<-| arrow is the output of a function. On the right of a function is something of the form |-< i|, where |i| is the input of the function.
+It is beyond the scope of this chapter to explain arrow notation, for a more detailed description we refer to the original paper \cite{paterson2001new} or section \ref{sec:arrowbased}. 
 
 > addQuiz :: Web () ()
 > addQuiz = proc () -> do
@@ -66,7 +68,8 @@ type |Web a b| has a value of type |a| as it input and produces a value of type
 >   _    <-  addQuestions                                    -< ref
 >   display (const $ X.toHtml "added quiz with questions.")  -< ()
 
-To add a quiz, we let the user input a form using the overloaded |input| function:
+To add a quiz, we let the user input a form using the overloaded |input|
+function:\more{sec:inputfunction}
 because we use the result of
 the |input| value later in the program as a |Quiz| value, the type inferencer
 constructs a form that is rendered as a |Quiz| form (see figure
@@ -78,12 +81,13 @@ constructs a form that is rendered as a |Quiz| form (see figure
 \label{fig:addQuiz}
 \end{figure}
 
-After the input |q| is entered and bound to variable |q|, we add the quiz to the database, yielding a
+After the input |q| is entered, we add the quiz to the database, yielding a
 reference |ref| to the Quiz value.
 The database code is wrapped in the |basil|
-function. The |new| function takes as its first paramater an index into the ER
+function. The |new| function \more{sec:inmemnew} takes as its first parameter an index into the ER
 model, which refers to the type of the entity that is created.
 The second parameter is the the entity, and the third parameter is a list with all the necessary references.
+\more{sec:initialvalues}
 For quizzes, the third argument is the empty list |PNil|, we show a more complicated example later on.
 
 After the quiz is added to the database, we proceed to add questions to the
@@ -107,8 +111,8 @@ applied on each entered question.
 \label{fig:addQuestion}
 \end{figure}
 
-The ER modeling library uses type-level functions which enforces all relationships are
-correctly used and initialized.
+The ER modeling library uses type-level functions which guarantee all relationships are correctly used and initialized.
+\more{sec:encoding} \more{sec:initialvalues}
 For example, in our data model, we have specified that each
 question belongs to exactly one |Quiz|.
 Therefore, we need to supply a reference to a |Quiz| entity when adding a new |Question| entity to the
@@ -132,8 +136,8 @@ no quizzes yet, we show a warning, otherwise we apply the |quizWithLink| functio
 >     _   -> display (X.concatHtml . map quizWithLink)  -< qs
 
 The |quizWithLink| takes a |Quiz| and its reference and produces HTML for
-that quiz. Recall that we defined |Quiz| as a record type: the |ghtml| displays
-a line with each record field and its value.
+that quiz. Recall that we defined |Quiz| as a record type: the function |ghtml|
+\more{sec:ghtml} displays a line with each record field and its value.
 Finally, we add links to view or take the quiz.
 
 > quizWithLink :: (Ref QuizModel Quiz, Quiz) -> X.Html
@@ -152,7 +156,7 @@ Finally, we add links to view or take the quiz.
 \subsection{Viewing Quizzes}
 
 To view a quiz, the function |viewQuiz| starts by looking up the 
-quiz in the database, using the |find| function, followed by locating the
+quiz in the database, using the |find| \more{sec:inmemfind} function, followed by locating the
 corresponding questions and displaying them. The |findRels|
 finds all relations and results in a list of |Ref| values. The corresponding
 entities can be found using the |find| function. Finally, the |display
@@ -214,7 +218,7 @@ filled in programmatically. To do this, we first introduce a new datatype
 >                                    } 
 
 Second, we define a function for converting between a |Response| and
-|ResponseView|. This function is called a \emph{lens} \cite{relationallenses}, and allows us to convert a
+|ResponseView|. This function is called a \emph{lens} \more{sec:lenses} \cite{relationallenses}, and allows us to convert a
 |Response| to a |ResponseView|, but also allows us to take an edited
 |ResponseView|, and update the original |Response| with the new value. We have
 constructed the lens using the fclabels package \footnote{\url{http://hackage.haskell.org/package/fclabels}}.
@@ -264,6 +268,8 @@ handlers.
 \caption{Taking a quiz: answering a question}
 \label{fig:takeQuiz2}
 \end{figure}
+
+%if False
 
 \subsection{Miscellaneous functions}
 
@@ -368,3 +374,5 @@ Finally, we need to give the |Regular| instances for |QuizForm| and
 
 > $(deriveAll ''ResponseView  "PFResponseView")
 > type instance PF ResponseView = PFResponseView
+
+%endif

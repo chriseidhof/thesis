@@ -41,6 +41,11 @@ terms of |gtoURL| and |gfromURL|.
 >  toURL    = gtoURL  . from
 >  fromURL  = fmap to . gfromURL
 
+The functions |gtoURL| and |gfromURL| are generic functions and work on almost any datatype. These particular functions are defined using the 
+regular\footnote{\url{http://hackage.haskell.org/package/regular}} library and can be found in the code accompanying this thesis.
+
+%if False
+
 In order for the generic functions |gtoURL| and |gfromURL| to work, we make |QuizRoute| an instance of the |Regular|
 class, which is provided by the
 regular\footnote{\url{http://hackage.haskell.org/package/regular}} library.
@@ -51,6 +56,8 @@ we also manually give a type family instance:
 
 > $(deriveAll ''QuizRoute "PFQuizRoute")
 > type instance PF QuizRoute = PFQuizRoute
+
+%endif
 
 Finally, we provide a helper function that links to a |QuizRoute|. We use
 this function to generate HTML that links to an action. Because the first

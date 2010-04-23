@@ -25,7 +25,7 @@
 
 %endif
 
-We define our data model as an Entity Relationship model \cite{chen1976entity}, or \emph{ER model}, a formalism for building data
+We define our data model as an Entity Relationship model \cite{chen1976entity}, or \emph{ER model}\more{chap:ermodels}, a formalism for building data
 models. In figure \ref{fig:quizermodel} you can see the graphical representation.
 Each quiz has a subject and a longer description, and consists of a sequence of
 questions. Each question belongs to exactly one quiz.
@@ -39,23 +39,22 @@ responses, but every response belongs to a single quiz.
 \label{fig:quizermodel}
 \end{figure}
 
-All the entities (represented by rectangles) are encoded as Haskell datatypes,
-with a record field for each attribute (represented by ovals). We have encoded
-the |answers| as a list. Instead, we could have chosen to add a separate
-|Answer| entity and add a relationship. For simplicity, we have chosen not do
-this.
+All the entities \more{sec:ermodels} (represented by rectangles) are encoded as Haskell datatypes,
+with a record field for each attribute (represented by ovals).
+In chapter \ref{chap:ermodels} we explain in detail how to encode an ER model in Haskell.
 
-> data Quiz      = Quiz      { subject :: String, description :: String}
-> data Question  = Question  { title :: String, choiceA, choiceB, choiceC :: String}
-> data Response  = Response  { name     :: String
->                            , email    :: Email
->                            , date     :: Date
->                            , answers  :: [Answer] 
+> data Quiz      = Quiz      {  subject :: String, description :: String}
+> data Question  = Question  {  title :: String, choiceA, choiceB, choiceC :: String}
+> data Response  = Response  {  name     :: String
+>                            ,  email    :: Email
+>                            ,  date     :: Date
+>                            ,  answers  :: [Answer] 
 >                            }
 
 > data Answer    = QA | QB | QC deriving (Show, Eq, Enum)
 
-We also enumerate the entities of a |QuizModel| in a type-level list.
+We enumerate the entities of a |QuizModel| as a type-level list:
+\more{sec:hlist}.
 
 > type QuizModel = Quiz B.:*: Question B.:*: Response B.:*: Nil
 
@@ -68,7 +67,7 @@ We also enumerate the entities of a |QuizModel| in a type-level list.
 For both relationships (the diamonds in the figure) we add a type. Note that the
 in the diagram, there is a |*| and a |1|
 annotation on the lines connecting the relationship with its entities. This is
-called the cardinality: ever |Question| entity belongs to a single |Quiz|
+called the \emph{cardinality} of the relationship: \more{sec:cardinality} every |Question| entity belongs to a single |Quiz|
 entity and every |Quiz| entity has several |Question| entities. We encode
 this using the |One| and |Many| types, respectively.
 
@@ -76,6 +75,7 @@ this using the |One| and |Many| types, respectively.
 > type Responses  = Rel  QuizModel  One   Quiz  Many  Response
 
 We also provide information at the value level for both relationships:
+\more{sec:encoding}
 
 > questions   :: Questions
 > questions  = Rel  One   ixQuiz  "quiz"  Many  ixQuestion  "questions"
@@ -83,9 +83,13 @@ We also provide information at the value level for both relationships:
 > responses   :: Responses
 > responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
 
-And we enumerate the relationships in a type-level list:
+We also enumerate the relations at the type level:
 
 > type QuizRelations = Questions B.:*: Responses B.:*: Nil
+
+The rest of the code is very mechanical and is included at the end of this chapter, where we have listed the entire source code of this example.
+
+%if False
 
 Now we can make |QuizModel| and |QuizRelations| an instance of the |ERModel|
 class. We need to provide some information on the value level, which is
@@ -120,8 +124,6 @@ containing all relationships.
 ixQuestions  :: Ix QuizRelations Questions
 ixResponses  :: Ix QuizRelations Responses
 \end{spec}
-
-%if False
 
 > $(deriveAll ''Quiz  "PFQuiz")
 > $(deriveAll ''Question  "PFQuestion")

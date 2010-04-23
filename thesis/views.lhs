@@ -295,6 +295,8 @@ following type:
 pform  :: Maybe PersonForm -> Form PersonForm
 \end{spec}
 
+\label{sec:lenses}
+
 The result of this function is a value of type |PersonForm|, and we need to
 update the original |Person| value.
 This is called the view-update problem \cite{foster2007combinators}, where a
