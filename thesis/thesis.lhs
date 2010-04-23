@@ -20,9 +20,55 @@
 
 \begin{document}
 \author{Chris Eidhof}
-\title{Web programming in Haskell}
 
-\maketitle
+\title{MSc Thesis}
+\begin{titlepage}
+\begin{center}
+
+
+% Upper part of the page
+
+
+\text{\LARGE Web programming in Haskell}\\[1.5cm]
+
+\text{\Large Chris Eidhof}\\[0.5cm]
+
+\text{\Large MSc Thesis}\\[0.5cm]
+{\large \today}\\[0.5cm]
+\text{INF/SCR-xx-xx}\\[0.5cm]
+
+% Title
+
+
+
+\vfill
+
+% Bottom of the page
+\includegraphics[scale=1.1]{uulogo}\\[1cm]
+
+% Author and supervisor
+\begin{minipage}{0.6\textwidth}
+\begin{flushleft} \large
+Center for Software Technology\\
+Dept. of Information and Computing Sciences\\
+Utrecht University\\
+Utrecht, the Netherlands
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.3\textwidth}
+\begin{flushright} \large
+\emph{Daily Supervisor:} \\
+prof. dr. S.D. Swierstra\\
+\emph{Second Supervisor:} \\
+dr. Andres L\"oh
+\end{flushright}
+\end{minipage}
+
+
+\end{center}
+
+\end{titlepage}
+
 
 \chapter*{Abstract}
 
