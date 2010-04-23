@@ -18,7 +18,9 @@
 > import qualified Text.XHtml.Strict.Formlets as Formlets
 > import qualified Happstack.Server.SimpleHTTP as H
  
-
+The |NextPage| type is simply a |String| value.
+ 
+> type NextPage = String
 
 %endif
 
@@ -28,45 +30,43 @@ web programming library. The full interface of the library is in Section
 The interface that we define is inspired by iTasks \cite{plasmeijeriTasks}, which is a
 library in the Clean language for building web workflows.
 
-First, we define the request body to be a list of key/value strings.
+When a web server receives a request for a page, both the URL and the
+|RequestBody| are sent. In our library, we define the |RequestBody| as the
+submitted form data: if a form is submitted, the |RequestBody| contains
+key/value pairs for each form field. Otherwise it is empty:
  
 > type RequestBody = [(String,String)]
  
-In our library, a page is either a form that yields an |a|, or a basic webpage
-that displays something. 
-The first parameter for |Form| is the rendering of the form, the
+The |Page| datatype defines atomic pages. The |Form| constructor constructs pages that consist of a form:
+the first parameter for |Form| is the rendering of the form, the
 second parameter is the parsing function, which happens only after the user has submitted
 the data. 
-Finally, we include a |Link| constructor that displays just a link.w
+The |Display| constructor displays a piece of HTML.
+Finally, we include a |Link| constructor that displays just a link.
 Our choice of basic elements might seem a bit limited, but instead of a |Page|
-datatype we could have provided a |Page| typeclass.
-That way, users of the library can later on add their own instances if the
-library does not provide the necessary primitives.
+datatype we could have provided a |Page| typeclass, where programmers can give
+their own instances if something is missing.
  
 > data Page a where
 >   Form     :: X.Html -> (RequestBody -> Failing a) -> Page a
 >   Display  :: X.Html -> Page ()
 >   Link     :: String -> Page ()
  
-A web continuation is a function that maps a |RequestBody| to a result. As an
-additional parameter, the |NextPage| contains a fresh URL for the continuation.
+A web continuation is a function that maps a |RequestBody| to a result. 
+The |NextPage| parameter contains a fresh URL for the continuation, which can be used in the rendering of links and form actions.
  
 > newtype Web a = Web {runWeb :: NextPage -> RequestBody -> Result a}
  
-When running a web continuation, the computation can be completely finished,
-which is captured by the |Done| constructor.
-Alternatively, a problem might have occured, which shows the error message and a
-new continuation.
-Finally, in the most common case the result is a page with a continuation, which
-is expressed using the |Step| constructor.
+When running a web continuation, the computation can be completely finished, which is captured by the |Done| constructor.
+Alternatively, a problem might have occured, which shows the error message and a new continuation.
+Finally, in the most common case the result is a page with a continuation, which is expressed using the |Step| constructor.
+For example, when running a |Form|, the |Step| constructor first shows the form
+and then parses the form.
  
 > data Result a  =  Done a
 >                |  Problem String (Web a)
 >                |  Step X.Html (Web a)
 
-The |NextPage| type is simply a |String| value.
- 
-> type NextPage = String
  
 From a single page we can calculate a function that takes a request and
 produces a |Result|:
@@ -76,9 +76,7 @@ produces a |Result|:
 For the |Display| constructor, we display the message using the |continue|
 function, which we define later.
 For the second field of the |Step| constructor, which has type |Web a|, we
-return a unit value.
-As we will see, |Web| can be made an instance of the |Monad| typeclass.
-The |Link| constructor follows a similar pattern.
+return a unit value.  The |Link| constructor follows a similar pattern.
 
 > runPage   (Display msg)    np _  = Step (continue msg      np "Continue")
 >                                         (return ())
@@ -92,7 +90,7 @@ constructor is now initialized with a continuation that parses the request.
 > runPage f@(Form msg parse) np _  = Step (makeForm msg)
 >                                         (Web (const (formResult (web f) . parse)))
  
-We can now make the |Web| type an instance of |Monad|. The return function
+We can make the |Web| type an instance of the |Monad| typeclass. The return function
 ignores the |NextPage| and |RequestBody|, and returns a |Done| result:
  
 > instance Monad Web where
@@ -101,7 +99,7 @@ ignores the |NextPage| and |RequestBody|, and returns a |Done| result:
 To combine two |Web| values, we construct a new |Web| value. We first run the
 left operand |l|, and pattern-match on the result. If the result is |Done|, we can
 continue with the right operand.
-If we need to display something using the |Step| or |Problem| constructor, we combine the
+If we display something using the |Step| or |Problem| constructor, we combine the
 second field of the step constructor (which is of type |Web| a) with the right
 operand |r|.
 
@@ -110,16 +108,22 @@ operand |r|.
 >                Step msg l'     -> Step     msg  (l' >>= r) 
 >                Problem msg l'  -> Problem  msg  (l' >>= r)
 
-To store continuations on the server, we keep track of an |Env| type that maps a
+We have now defined a library for building workflows on the web. Using the basic
+elements in |Page| and the monad instance we can already write advanced
+workflows.
+We will now look at how to interpret |Web| values as programs and run them on
+a web server.
+To store continuations on the server, we keep track of an environment |Env| that maps a
 URL to a continuation:
 
 > type Env = M.Map String (Web ())
 
-And given the |Env|, a URL and a request body, we can produce Html and a new,
+Given the environment |Env|, a URL and a request body, we can produce Html and a new,
 changed environment. The |run| functions looks up the URL in the environment,
 and if it is found, it runs the continuation. That yields a value |result|. From
 the |result| we can derive the HTML that needs to be displayed, and the next
-continuation. Finally, we update the environment and return the HTML with the
+continuation.
+Finally, we update the environment and return the HTML with the
 new environment.
  
 > run :: Env -> String -> RequestBody -> (X.Html, Env) 
@@ -201,6 +205,8 @@ We have defined some smart constructors that lift a |Page| directly into the |We
 Finally, some code to abstract working with forms. This makes use of the
 formlets library \footnote{\url{http://hackage.haskell.org/package/hackage}}. We
 provide a class |DefaultForm| with instances for |String|, |Integer| and |(,)|. 
+Although the library described above is not in any way dependent on formlets,
+they provide a good abstraction and integrate easily.
  
 > class DefaultForm i  where form :: Form i
 > type Form a = Formlets.XHtmlForm Identity a

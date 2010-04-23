@@ -52,8 +52,8 @@ that it carries along.
 The environment is used to store state.
 
 Let us give an example of a program where continuations are a good solution.
-The Arc Challenge, as posed by \citet{arc}, was introduced to compare the
-expressiveness of web programming languages. It is not a contrived problem,
+The Arc Challenge, as posed by Graham \cite{arc}, was introduced to compare the
+expressiveness of web programming languages. It is not a contrived challenge,
 web applications often need to solve these kinds of problems, where results
 from a previous are used on a later page.
 
