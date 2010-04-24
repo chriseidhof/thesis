@@ -51,32 +51,34 @@
 
 \section{Introduction}
 
-Most web applications are structured using the Model, View, Controller paradigm.
+Most web applications are structured using the Model, View, Controller paradigm
+\cite{krasner1988description}.
 We believe this is a good way to separate logical parts of an application: The
 model part is concerned with the data storage, the view presents data to the end
-user and the controller coordinates all of this.
+user and the controller coordinates all of this. In this chapter, we focus on
+developing a library for the view part.
 
 The view code is often heavily dependent on model code, and as a result,
 most web programming frameworks conveniently include features to build view code
 based on the structure of the model.
-For example, Ruby on Rails can generate HTML templates
+For example, Ruby on Rails \cite{rubyonrails} can generate HTML templates
 for each model class, and the generated templates can be edited by hand to have
 maximum control over the output.
-However, this approach is problematic: \emph{if the model changes, either the template has to be
+However, this approach is problematic: if the model changes, either the template has to be
 changed by hand, introducing a possibility for errors, or the template has to be
-generated again, losing the changes made so far}.
+generated again, losing the changes made so far.
 
 Generating code can save a lot of time when initially creating an application,
 but can introduce a maintenance problem if the generation source changes.
 While code generation can reduce program size and program complexity, developers
 often only use it the first time and make changes to the generated code.
 
-We use generic programming \todo{citation} as a technique for generating view
+We use generic programming \cite{hinze2009generic, syb, backhouse1999generic} as a technique for generating view
 code based on the structure of the model. However, generic programming suffers
 from a different problem: \emph{it is not possible to change the structure of
 the output, except by changing the structure of the input}. 
 Changing our model datatypes (the input) to accomodate for the view code (the
-output) clearly breaks abstractions and is not the right solution to this problem. 
+output) breaks abstractions and is not the right solution to this problem. 
 
 The solution we present in this chapter combines bidirectional programming with generic
 programming. A bidirectional program works in two ways: if a program converts from
@@ -115,7 +117,7 @@ generic programming. For example, consider the |Person| datatype:
 
 %endif
 
-We can now use Template Haskell code from the the regular library \todo{cite} to derive a structural view on |Person|:
+We can now use Template Haskell code from the the regular library \cite{rodriguez2009generic} to derive a structural view on |Person|:
 
 > $(deriveAll ''Person "PFPerson")
 > type instance PF Person = PFPerson
@@ -149,31 +151,34 @@ If we if we print the value of |ghtml chris| we get the following result:
 
 \begin{verbatim}
 <h1>Person</h1 >
-<label>Name: </label>chris<br />
-<label>BirthDate: </label >16-01-85<br />
-<label>Email: </label>chris@eidhof.nl> 
+<label>Name: </label> chris<br />
+<label>BirthDate: </label> 16-01-85<br />
+<label>Email: </label> chris@eidhof.nl
 \end{verbatim}
+
+For each record label we generated a \texttt{<label>} element, and the values
+are printed after the label. The name of the constructor is surrounded with an
+\texttt{h1} tag.
 
 \subsection{Customization}
 \label{sec:customization}
 
 Generating HTML based on the structure of the type is a feature that virtually
 every web framework provides.
-It is very useful to quickly set up some basic pages, however: most web applications require you to change the generated code if you
-are not satisfied with it.
-As explained in the introduction, this is problematic, because if the source
+It is very useful to quickly set up some basic pages, however: most web
+applications require custom display code.
+As explained in the introduction, writing this code manually is problematic, because if the source
 type changes, you either have to manually update the changes in the view code,
 or lose the customizations.
 
-Suppose we want to customize the way HTML is generated for the |Person|
-datatype: we do not want to show the birthDay and we only show the first part of
+We now customize the way HTML is generated for the |Person|
+datatype: we do not show the |birthDate| and we only show the first part of
 someone's e-mail address.
 Instead of generating that HTML
 directly from the |Person| datatype, we add an indirection: we first
 convert the |Person| datatype into a |PersonView| datatype, and generically
 generate the HTML for the |PersonView| value.
-This way, we can maintain a clean separation
-between the model code and the view code without having to write manual HTML.
+This way, we can maintain a clean separation between the model code and the view code without having to write manual HTML.
 First, we define the |PersonView| datatype:
 
 > data PersonView = PersonView  {  _name   :: String
@@ -182,13 +187,13 @@ First, we define the |PersonView| datatype:
 
 We can now write a conversion function from |Person| to |PersonView|:
 
+> personToPersonView :: Person -> PersonView
 > personToPersonView (Person name bDate em) = 
 >     PersonView name (obfuscate em)
 
-And using the same technique as above, we can generate |HTML| for values of the |PersonView| datatype.
-This is powerful, because we can keep using the |Person| datatype from our
-database, and only change it in the view part of the code. We have maintained
-the separation of concerns while having full flexibility over the view.
+Using the same generic function, we can generate |HTML| for values of the |PersonView| datatype.
+This is powerful, because we can keep using the |Person| datatype from our database, and only change it in the view part of the code.
+We have customized the generic code without writing manual HTML: we maintained a separation of concerns while having full flexibility over the view.
 
 \section{Generic forms}
 \label{sec:gform}
@@ -258,11 +263,12 @@ personForm  =    pure Person
             <*>  check checkEmail  input
 \end{spec}
 
-The formlets library provides functions to get the |HTML| of a form, and the
-parsing function. The simplified type signature is similar to:
+The formlets library provides functions to get the HTML of a form, and the
+parsing function. For our purposes, we have simplified the type signature
+slightly:
 
 \begin{spec}
-runForm :: Form a -> (HTML, PostData -> Either Error a)
+runForm :: Form a -> (Html, PostData -> Either Error a)
 \end{spec}
 
 The second function is a parse function that parses the |PostData|
@@ -304,9 +310,9 @@ view on the original data is changed, and the changes need to be reflected in
 the original datatype. Lenses \cite{relationallenses, bohannon2008boomerang,
 greenwald333language, foster2008quotient} are a solution to this problem. A lens
 is defined as two functions with types |a -> c| and |c -> a -> a|. The first
-function takes an abstract type |a| and calculates a view type |c|. The second
-function takes a view type |c| and changes the abstract type |a| accordingly,
-yielding a new |a| value.
+function takes an abstract type |a| and produces a view type |c|. The second
+function takes a view type |c| and updates the abstract type |a| with the values
+from |c|.
 
 Using the fclabels library, we can construct a
 lens between |Person| and |PersonForm|. Such a lens has type |Person :->
@@ -322,7 +328,8 @@ projectedForm :: (Regular c, GFormlet (PF c)) => (a :-> c) -> a -> Form m a
 We now proceed do define such a lens that converts between |Person| and
 |PersonView|. Combined with the |projectedForm| function, this yields a form
 that is rendered as a |PersonView| form but produces |Person| values.
-For a detailed explanation of how to construct lenses using the fclabels package, see \todo{TR fclabels}.
+For a detailed explanation of how to construct lenses using the fclabels
+package, see the package homepage.
 
 %if False
 
@@ -355,15 +362,19 @@ personForm :: Person -> Form Person
 personForm = projectedForm convertPerson
 \end{spec}
 
-The |projectedForm| first converts the value |x| to its projected datatype
-|PersonForm|, then generates a generic form for it.
+The function |personForm| first converts the input value |x| of type |Person| to
+the view datatype |PersonForm| and then generates a form for it using generic
+programming.
 It also changes the parser
-function such that the input value |x| is returned with the changes from the
-form.
+function such that the changed input value |x| is returned: all changes from the
+|PersonView| value are reflected.
+
 Using the fclabels package allows us to construct the bidirectional function using
 simple combinators.
 We have again modified our view code without changing our model code or
-constructing forms manually, thus maintaining the separation of concerns.
+constructing forms manually, thus maintaining the separation of concerns. 
+This technique works independent of the form library used: the formlets are just
+an example.
 
 \section{Generating JSON}
 \label{sec:gjson}
@@ -478,7 +489,7 @@ computers or mobile phones.
 That way we can reuse all our model code and possible a large part of the
 controller code.
 
-The lenses solve the view-update problem. Proxima \cite{proxima} takes this
+The lenses solve the view-update problem. Proxima \cite{schrage2004proxima} takes this
 approach further: they build a very rich editor that solves the view-update
 problem in an elegant way. We could extend our approach in the same way.
 

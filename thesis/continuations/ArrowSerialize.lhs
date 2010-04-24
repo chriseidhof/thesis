@@ -21,8 +21,8 @@ A |Web| value can be recursive, or in other words: it is a \emph{graph} that
 describes the computation. However, the code that is used to describe this graph
 is finite.
 Using the data-reify
-package\footnote{\url{http://hackage.haskell.org/package/data-reify}} that is
-extensively described in \citet{gill2009type}.
+package\footnote{\url{http://hackage.haskell.org/package/data-reify}}
+\citet{gill2009type}.
 we can inspect sharing among values, and convert the graph value into a finite
 representation, where each |Web| value is uniquely identified by a number.
 We can then store a continuation as the number and the input value.

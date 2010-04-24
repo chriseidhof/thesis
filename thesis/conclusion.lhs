@@ -61,7 +61,7 @@ programmers.
 
 In Haskell, multiple libraries exist that provide a continuation-based interface
 for web programming. However, none of them are actively maintained. In his paper
-on arrows, \citet{hughes2000generalising} describes a library for web
+on arrows, Hughes \cite{hughes2000generalising} describes a library for web
 programming with arrows. The WASH system \cite{thiemann2002wash,
 thiemann2005embedded, thiemann2006wash} provides a library for building
 page flows in a style similar to our library. However, their code as not been

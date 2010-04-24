@@ -116,6 +116,19 @@ Finally, we have written about one of the continuation-based web programming
 libraries and submitted the post to Hacker
 News\footnote{\url{http://news.ycombinator.com/item?id=1004701}}, which resulted
 in a large discussion.
+\\
+
+\noindent The code accompanying this thesis can be found on github, there are several
+repositories:
+\\
+
+\begin{small}
+\begin{tabular}{l l}
+\url{http://github.com/chriseidhof/thesis} & Main thesis repository \\
+\url{http://github.com/chriseidhof/Basil} & Basil library for ER modeling \\
+\url{http://github.com/chriseidhof/regular-web} & regular-web library \\
+\end{tabular}
+\end{small}
 
 %if not thesis
 

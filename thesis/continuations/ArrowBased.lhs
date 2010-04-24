@@ -34,17 +34,19 @@
 
 As we have seen in the previous section, web continuations can be expressed as
 monads.
-However, because the monadic approach stores functions inside the |Web| and
+However, because the monadic approach stores \emph{functions} inside the |Web| and
 |Result| datatypes, it is not possible to serialize these datatypes.
 If we change our library to an Arrow-based interface
-\cite{hughes2000generalising}, we can solve this. We first show some
+\cite{hughes2000generalising}, we are halfway to a solution.
+We first show some
 examples, then implement the library in section \ref{sec:arrowimpl},
 and finally discuss how to serialize these continuations in \ref{sec:arrowserial}.
+The API is summerized in section \ref{sec:arrowinterface}.
 
-First, we show some example programs using our library. For the API used in
-these examples see section \ref{sec:arrowinterface}.
-The solution to the Arc challenge stated the introduction of this chapter is
-written down in the following way:
+Using the arrow-based library, we can solve the arc challenge in the following
+way. Note that we use the |&&&| for threading a value: if we want to use the
+output of an arrow-function in a later computation, we explictly thread the
+value:
 
 > arc :: Web () ()
 > arc =     input 
@@ -54,9 +56,9 @@ written down in the following way:
 \label{sec:arrownotation}
 
 Using arrow notation \cite{paterson2001new}, we can write down our example in a
-style that is reminiscent of monadic do-notation. Arrow notation can save a lot
+style that is like monadic do-notation. Arrow notation can save a lot
 of code, especially when dealing with variables that are used multiple times.
-With normal arrows, these variables have to be explicitly threaded each time,
+Without arrow notation, these variables have to be explicitly threaded each time,
 and using arrow notation all the threading is implicit.
 
 > arc' = proc () -> do
@@ -70,7 +72,10 @@ Compared to writing arrows using standard combinators, arrow notation becomes
 especially useful when constructing larger programs.
 When desugared, the following programming is quite large.
 However, using arrow notation, it is almost as simple as its monadic
-counterpart.
+counterpart. There is some extra burden placed on the user: she has to specify
+the input of each arrow explictly.
+We now show a larger program that also uses an |if then else| control structure,
+which is also supported by the arrow notation:
 
 > arcExtended = proc () -> do
 >    x     <- input      -< ()
@@ -80,6 +85,9 @@ counterpart.
 >    if x > (42 :: Integer)
 >       then display (\n -> X.toHtml $ "Large number: " ++ show n)  -< x
 >       else display (const $ X.toHtml "Small.")                    -< ()
+
+Without arrow notation, this program would be very complex, do to the threading
+and the control structure.
 
 \subsection{The library implementation}
 \label{sec:arrowimpl}
@@ -157,7 +165,7 @@ When running the |Web| computation, the |c| input does not change.
 Finally, we provide a constructor |Choice| for making choices. If the input is
 a type |a| wrapped in a |Left| constructor, the |Web| action is executed. If the
 input is a |c| value wrapped in the |Right| constructor, the output is a
-value of type |Right c| too.
+value |Right c| too, and is passed around unchanged.
 
 >   Choice  :: Web a b -> Web (Either a c) (Either b c)
 
@@ -182,9 +190,9 @@ We have made |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 
 \end{figure}
 
-The |Page| datatype from the previous section is changed in the same way. We add
-an extra parameter |i| that captures the input of a page. Furthermore, we add a
-constructor |Fun| that can contain any Haskell function.
+The |Page| datatype from the previous section is changed in the same way as
+|Web|: we add an extra parameter |i| that captures the input of a page.
+Furthermore, we add a constructor |Fun| that can contain any Haskell function.
 
 > data Page i o where
 >   Fun      :: (i -> o)                              -> Page i o
@@ -196,9 +204,9 @@ constructor |Fun| that can contain any Haskell function.
 
 We also provide smart constructors that lift a |Page| type into the |Web| type:
 
-> input    :: DefaultForm f => Web () f
-> display  :: (i -> X.Html) -> Web i ()
-> link     :: String -> Web i ()
+> input    :: DefaultForm f =>  Web ()  f
+> display  :: (i -> X.Html) ->  Web i   ()
+> link     :: String        ->  Web i   ()
 
 
 Now we can define the |Result| datatype, which is very similar to the |Result|
@@ -211,7 +219,9 @@ continuation.
 >   Step    :: X.Html -> Continuation o -> Result o
 
 The |Continuation| is not just a |Web i o| value, but also stores the input |i|.
-We can wrap this in an existential type.
+We can wrap this in an existential type that hides the type of |i|. Because an
+arrow |Web i o| is explicit about its input, storing just the |i| value is
+enough to capture the complete environment:
 
 > data Continuation o = forall i . Cont i (Web i o)
 
@@ -233,13 +243,13 @@ To get the result of a single page, we provide the |runPage| function, which is
 again very similar to the |runPage| function in the previous section.
 
 > runPage :: Page i o -> i -> NextPage -> Result o
-> runPage (Fun f)           i np = Done  (f i)
-> runPage (Form msg parse)  _ np = Step  (makeForm msg) 
->                                        (returnCont $ runForm msg parse)
-> runPage (Display msg)     i np = Step  (continue (msg i) np "Continue") 
->                                        noResult
-> runPage (Link  s)         i np = Step  (continue X.noHtml np s)
->                                        noResult
+> runPage (Fun f)           i  np = Done  (f i)
+> runPage (Form msg parse)  _  np = Step  (makeForm msg) 
+>                                         (returnCont $ runForm msg parse)
+> runPage (Display msg)     i  np = Step  (continue (msg i) np "Continue") 
+>                                         noResult
+> runPage (Link  s)         i  np = Step  (continue X.noHtml np s)
+>                                         noResult
 
 The helper functions |noResult| and |returnCont| build simple continuations:
 
@@ -263,7 +273,10 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 >                   retry 
 >                   (arr fromSuccess)
 >        retry = display showFormWithError `Seq` start
->        showFormWithError (Failure msgs) = makeForm (X.toHtml msgs X.+++ X.br X.+++ formHtml)
+>        showFormWithError (Failure msgs) = 
+>          makeForm (X.toHtml msgs X.+++ X.br X.+++ formHtml)
+
+The |choice| function is defined using arrow notation:
 
 > choice :: (a -> Bool) -> Web a b -> Web a b -> Web a b
 > choice f l r = proc x -> if f x then l -< x else r -< x

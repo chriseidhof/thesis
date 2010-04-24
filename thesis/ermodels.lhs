@@ -67,7 +67,7 @@ Haskell descriptions of ER models.
 We leverage the type system to guarantee that the generated logical models are
 correct and encode the same constraints as their conceptual counterparts.
 
-The conceptual and logical models are two groups of data models. In \citet{chen1976entity},
+The conceptual and logical models are two groups of data models. In Chen \cite{chen1976entity},
 three groups for data models are defined:
 
 \begin{itemize}
