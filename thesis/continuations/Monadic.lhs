@@ -25,51 +25,56 @@ The |NextPage| type is simply a |String| value.
 %endif
 
 In this section we build a monadic continuation-based
-web programming library. The full interface of the library is in Section
-\ref{sec:monadinterface}.
-The interface that we define is inspired by iTasks \cite{plasmeijeriTasks}, which is a
-library in the Clean language for building web workflows.
+web programming library. The full interface of the library is given in section
+\ref{sec:monadinterface},
+and is inspired by iTasks \cite{plasmeijeriTasks}, which is a
+library in the Clean language.
 
 When a web server receives a request for a page, both the URL and the
-|RequestBody| are sent. In our library, we define the |RequestBody| as the
-submitted form data: if a form is submitted, the |RequestBody| contains
-key/value pairs for each form field. Otherwise it is empty:
+|RequestBody| are sent. 
+If a form is submitted, the |RequestBody| contains
+the key/value pairs for each form field. Otherwise it is empty:
  
 > type RequestBody = [(String,String)]
  
 The |Page| datatype defines atomic pages. The |Form| constructor constructs pages that consist of a form:
-the first parameter for |Form| is the rendering of the form, the
-second parameter is the parsing function, which happens only after the user has submitted
-the data. 
+the first parameter for |Form| is the rendering of the form and the
+second parameter is the parsing function, which is evaluated only after the user has submitted
+the form. The result of the parsing function is wrapped in the |Failing|
+datatype, which either contains the result of a succesful parse or a list of
+error messages.
 The |Display| constructor displays a piece of HTML.
 Finally, we include a |Link| constructor that displays just a link.
-Our choice of basic elements might seem a bit limited, but instead of a |Page|
+Our choice of |Page| constructors might seem a bit limited, but instead of a |Page|
 datatype we could have provided a |Page| typeclass, where programmers can give
 their own instances if something is missing.
  
 > data Page a where
->   Form     :: X.Html -> (RequestBody -> Failing a) -> Page a
->   Display  :: X.Html -> Page ()
->   Link     :: String -> Page ()
+>   Form     :: X.Html -> (RequestBody -> Failing a)  -> Page a
+>   Display  :: X.Html                                -> Page ()
+>   Link     :: String                                -> Page ()
  
 A web continuation is a function that maps a |RequestBody| to a result. 
-The |NextPage| parameter contains a fresh URL for the continuation, which can be used in the rendering of links and form actions.
+We will explain the |NextPage| type later.
  
 > newtype Web a = Web {runWeb :: NextPage -> RequestBody -> Result a}
  
-When running a web continuation, the computation can be completely finished, which is captured by the |Done| constructor.
-Alternatively, a problem might have occured, which shows the error message and a new continuation.
-Finally, in the most common case the result is a page with a continuation, which is expressed using the |Step| constructor.
-For example, when running a |Form|, the |Step| constructor first shows the form
-and then parses the form.
+The |Result| datatype contains the result of running a web continuation. When
+the interaction is completely finished, it returns the |Done| constructor.
+Alternatively, a problem might have occured, resulting in error message and a new continuation.
+Finally, in most common case, the result is a new page to be displayed, with a
+continuation (the |Web a| part), which is expressed using the |Step| constructor.
  
 > data Result a  =  Done a
->                |  Problem String (Web a)
->                |  Step X.Html (Web a)
+>                |  Problem  String  (Web a)
+>                |  Step     X.Html  (Web a)
 
  
-From a single page we can calculate a function that takes a request and
-produces a |Result|:
+From a single page we can compute a function that takes a request and
+produces a |Result|. The |runPage| function takes the |Page| is its first
+argument. The second argument is of type |NextPage|, which contains a fresh URL
+that can be used to produce a hyperlink to the next page. The final argument is
+a |RequestBody|, which contains the submitted form data:
  
 > runPage :: Page a ->  NextPage -> RequestBody -> Result a
 
@@ -85,7 +90,9 @@ return a unit value.  The |Link| constructor follows a similar pattern.
 
 The case for |Form| is more interesting: first it displays the HTML of the form
 using the |makeForm| function. However, the second field of the |Step|
-constructor is now initialized with a continuation that parses the request.
+constructor is now initialized with a continuation that parses the request. The
+|web| function lifts a |Page| value to a |Web| value, and |formResult| shows the
+form repeatedly until there is a succesful parse.
 
 > runPage f@(Form msg parse) np _  = Step (makeForm msg)
 >                                         (Web (const (formResult (web f) . parse)))
@@ -108,12 +115,11 @@ operand |r|.
 >                Step msg l'     -> Step     msg  (l' >>= r) 
 >                Problem msg l'  -> Problem  msg  (l' >>= r)
 
-We have now defined a library for building workflows on the web. Using the basic
-elements in |Page| and the monad instance we can already write advanced
-workflows.
-We will now look at how to interpret |Web| values as programs and run them on
-a web server.
-To store continuations on the server, we keep track of an environment |Env| that maps a
+At this point, we have defined a library for expressing web interactions, using the basic
+elements in |Page| and the monad instance we can already express advanced
+interactions. However, to run them we need to interpret |Web| values as programs
+and execute them on a web server.
+To be able to store continuations on the server, we keep track of an environment |Env| that maps a
 URL to a continuation:
 
 > type Env = M.Map String (Web ())
@@ -203,7 +209,7 @@ We have defined some smart constructors that lift a |Page| directly into the |We
 %endif
 
 Finally, some code to abstract working with forms. This makes use of the
-formlets library \footnote{\url{http://hackage.haskell.org/package/hackage}}. We
+formlets library\footnote{\url{http://hackage.haskell.org/package/hackage}}. We
 provide a class |DefaultForm| with instances for |String|, |Integer| and |(,)|. 
 Although the library described above is not in any way dependent on formlets,
 they provide a good abstraction and integrate easily.
@@ -246,34 +252,31 @@ client to the same server.
 
 \item \emph{Restart of the server.} Sometimes it is necessary to restart the
 server. For example, when the code on the server has changed or when the server
-needs to be rebooted. When we do not serialize our continuations, all the
-state that users have is lost, and every workflow needs to be restarted.
+needs to be rebooted. When we do not serialize our continuations, all 
+state that users have is lost, and each workflow needs to be restarted.
 
 \end{itemize}
 
 Because our continuation type |Request -> Result ()| is a function type,
 it is impossible to serialize it.
-No implementation of Haskell does support the serialization of
-arbitrary functions.
-The |Result| datatype might contain a |Web| datatype, which
-in turn is a function again.
-While our representation is conceptually elegant, it is not possible to save it,
-and that might be very impractical for some use cases where the state is very
-important.
+While our representation is conceptually elegant, it is not possible to preserve
+it externally.
 
 There are a couple of solutions to solve this problem, but they all involve a
 large amount of work that we could not fit into this thesis.
 
 \begin{itemize}
-\item We could \emph{extend the compiler} to support the serialization of
+\item We may \emph{extend the compiler} to support the serialization of
 functions.
 This is the approach taken by the Clean compiler, which wraps everything in a
-|Dynamic| type which stores a value along with a type-representation.
-\item We could use a different structure to represent our continuations which
-does not store functions explicitly. For example, instead of a monadic
-interface, we can provide an \emph{arrow interface}.
+|Dynamic| type which stores a value along with a representation of its type.
+This makes it possible to check, when we reload the function, that our code is
+still type-safe.
+\item We may use an explicit structure to represent our continuations.
+For example, instead of a monadic
+interface, we can use an \emph{arrow interface}.
 We expand on this approach in section \ref{sec:arrowbased}
-\item We could use a form of meta-programming to analyze the programming and
-\emph{defunctionalize} it. We look further into this approach in section
+\item We may use a form of meta-programming to analyze the program and
+\emph{defunctionalize} it. We discuss this approach in section
 \ref{sec:defunctionalization}.
 \end{itemize}

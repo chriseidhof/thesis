@@ -60,7 +60,7 @@ Utrecht, the Netherlands
 \emph{Daily Supervisor:} \\
 prof. dr. S.D. Swierstra\\
 \emph{Second Supervisor:} \\
-dr. Andres L\"oh
+dr. A. L\"oh
 \end{flushright}
 \end{minipage}
 
@@ -72,8 +72,8 @@ dr. Andres L\"oh
 
 \chapter*{Abstract}
 
-In this thesis we show how to do web programming in the statically typed Haskell
-programming language, applying programming language research to the web
+In this thesis we show how to do web programming in the statically typed
+programming language Haskell, applying programming language research to the web
 programming world.
 We construct three libraries that encompass a framework for building database-driven web applications.
 

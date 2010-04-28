@@ -42,7 +42,7 @@ Ultimately, this could be done using a Template Haskell function.
 
 We define the |contributes| and |releases| relationship sets. Note that we give
 an extra |String| parameter, which is used in a later section, when we
-build an interface to a relational database.
+build an interface to an external relational database.
 
 > type TContributes  = Rel  CompilerModel  Many  Compiler  Many  Person
 > type TReleases     = Rel  CompilerModel  One   Compiler  Many  Release
@@ -51,7 +51,7 @@ build an interface to a relational database.
 > contributes  = Rel  Many  ixCompiler  "compilers"  Many  ixPerson  "persons"
 > releases     = Rel  One   ixCompiler  "compiler"   Many  ixRelease "releases"
 
-Now we also need to enumerate the relationship sets on the type level:
+The next step is to construct a type-level list with all the relationships:
 
 > type CompilerRelations  =    TContributes :*:  TReleases :*:  Nil
 
@@ -85,16 +85,6 @@ We have written Template Haskell that generates this, but it is instructive to d
 > type instance TypeEq Release      Person    = False
 > type instance TypeEq Release      Release   = True
 
-Now we construct a |Compiler| entity and two |Release| entities:
-
-> ghc :: Compiler
-> ghc = Compiler "GHC" (URL "http://haskell.org/ghc")
->
-> ghc612 :: Release
-> ghc612 = Release "6.12" (Date "11 Oct 2009") ""
->
-> ghc610 :: Release
-> ghc610 = Release "6.10" (Date "4 Nov 2008") ""
 
 The |release| function constructs an |InitialValue| for a Compiler's release.
 It is a tuple that contains a reference to a |Compiler| entity, the direction
@@ -118,6 +108,17 @@ Note that the third argument is based on the |InitialValues| function from
 section \ref{sec:initialvalues}. If we forget to include a |PList| with a
 reference to the compiler, we get a type error. This way, the type system
 ensures that we always provide the right initial relationships.
+
+The value |ghc| is a |Compiler| entity, the values |ghc612| and |ghc610| are |Release| entities:
+
+> ghc :: Compiler
+> ghc = Compiler "GHC" (URL "http://haskell.org/ghc")
+>
+> ghc612 :: Release
+> ghc612 = Release "6.12" (Date "11 Oct 2009") ""
+>
+> ghc610 :: Release
+> ghc610 = Release "6.10" (Date "4 Nov 2008") ""
 
 To find all releases that belong to a |Compiler| entity, we write the following code:
 
@@ -147,5 +148,5 @@ And evaluating |runIt2| yields the following result:
 Just (fromList [Ref 1,Ref 2])
 \end{spec}
 
-We have now written an in-memory database that generates its schema from the ER model described in section \ref{sec:encoding}.
+We have now written an in-memory database that derives its schema from the ER model described in section \ref{sec:encoding}.
 The in-memory database guarantees that all relationships are correctly initialized when creating a new entity, and by encoding entities as Haskell record datatypes we guarentee that all attributes of an entity are provided.

@@ -11,7 +11,7 @@ into first-order programs, i.e. programs without higher-order functions
 \cite{reynoldsdefunctionalization, danvy2001defunctionalization}.
 We explain the technique by defunctionalizing an example program.
 After that, we try to embed defunctionalization in the Haskell type system
-by using an index monad. However, the code is not finished.
+by using an index monad. The library described in this section is not finished yet.
 
 Consider the following example, written in monadic style:
 
@@ -93,16 +93,16 @@ In Haskell, we cannot inspect bindings and sharing of a function. In Template
 Haskell, however, we can inspect the entire program, but we do not have type
 information available.
 
-To provide a workaround for these problems, we use the next section to introduce
+In the next section we provide a workaround for these problems by introducing
 a monad that is explicit about the environment and types in the environment. 
-It does not inspect sharing, but it is a first step in the direction of
+It does not solve the sharing problem, but it is a first step in the direction of
 automatic defunctionalization.
 
 \subsection{A custom parameterized monad}
 
 The key idea is to use the type system for analysis of our
 code, by building an indexed monad.
-The idea to encode a program analysis in the type system has been around for some time in the Haskell community
+Encoding a program analysis in the type system has been done before in the Haskell community
 \cite{russo2008library, pucella2009haskell, fluet2006monadic}.
 
 We start out with a very simple Monad, which is only parameterized over its result type.
@@ -115,7 +115,7 @@ data Cont a where
   Bind   :: Cont a -> (a -> Cont b)  -> Cont b
 \end{spec}
 
-We can easily make |Cont| an instance of |Monad|. The |Cont| datatype makes the structure of the monadic expression explicit: the monadic binds are explicit in our |Cont| datatype. The first step we take is extend the |Cont| datatype with an extra parameter |fV|, which stands for the free variables.
+We can easily make |Cont| an instance of |Monad|. The |Cont| datatype makes the structure of the monadic expression explicit: the monadic binds are explicit in our |Cont| datatype. The first step we take is to extend the |Cont| datatype with an extra parameter |fV|, which stands for the free variables.
 
 \begin{spec}
 data Cont fv a where
@@ -127,12 +127,14 @@ However, the definition above is not done yet In the |Use| constructor, the |fv|
 
 $ fv_3 = fv_1 \cup (fv_2 - \{a\}) $
 
-An improvement would be to use a |Ref| datatype that refers to a free variable.
+The next step is to use a |Ref| datatype that refers to a free variable.
 The exact implementation is not important now. It has only one type parameter, the type of the value it refers to:
 
 \begin{spec}
  data Ref a
 \end{spec}
+
+The |Cont| datatype now stores a list of free variables in its type. In the |Use| constructor, the |free| indicates a single free variable:
 
 \begin{spec}
 data Cont fv a where
@@ -140,9 +142,9 @@ data Cont fv a where
   Bind :: Cont fv1 a -> (Ref a -> Cont fv2 b) -> Cont fv3 b
 \end{spec}
 
-We can now see which variables are used. However, the type variable |fv3| in the |Bind| constructor is still not correct: it needs to be the union of the type variables |fv1| and |fv2|, where |a| is removed from |fv2|.
+The |fv| type parameter in the |Cont| datatype indicates which free variables are used. However, the type variable |fv3| in the |Bind| constructor is still not correct: it needs to be the union of the type variables |fv1| and |fv2|, where |a| is removed from |fv2|.
 
-First, we change the |Use| constructor to return a list of references to free variables (even though, in our case, there is only one free variable). The |Singleton| type is a type synonym for a singleton heterogenerous list.
+First, we change the |Use| constructor to return a list of references to free variables (even though, in our case, there is only a single free variable). The |Singleton| type is a type synonym for a singleton heterogenerous list.
 
 \begin{spec}
  data Cont fv a where
@@ -160,7 +162,7 @@ Lists are something we can deal with on the type-level. For example, we can now 
         -> Cont fv3 b
 \end{spec}
 
-However, we are not done yet. We also want to remove the |Ref a| from |fv2| to really obtain the free variables of that function. And while we are at it, we also want to remove duplicates in the list that come from appending |fv1| and |fv2|. Removing duplicates is not that easy. We can not simply compare two |Ref| types. Therefore, we add a type parameter to |Ref| that is the index of the |Bind| constructor in the program. For completeness, we present the following type, that adds two type-level numbers as parameters:
+However, we are not done yet. We also want to remove the |Ref a| from |fv2| to really obtain the free variables of that function. And while we are at it, we also want to remove duplicates in the list that arise from appending |fv1| and |fv2|. Removing duplicates is not that easy. We can not simply compare two |Ref| types. Therefore, we add a type parameter to |Ref| that is the index of the |Bind| construct in the program. For completeness, we present the following type, that adds two type-level numbers as parameters:
 
 \begin{spec}
 data Cont freeVars from to a where

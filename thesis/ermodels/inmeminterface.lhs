@@ -35,14 +35,13 @@ runBasil  ::  ERModel entities rels
           =>  Basil entities rels a 
           ->  (a, BasilState entities rels)
 
-emptyBasilState :: forall entities rels . 
-                   ERModel entities rels 
-                => BasilState entities rels
+emptyBasilState  ::  ERModel entities rels 
+                 =>  BasilState entities rels
 
-contBasil  ::  forall entities rels a . ERModel entities rels
-          =>  Basil entities rels a 
-          ->  BasilState entities rels
-          ->  (a, BasilState entities rels)
+contBasil  ::  ERModel entities rels
+           =>  Basil entities rels a 
+           ->  BasilState entities rels
+           ->  (a, BasilState entities rels)
 
 \end{spec}
 

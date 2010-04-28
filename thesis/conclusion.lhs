@@ -32,58 +32,56 @@
 
 \subsection{Data models}
 
-We are not aware of a technique to encode data models in Haskell on the
+We are not aware of a technique to encode data models in Haskell at the
 conceptual level. However, many implementations exist to encode data models in
-Haskell on the logical level.
+Haskell at the logical level.
 
 The Happstack framework\footnote{\url{http://happstack.com}} contains a
 component for constructing in-memory databases. It is
 inspired by the Java Prevayler library \cite{wuestefeld2003you}, which works by
 storing the entire database in memory and journalling changes on disk.
-This approach leads to very fast code, but also leads to less portable code. If
+This approach leads to very fast response times, but also leads to less portable code. If
 the user wants to switch to a different type of database, it might involve a lot
 of work.
 
 The HaskellDB library \cite{bringert2004student, leijen2000domain} provides a
-type-safe way to access relational database from Haskell. They allow the user to
-construct queries and schemas that are valid, checked by the type system.
+type-safe way to access relational databases from Haskell. It allows the user to
+construct queries and schemas that are valid and checked by the type system.
 
 Outside of Haskell, the Core Data framework \cite{mark2009anatomy} provides a way to build data models
 in Objective-C. In Core Data, a data model is designed graphically (on the
-conceptual level), and then derives a data model on the logic level
-automatically. It can provide interfaces to relational databases, flat files or
-XML, and automatically provides undo support.
+conceptual level), and Core Data derives a data model on the logic level
+automatically. It has interfaces to relational databases, flat files or
+XML, and automatically provides undo support for data models.
 The interface for the programmer uses objects, and relationships are encoded as
-pointers to other objects,  which provides a native feel for object-oriented
+pointers to other objects, thus providing a native feel to object-oriented
 programmers.
 
 \subsection{Continuations}
 
 In Haskell, multiple libraries exist that provide a continuation-based interface
-for web programming. However, none of them are actively maintained. In his paper
+for web programming. However, none of them is actively maintained. In his paper
 on arrows, Hughes \cite{hughes2000generalising} describes a library for web
 programming with arrows. The WASH system \cite{thiemann2002wash,
 thiemann2005embedded, thiemann2006wash} provides a library for building
-page flows in a style similar to our library. However, their code as not been
-actively maintained.
+page flows in a style similar to our library.
 
 In the Clean programming language, the iTasks system \cite{plasmeijeridata,
 plasmeijeriTasks} provides a monadic interface for building continuation-style
 web applications. The Clean language provides native support for serializing
 continuations. However, the Clean language is not as widely used as Haskell, and
-therefore does not have the vast amount of packages available that exist for
-Haskell.
+there is not such a vast number of packages available compared to Haskell.
 
 The Seaside framework \cite{ducasse2007seaside} is an implementation of
-continuation-based web programming in Smalltalk. Smalltalk is a highly dynamic
-language that is not statically typed. Although Smalltalk programs are typically very
+continuation-based web programming in Smalltalk. Smalltalk is a dynamically typed 
+language. Although Smalltalk programs are typically
 concise, they lack the static guarantees that a type-checker provides.
 
 The Arc language\footnote{\url{http://arclanguage.org/}} is designed for web
 programming, and also makes heavy use of continuations. As we have seen in
-chapter \ref{chap:continuations}, their programs are very concise, although they
-are arguably not as readable as our Haskell counterparts. Also, they are not
-statically typed.
+chapter \ref{chap:continuations}, Arc programs are very concise, although 
+arguably not as readable as our Haskell counterparts. Also, they are not
+type-checked.
 
 Finally, the LISP and Scheme communities have acted as pioneers in continuation-based web
 programming.\cite{queinnec2000influence, restruct, graunke-programming, graunke-modeling,
@@ -96,16 +94,16 @@ automatic restructuring techniques.
 
 The iData toolkit \cite{plasmeijeridata} is one of the first frameworks that uses generic programming
 to generate views such as forms and HTML.
-They also make use of view objects to customize generic programs, although it is
-not clear whether they use similar techniques for building bidirectional
+iData also makes use of view objects to customize generic programs, although it is
+not clear whether similar techniques are used for building bidirectional
 functions.
 
 The WebObjects framework \cite{webobjects} also provides features for rapid
 prototyping, named Direct2Web. In Direct2Web, the entire application is created
 from the data model. Although Direct2Web is based on meta-programming features
-such as reflection and introspection, it yields the same results. We believe
-generic programming forms a more principled approach to meta-programming,
-especially because everything is strongly typed and checked at compile-time.
+such as reflection and introspection, it provides features that are similar to our generic functions.
+Generic programming forms a more principled approach to meta-programming,
+because generic programs are type-checked.
 
 \section{Future work}
 
@@ -127,8 +125,8 @@ different datatypes.
 
 Although we have built some small applications with the libraries, 
 building larger examples will be of great benefit to the practical applications
-of the libraries. We do not think that our libraries are finished yet, using
-them for real applications gives a good indication of what features are
+of the libraries. We do not think that our libraries are finished yet, but using
+them for real applications will give a good indication of what features are
 lacking.
 
 \subsection{AJAX}
@@ -141,25 +139,25 @@ Javascript \cite{ecma262}, which is the only widely supported programming langua
 client-side scripting. In Haskell, this could be achieved using the YHC Compiler
 \cite{golubovsky2007yhc} that supports compilation to Javascript.
 
-A different approach would be to build a domain-specific language that generates
-Javascript. However, this might lead to a compromise in expressiveness, as it
+A different approach is be to build a domain-specific language that generates
+Javascript. However, this may lead to a compromise in expressiveness, as it
 is probably impossible to support arbitrary Haskell functions. Also, the
 Haskell evaluation model is very different from the Javascript evaluation model, which
-can lead to errors that are only detected at runtime.
-This might be particularly true if laziness and infinite structures are used.
+may easily lead to errors that are only detected at runtime;
+this is particularly true if laziness and infinite values are used.
 
 We think an AJAX library can be designed independently of the libraries built in
 this thesis, but can be used in combination with these libraries.
 We can envision a library that works in a functional reactive style, such as
 other GUI toolkits \cite{carlsson1993fudgets, hudak2003arrows}. There is a
 functional reactive programming framework in Javascript
-\cite{meyerovich-flapjax} that is compiled using Haskell, perhaps it can be
+\cite{meyerovich-flapjax} that is compiled using Haskell: perhaps it can be
 integrated with Haskell.
 
 However, compiling code to run in the web browser is only the first step: AJAX-style websites
-also involve communication between the server and the client. The security is
-important, for example, if we store the database password on the server, we have
-to ensure it does not accidentally leak to the client. We think the research on
+also involve communication between the server and the client. Here, security is
+important, for example: if we store the database password on the server, we have
+to ensure it does not accidentally leak to the client. Research on
 security analysis \cite{feedbackoriented, heintze1998slam,
 pottier2003information} could be of great help here.
 
@@ -170,7 +168,7 @@ three libraries that are used by that application. Together, they form a
 framework that can be used to build web applications in a type-safe way. Generic
 programming allows for rapid prototyping, but using lenses we can also change
 generic programs.
-We think that our work could form the basis of libraries to be used in
+We think that our work may form a good starting point for libraries to be used in
 real applications. 
 
 %if not thesis

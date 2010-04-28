@@ -42,7 +42,7 @@ In the later chapters, we describe each library in great detail, both the interf
 The first library we use is for data modeling in Haskell.
 It provides a way to encode a data model on a high level that is independent of the actual database that is used.
 The second library is for building workflows that span over multiple pages.
-The final library we use makes it easy to generate view code based on the structure of the data model by using generic programming.
+The third library we use makes it easy to generate view code based on the structure of the data model by using generic programming.
 It also includes functions to change how the code is generated.
 
 We start by defining the data model for our quizzes in section

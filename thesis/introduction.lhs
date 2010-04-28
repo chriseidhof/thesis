@@ -34,25 +34,28 @@ forms an even better basis. We demonstrate this by building a web development fr
 
 Statically typed languages have numerous advantages over dynamic languages.
 Type checking eliminates a large class of run-time errors and enables many
-compile-time optimizations. Statically typed languages have the perceived
-disadvantage of denoting all types explicitly, however: Haskell is a language that has type
-inferencing, this disadvantage does not arise.
+compile-time optimizations. A perceived
+disadvantage of statically typed languages is that all types are denoted
+explicitly, however: Haskell is a language that has type inferencing, therefore
+this disadvantage does not arise.
 
 The framework we develop in this thesis is based on the 
-\emph{model-view-controller} pattern \cite{krasner1988description}.
-This leads to a separation of concerns and achieves good modularity:
+\emph{model-view-controller} pattern,
+thus leading to a separation of concerns and achieving well structured
+applications:
 
 \begin{itemize}
 \item The model layer takes care of the data model and persistence.
-\item The view layer displays model data to the end user.
+\item The view layer presents the data to the application user.
 \item The controller layer mediates between the model and view and contains application logic.
 \end{itemize}
 
-For each of these layers, we design a library. The libraries are completely
-orthogonal but work very well together.
-We present an example in chapter \ref{chap:quizexample} that describes how all
+For each of these layers, we design a library with core functionalities. 
+These libraries are completely orthogonal and work very well together.
+We present an example in chapter \ref{chap:quizexample} to show how all
 of the libraries designed in this thesis fit together.
-This thesis addresses the following questions:
+
+\noindent This thesis addresses the following questions:
 
 \begin{itemize}
 \item What is a good abstraction for representing data models?
@@ -63,13 +66,10 @@ This thesis addresses the following questions:
 To answer these questions, we have looked at both programming language research
 and web programming research.
 
-In chapter \ref{chap:quizexample} we show a sample application 
-using the libraries described in this thesis:
-a system for creating and taking multiple-choice quizzes.
-
 In chapter \ref{chap:ermodels} we describe how to represent and
 work with ER models in Haskell.
-ER models are a high-level abstraction of data models.
+ER models describe at a high level the structure of data elements and the relationship between
+them, without having to worry about how the data is represented.
 We implement a library to represent ER models and describe the
 implementation of two backends: one is an in-memory
 database, and the other an interface with a relational database.
@@ -81,7 +81,8 @@ Continuations add a stateful layer on top of the stateless HTTP
 protocol. We have built multiple libraries, and discuss their differences.
 
 In chapter \ref{chap:views} we describe how generic programming reduces
-view boilerplate. We have built functions that generate view code based on
+the boilerplate code associated with the presentation of data.
+We have built functions that generate view code based on
 the structure of the input data, and we show how the generated code can be
 customized in an elegant, functional way.
 
@@ -107,7 +108,7 @@ programming to change generic programs.
 This thesis work formed the basis for two papers. The first one is submitted to
 the APLWACA conference and is aimed at web programmers that do not use
 statically typed programming languages.
-The second paper discusses the design and implementation of a bi-directional
+The second paper discusses the design and implementation of our bi-directional
 programming library.
 The second paper contains examples of combining bi-directional programming with
 generic programming that stem from the problems we encountered when working on

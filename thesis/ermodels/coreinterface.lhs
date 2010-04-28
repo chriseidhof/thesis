@@ -19,8 +19,4 @@ data Rel entities cardinalityL cardinalityR l r where
         ->  Ix entities r
         ->  String
         ->  Rel entities cardinalityL l cardinalityR r
-
-mkRelation  ::  (String, Cardinality cardinalityL, Ix entities l)
-            ->  (String, Cardinality cardinalityR, Ix entities r)
-            ->  Rel entities cardinalityL l cardinalityR r
 \end{spec}

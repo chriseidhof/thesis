@@ -26,3 +26,4 @@
 %format fv3
 %format -< = "\prec"
 %format proc = "\mathbf{proc}"
+%format family = "\mathbf{family}"

@@ -4,8 +4,8 @@ We have identified two approaches that can be used to serialize |Web| values:
  
  \begin{itemize}
  \item
-In order to serialize an |Arrow|, we can keep track of which steps are
-already taken. Consider the |handleRequest| function defined above,
+In order to serialize an |Arrow|, we can keep track of which steps which have
+already been taken. Consider the |handleRequest| function defined above,
 which changes the |Web| structure. 
 If we store how it changes the |Web| structure (for example, in the
 |Continuation| datatype), we can always reconstruct the same |Web| value
@@ -14,7 +14,8 @@ We can store the changes by introducing a |Trace| datatype, and every rewrite
 step emits a |Trace| value. That way, we can reinterpret the |Web| and a |Trace|
 value, and reconstruct the original |Web| value. Using a |Dynamic|
 value\footnote{\url{http://haskell.org/ghc/docs/latest/html/libraries/base-4.2.0.0/Data-Dynamic.html}},
-we can cast the input value to the right type in a safe way.
+we can cast the input value to the right type in a safe way. We think that the
+generalized |Zipper| data-structure \cite{hinze-chapter} might be of help here.
 
 \item
 A |Web| value can be recursive, or in other words: it is a \emph{graph} that
@@ -28,8 +29,6 @@ representation, where each |Web| value is uniquely identified by a number.
 We can then store a continuation as the number and the input value.
 
 \end{itemize}
-
-\todo{Tracing is much like a Zipper.}
 
 %if False
 

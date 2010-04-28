@@ -13,10 +13,10 @@
 
 %endif
 
-Our web application responds to URLs. The URL forms part of the user
+Every web application responds to URLs. The URL forms part of the user
 interface: they should be readable most of the times, and users should be able
 to copy and paste them.
-We build a datatype describing all valid
+We build a datatype from which we generate all valid
 URLs in our application: users can list all the quizes, add a new quiz, view
 a quiz and take a quiz.
 As we see later, we give a handle for each constructor, describing the
@@ -30,12 +30,13 @@ produce valid URLs:
 >                 |  Take  Int
 >   deriving Show
 
-The datatype allows us to construct URLs from values of |QuizRoute| and parse URLs to
-values of |QuizRoute| if we make it an instance of the  |ToURL| typeclass. The
-typeclass captures that we can convert between the string representation of URLs and values of |QuizRoute|.
-The user of the library gives the instance manually, for maximum flexibility.
-However, often this flexibility is not needed, and the instance can be given in
-terms of |gtoURL| and |gfromURL|.
+This datatype allows us to construct URLs from values of |QuizRoute| and parse URLs to
+values of |QuizRoute|, provided we make it an instance of the  |ToURL|
+type class. That
+type class captures that we can convert between the string representation of URLs and values of |QuizRoute|.
+The user of the library gives the instance explicitly, but since this is most
+often done in the same way, we can give default definations using the functions
+|gtoURL| and |gfromURL|:
 
 > instance ToURL QuizRoute where
 >  toURL    = gtoURL  . from
@@ -46,24 +47,26 @@ regular\footnote{\url{http://hackage.haskell.org/package/regular}} library and c
 
 %if False
 
-In order for the generic functions |gtoURL| and |gfromURL| to work, we make |QuizRoute| an instance of the |Regular|
-class, which is provided by the
+In order for the generic functions |gtoURL| and |gfromURL| to work, |QuizRoute|
+has to be an instance of the |Regular|
+class, as provided by the
 regular\footnote{\url{http://hackage.haskell.org/package/regular}} library.
-We do this using a Template Haskell call.
+We can again do this using a Template Haskell call.
 Because the Template Haskell in the regular library is designed to work with
 an older version of Template Haskell that does not support type families,
-we also manually give a type family instance:
+we also have to manually provide a type family instance:
 
 > $(deriveAll ''QuizRoute "PFQuizRoute")
 > type instance PF QuizRoute = PFQuizRoute
 
 %endif
 
-Finally, we provide a helper function that links to a |QuizRoute|. We use
-this function to generate HTML that links to an action. Because the first
+Finally, we provide a helper function |static| that produces a hyperlink to a |QuizRoute|
+URL.
+Because the first
 argument is a |QuizRoute| value, we can only link to correct URLs. We use the
 \texttt{Text.XHtml.Strict} library for building HTML, which is imported with a
-|qualified import| in the |X| namespace.
+qualified import in the |X| namespace.
 
 > static :: QuizRoute -> String -> X.Html
 > static u s = X.anchor X.! [X.href $ "/" ++ renderURL (toURL u)] X.<< X.toHtml s

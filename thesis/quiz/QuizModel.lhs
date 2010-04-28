@@ -26,11 +26,12 @@
 %endif
 
 We define our data model as an Entity Relationship model \cite{chen1976entity}, or \emph{ER model}\more{chap:ermodels}, a formalism for building data
-models. In figure \ref{fig:quizermodel} you can see the graphical representation.
-Each quiz has a subject and a longer description, and consists of a sequence of
+models. In figure \ref{fig:quizermodel} we present the graphical representation
+of our quiz data model.
+Each quiz has a subject and a description, and is associated with a sequence of
 questions. Each question belongs to exactly one quiz.
 A response to a quiz contains the name and email-address of the respondant, as well as
-the date on which the quiz was taken, and the list of answers. A quiz has many
+the date on which the quiz was taken, and the list of answers given. A quiz has many
 responses, but every response belongs to a single quiz.
 
 \begin{figure}
@@ -39,7 +40,7 @@ responses, but every response belongs to a single quiz.
 \label{fig:quizermodel}
 \end{figure}
 
-All the entities \more{sec:ermodels} (represented by rectangles) are encoded as Haskell datatypes,
+Entities \more{sec:ermodels} (represented by rectangles) are encoded as Haskell datatypes,
 with a record field for each attribute (represented by ovals).
 In chapter \ref{chap:ermodels} we explain in detail how to encode an ER model in Haskell.
 
@@ -74,7 +75,7 @@ this using the |One| and |Many| types, respectively.
 > type Questions  = Rel  QuizModel  One   Quiz  Many  Question
 > type Responses  = Rel  QuizModel  One   Quiz  Many  Response
 
-We also provide information at the value level for both relationships:
+We also provide a representation at the value level for both relationships:
 \more{sec:encoding}
 
 > questions   :: Questions
@@ -83,11 +84,12 @@ We also provide information at the value level for both relationships:
 > responses   :: Responses
 > responses  = Rel  One   ixQuiz  "quiz"  Many  ixResponse "responses"
 
-We also enumerate the relations at the type level:
+We again enumerate the relations at the type level:
 
 > type QuizRelations = Questions B.:*: Responses B.:*: Nil
 
-The rest of the code is very mechanical and is included at the end of this chapter, where we have listed the entire source code of this example.
+The rest of the code is very mechanical and is included at the end of this
+chapter, where we have listed the complete source code of this example.
 
 %if False
 

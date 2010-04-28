@@ -62,8 +62,7 @@ Logical models describe the data models in terms of a database system.
 Examples of such logical models are the actual schemas used by a relational
 database management system or the data structures of an in-memory database.
 We use our library that encodes ER models to derive logical models
-automatically. We show how the logical models can be derived from the 
-Haskell descriptions of ER models.
+automatically.
 We leverage the type system to guarantee that the generated logical models are
 correct and encode the same constraints as their conceptual counterparts.
 
@@ -83,11 +82,11 @@ designer might add indexes on keys, which directly corresponds to changes in the
 physical layer.
 \end{itemize}
 
-We are not aware of other work in Haskell that operates on the conceptual level.
-There exist libraries on the other levels:
+We are not aware of other work in Haskell that operates at the conceptual level.
+There exist libraries dealing with data models at the other levels:
 HaskellDB \cite{bringert2004student, leijen2000domain} is a typed interface to relational
-databases and operates on the \emph{logical level}.
-Recent work by Visser \cite{sebasmscthesis} operates on the \emph{physical level}.
+databases and operates at the \emph{logical level}.
+Recent work by Visser \cite{sebasmscthesis} operates at the \emph{physical level}.
 
 In section \ref{sec:ermodels}, we build an example ER model and introduce the
 vocabulary for ER modeling.
@@ -107,7 +106,7 @@ provide an interface that is similar to the interface of the in-memory database.
 
 Section \ref{sec:query}
 describes a query language for ER models, and how these queries are translated into queries
-for the in-memory database and queries for the relational database.
+for the in-memory and relational databases.
 
 Finally, in section \ref{sec:erfuture} we describe future work and in section
 \ref{sec:erconclusion} we conclude. For completeness we have included the
@@ -117,8 +116,8 @@ This chapter provides the following contributions:
 
 \begin{itemize}
 \item We encode ER models in Haskell.
-\item We translate encoded ER models into an in-memory database schema.
-\item We translate encoded ER models into a relational database schema.
+\item We map encoded ER models into an in-memory database schema.
+\item We map encoded ER models into a relational database schema.
 \item We define a query language that works on conceptual models and translates
 to logical models.
 \item We provide a large example of type-level programming.
@@ -176,8 +175,9 @@ In the \relationship{contributes} relationship each person works on zero or more
 compilers, and each compiler has zero or more contributors. This property of the
 relationship is called the \emph{cardinality}, and states how many entities are related
 to each other. In the \relationship{contributes} relationship the cardinality is
-\emph{many-to-many}. Each compiler has multiple releases, but every release
-belongs to exactly one compiler. This is an example of a \emph{many-to-one}
+\emph{many-to-many}.
+The \relationship{releases} describes that each compiler has multiple releases, but every release
+belongs to exactly one compiler, and is an example of a \emph{many-to-one}
 relationship. The other cardinalities are \emph{one-to-one} and
 \emph{one-to-many}.
 
@@ -199,13 +199,16 @@ model that describes Haskell compilers.
 \section{Building an in-memory database in Haskell}
 \label{sec:inmem}
 
-We have encoded a conceptual model in Haskell, and in this section we 
-derive an in-memory database schema from the conceptual model. Also, we 
-provide an interface to manipulate the database schema that enforces the
-constraints encoded in the previous section.
+Now that we have encoded a conceptual model in Haskell, we  show how to 
+derive an in-memory database schema from such a  conceptual model. Also, we 
+provide an interface to manipulate the database such that the the
+constraints encoded in the previous section are enforced.
 In particular, when creating a new entity, we add \emph{initial relationships}.
 If we consider the ER model from figure \ref{fig:ermodel}, we see that each
-|Release| entity belongs to a |Compiler| entity. We design the interface for the
+|Release| entity belongs to precisely one |Compiler| entity. When creating a new |Release|,
+we also ask for a reference to a |Compiler| entity, so that the relationship is
+satisfied.
+We design the interface for the
 in-memory database in such a way that the initial relationships are included
 when creating a new entity, and encode this in the type system.
 
@@ -213,7 +216,7 @@ First, we shortly introduce a library for programming with heterogenous lists in
 section \ref{sec:hlist}. In section \ref{sec:entities} we see how to store entities and in section
 \ref{sec:inmemrels} we see how to store relationships.
 Finally, in section \ref{sec:inmeminterface} we 
-build the interface for a library by combining the relationship storage and
+build the library interface by combining the relationship storage and
 entity storage.
 
 \subsection{Using type-level programming libraries}
@@ -221,23 +224,25 @@ entity storage.
 
 As an aside, we first introduce our library for building heterogenous lists
 \cite{kiselyov2004strongly}.
-We have experimented with using the |HList| library, but that
+We have experimented with the |HList| library, but that
 turns out to be inconvenient: composition of |HList| functions can be quite
-difficult. Therefore, we have provided an alternative |HList| library that fits
-our needs. It allows for easy mapping over lists and provides typed references
+difficult. Therefore, we provide an alternative |HList| library that fits
+our needs. From here on, any reference to the HList library refers to the
+library described in this section.
+Our library allows for easy mapping over lists and provides typed references
 into the list. The full interface is defined in section \ref{sec:erhlist}.
 
 An |HList| is defined as either a |Nil| or a |Cons| value. The |HList| datatype
 has a type parameter |a| that is used to keep track of the elements in the list.
-If we produce an empty list with the |Nil| constructor, |a| is |Nil|. If we
-construct a list by combining an elemenent of type |a| and an existing list of
-type |b|, the result will be a list of type |a :*: b|. Both the |Nil| datatype
-and the |:*:| datatype are types without constructors, they exist only at the
+If we produce an empty list with the |Nil| constructor, |a| is the type |Nil|. If we
+construct a list by combining an elemenent of type |a| and an existing list 
+described by the type |b|, the result will be a list of type |a :*: b|. Both the |Nil| datatype
+and the |:*:| datatype are types without constructors; they exist only at the
 type-level:
 
 > data HList a where
->   Nil  :: HList Nil
->   Cons :: a -> HList b -> HList (a :*: b)
+>   Nil   :: HList Nil
+>   Cons  :: a -> HList b -> HList (a :*: b)
 >
 > data (:*:) a b
 > data Nil
@@ -289,41 +294,19 @@ convenient interface.
 
 %include ermodels/example.lhs
 
-% The approach we take is changing the type of |newEntity| to include all
-% neccessary relationships. In our |ERModel| typeclass we have listed all the
-% relationship sets in an ER model. Using a function on the type level, we can filter
-% out the relationship sets that are interesting for us. Specifically, if there is
-% a to-one relationship, we want to include it when creating a new entity.
-% 
-% If we take a look at our example model, we can easily see how we can derive the
-% initial relationships for a ER model. When we add a |Compiler| entity, we do not
-% have to add any initial relationship, because a compiler can have a relationship
-% with many |Release| and |Author| entities. An |Author| 
-% 
-% We now add an additional parameter to the |newEntity| function that requests an
-% entity reference for every to-one relationship.
-% 
-% > newEntity  ::  (EnumTypes phi enum, El phi ent, ERModel phi rels) 
-% >            =>  ent 
-% >            -> FilteredEntities phi rels ent 
-% >            -> EntityStorage phi enum -> (EntityStorage phi enum, Ref phi ent)
-% 
-% The |FilteredEntities| can be implemented using type-functions.
-
 \section{Interfacing with a relational database}
 \label{sec:relationaldb}
 
-In this section, we build an interface with a relational database.
-In section \ref{sec:rdbschema} we show how we can model a relational database
+In this section, we build an interface to a relational database.
+In section \ref{sec:rdbschema} we show how to model a relational database
 in Haskell. We use a typed approach that is inspired by Leijen
 \cite{leijen2000domain}, and Oury and Swierstra \cite{oury2008power}.
-In section \ref{sec:rdbentities} we show how we can store entities in a relational
+In section \ref{sec:rdbentities} we show how to store entities in a relational
 database by translating entity types to relational database tables.
-Section \ref{sec:rdbrels} describes how we can store relationships. In
+Section \ref{sec:rdbrels} describes how to store relationships. In
 particular, we show how to translate relationships to either foreign keys
 or join tables.
-Finally, in section \ref{sec:rdbinterface} we show the library interface that is very similar to the in-memory
-interface.
+Finally, in section \ref{sec:rdbinterface} we show the library interface (which is very similar to the in-memory interface).
 
 \subsection{Modeling a relational database}
 \label{sec:rdbschema}
@@ -562,7 +545,8 @@ Failed, modules loaded: none.
 In this section we have seen how to translate an ER model into a Haskell
 representation.
 By making heavy use of type-level programming, we have provided an interface
-that is type-safe: all operations on entities and relations are type-checked.
+that is type-safe: all operations on entities and relations are checked to
+satisfy the constraints.
 We have seen how to build an in-memory database from our ER model and how to
 interface with a relational database.
 Our approach abstracts over the logical layer, which allows library users to write code

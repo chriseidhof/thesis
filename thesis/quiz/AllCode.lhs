@@ -72,6 +72,7 @@
 > static u s = X.anchor X.! [X.href $ "/" ++ renderURL (toURL u)] X.<< X.toHtml s
 
 \subsection{The Quiz controller}
+\label{sec:quizcontrollerallcode}
 
 > handle :: QuizRoute -> Continuation (MVar St) IO ()
 > handle Add       = Cont ()              addQuiz

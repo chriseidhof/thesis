@@ -85,13 +85,13 @@ contributes :: Rel Many Compiler Many Person
 contributes = Rel
 \end{spec}
 
-However, the |contributes| relationship is not constrained in one of the two
+However, the |contributes| relationship is not yet constrained in one of the two
 ways stated in beginning of this section: it does not guarantee that both
 entities are in the same ER model and it does not put any restriction on the
 cardinality.
 
-We start by restricting the cardinality. We introduce a datatype |Cardinality|,
-which has a constructor for both cardinalities. This way, we can construct a value
+We start with restricting the cardinality, by introducing a datatype |Cardinality|,
+which has a constructor for each cardinality. This way, we can construct a value
 of |Cardinality One| and |Cardinality Many|, but no other values. 
 
 \begin{spec}
@@ -105,10 +105,10 @@ restricts the cardinality: it is only possible to construct relationships that
 have the cardinality one-to-one, one-to-many, many-to-one or many-to-many.
 
 \begin{spec}
-data Rel entities cardinalityL cardinalityR l r where
+data Rel cardinalityL l cardinalityR r where
   Rel  ::  Cardinality cardinalityL 
        ->  Cardinality cardinalityR
-       ->  Rel entities cardinalityL l cardinalityR r
+       ->  Rel cardinalityL l cardinalityR r
 \end{spec}
 
 At this point, we can define entities, entity sets and
@@ -137,23 +137,23 @@ points to:
 > ixRelease   ::  Ix CompilerModel Release
 > ixRelease   =   Suc (Suc Zero)
 
-We can now change |Rel| to guarantee the final constraint. By storing typed
+We can now change |Rel| to enforce the final constraint. By storing typed
 references in the |Rel| constructor that point into the same type-level list, we
 encode that both entities are in the same ER model. We also add a type-parameter
 |entities| to |Rel|, to encode that |Rel| is a relationship in that ER model.
 
 > data Rel entities cardinalityL l cardinalityR r where
 >   Rel  ::  Cardinality cardinalityL 
->        ->  Cardinality cardinalityR
 >        ->  Ix entities l
+>        ->  Cardinality cardinalityR
 >        ->  Ix entities r
 >        ->  Rel entities cardinalityL l cardinalityR r
 
 We could have changed the |Rel| constructor to have type-class constraints
-instead of adding these fields, but having the references on the value level is handy
+instead of adding these fields, but having the references at the value level is handy
 for pattern-matching, as we see later on.
 
-Our \relationship{contributes} relationship type has to change appropriately. We also define
+Our \relationship{contributes} relationship type has to change accordingly. We also define
 the \relationship{releases} relationship.
 
 > contributes ::  Rel  CompilerModel  Many  Compiler  Many  Person
@@ -162,8 +162,8 @@ the \relationship{releases} relationship.
 > releases    ::  Rel  CompilerModel  One   Compiler  Many  Release
 > releases     = Rel  One   Many  ixCompiler  ixRelease
 
-To reason about an ER Model, we add a type-class |ERModel| that relates the
-entities and the relationships. First, we enumerate all relationship sets in a
+To relate the entities and relationships to each other we add a type-class |ERModel|.
+First, we enumerate all relationship sets in a
 type-level list:
 
 > type CompilerRelations  =    Rel CompilerModel  Many  Compiler  Many  Person
@@ -183,6 +183,6 @@ the |TList4| type in a later section.
 >              $  TCons4 releases
 >              $  TNil4 
 
-We now achieved the goal stated in in the introduction: the ER model from the
+We now have achieved the goal stated in in the introduction: the ER model from the
 previous section is encoded in Haskell, and the constraints are guaranteed by
 the typechecker.

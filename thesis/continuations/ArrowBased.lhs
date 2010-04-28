@@ -32,19 +32,19 @@
 
 %endif
 
-As we have seen in the previous section, web continuations can be expressed as
+As we have seen in the previous section, web interactions can be expressed as
 monads.
-However, because the monadic approach stores \emph{functions} inside the |Web| and
-|Result| datatypes, it is not possible to serialize these datatypes.
+However, in the monadic approach the |Web| and
+|Result| datatypes contain function values, it is not possible to serialize these datatypes.
 If we change our library to an Arrow-based interface
 \cite{hughes2000generalising}, we are halfway to a solution.
 We first show some
 examples, then implement the library in section \ref{sec:arrowimpl},
-and finally discuss how to serialize these continuations in \ref{sec:arrowserial}.
+and finally discuss how to serialize the arrow-based interactions in \ref{sec:arrowserial}.
 The API is summerized in section \ref{sec:arrowinterface}.
 
 Using the arrow-based library, we can solve the arc challenge in the following
-way. Note that we use the |&&&| for threading a value: if we want to use the
+way. Note that we use the combinator |&&&| for threading a value: if we want to use the
 output of an arrow-function in a later computation, we explictly thread the
 value:
 
@@ -55,8 +55,14 @@ value:
 
 \label{sec:arrownotation}
 
-Using arrow notation \cite{paterson2001new}, we can write down our example in a
-style that is like monadic do-notation. Arrow notation can save a lot
+\todo{e legt niet uit wat de essentie is van dee benadering, namelijk dat je
+geen bind hebt, en dus geen gebruik makat van de Haskell environment. In de
+arrows zorg je zelf voor een expliciete, maar verborgen omgeving, en dus is er
+een ontkoppleing van je closres in een algoritmisch gedeelte en een
+omgevingsgedeelte.}
+
+Using arrow notation \cite{paterson2001new}, we can denote our example in a
+style that resembles like monadic do-notation. Arrow notation can save a lot
 of code, especially when dealing with variables that are used multiple times.
 Without arrow notation, these variables have to be explicitly threaded each time,
 and using arrow notation all the threading is implicit.
@@ -83,25 +89,24 @@ which is also supported by the arrow notation:
 >    link "Click here"   -< ()
 >    display X.toHtml    -< (name :: String)
 >    if x > (42 :: Integer)
->       then display (\n -> X.toHtml $ "Large number: " ++ show n)  -< x
->       else display (const $ X.toHtml "Small.")                    -< ()
+>       then  display (\n -> X.toHtml $ "Large number: " ++ show n)  -< x
+>       else  display (const $ X.toHtml "Small.")                    -< ()
 
-Without arrow notation, this program would be very complex, do to the threading
+Without arrow notation, this program would be hard to write, due to the threading
 and the control structure.
 
 \subsection{The library implementation}
 \label{sec:arrowimpl}
 
 The difference between monads and arrows has been a topic of research since the
-introduction of arrows \cite{hughes2000generalising, lindley2008idioms}.
+introduction of arrows in Haskell \cite{hughes2000generalising, lindley2008idioms}.
 However, for our purposes, we focus on two important aspects of arrows:
 
 \begin{itemize}
 \item Arrows are \emph{explicit in their environment}. The environment that an
 arrow uses is always explicit as its input parameter.
 This means that users of an arrow-based interface have to explicitly define
-inputs and outputs of each arrow, but this problem is largely solved by using
-arrow notation.
+inputs and outputs of each arrow, leading to more code.
 \item We can represent our |Web| structure \emph{without using functions as
 continuations}. Because arrows are explicit about their environment, we can
 store the environment and a \emph{trace} that describes how we got the current
@@ -135,19 +140,20 @@ datatype from the previous section is of kind |* -> *|.
 Therefore, we add an extra type-parameter |i|, which captures the input of a
 |Web| computation, or in other words: its environment.
 The |o| type-parameter indicates the result of running a |Web| computation.
-Note that there are no functions stored in the |Web| type itself, which is
+There are no functions stored in the |Web| type itself, which is
 essential for serialization, as we show later on.
 \label{sec:dataweb}
 
 > data Web i o where
 
-The |Single| constructor indicates a single |Page| that is shown to the user.
+The |Single| constructor constructs a single interaction that shows a page to
+the user:
 
 >   Single  :: Page i o -> Web i o
 
 The |Req| is a constructor that produces the |RequestBody| for a specific
-request. It is needed to provide global access to the |RequestBody| throughout a
-computation.
+request. Using the |Req| in a |Web| computation gives access to the current
+|RequestBody|:
 
 >   Req     :: Web () RequestBody
 
@@ -177,11 +183,11 @@ We have made |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
 > instance Functor (Web i)  where fmap = flip Seq . arr
 > instance ArrowChoice Web  where left = Choice
 >
-> instance Arrow Web        where
+> instance Arrow Web where
 >   arr   = Single . Fun
 >   first = First
 >
-> instance Category Web     where
+> instance Category  Web where
 >   id  = arr Prelude.id
 >   (.) = flip Seq
 

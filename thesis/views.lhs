@@ -53,24 +53,24 @@
 
 Most web applications are structured using the Model, View, Controller paradigm
 \cite{krasner1988description}.
-We believe this is a good way to separate logical parts of an application: The
+This separates logical parts of an application: the
 model part is concerned with the data storage, the view presents data to the end
 user and the controller coordinates all of this. In this chapter, we focus on
 developing a library for the view part.
 
-The view code is often heavily dependent on model code, and as a result,
+The view code often depends heavily on model code, and as a result,
 most web programming frameworks conveniently include features to build view code
 based on the structure of the model.
-For example, Ruby on Rails \cite{rubyonrails} can generate HTML templates
-for each model class, and the generated templates can be edited by hand to have
+For example, Ruby on Rails \cite{rubyonrails} generates HTML templates
+for each model class, and the generated templates are be edited by hand to have
 maximum control over the output.
 However, this approach is problematic: if the model changes, either the template has to be
 changed by hand, introducing a possibility for errors, or the template has to be
-generated again, losing the changes made so far.
+regenerated, losing the changes made so far.
 
-Generating code can save a lot of time when initially creating an application,
-but can introduce a maintenance problem if the generation source changes.
-While code generation can reduce program size and program complexity, developers
+Generating code saves a lot of time when initially creating an application,
+but introduces a maintenance problem if the source datatype changes.
+While code generation reduces program size and program complexity, developers
 often only use it the first time and make changes to the generated code.
 
 We use generic programming \cite{hinze2009generic, syb, backhouse1999generic} as a technique for generating view
@@ -82,7 +82,7 @@ output) breaks abstractions and is not the right solution to this problem.
 
 The solution we present in this chapter combines bidirectional programming with generic
 programming. A bidirectional program works in two ways: if a program converts from
-|A| to |B|, there is also a way to go back from a |B| to an |A|. The fclabels
+|A| to |B|, there is also a way to go back from a |B| to an |A|. The \emph{fclabels}
 library\footnote{\url{http://hackage.haskell.org/package/fclabels}} 
 provides combinators to construct \emph{lenses} in Haskell, which allow
 for bidirectional programming. Our solution uses lenses to convert a model
@@ -93,7 +93,7 @@ In section \ref{sec:ghtml} we describe how to generate HTML using generic
 programming.
 Section \ref{sec:gform} describes how to build type-safe forms based on the
 formlets\footnote{\url{http://hackage.haskell.org/package/formlets}} library
-\cite{formlets}, and in section \ref{sec:gjson} we show how we can derive an
+\cite{formlets}, and in section \ref{sec:gjson} we show how to derive an
 API from our model. In the last sections we describe future work and
 conclude. The functions described in this section are released as part of the regular-web 
 package\footnote{\url{http://hackage.haskell.org/package/regular-web}}.
@@ -101,7 +101,7 @@ package\footnote{\url{http://hackage.haskell.org/package/regular-web}}.
 \section{Generic HTML generation}
 \label{sec:ghtml}
 
-In Haskell, we can easily generate an HTML representation of our datatype using
+In Haskell, it is easy to generate an HTML representation of a datatype by using
 generic programming. For example, consider the |Person| datatype:
 
 > data Person  = Person  { name :: String, birthDate :: Date, email :: Email }
@@ -117,12 +117,12 @@ generic programming. For example, consider the |Person| datatype:
 
 %endif
 
-We can now use Template Haskell code from the the regular library \cite{rodriguez2009generic} to derive a structural view on |Person|:
+Using Template Haskell code from the the regular library \cite{rodriguez2009generic} to derive a structural view on |Person|:
 
 > $(deriveAll ''Person "PFPerson")
 > type instance PF Person = PFPerson
 
-The two Template Haskell calls make sure that |Person| is an instance of the |Regular|
+The two lines above are needed to make |Person| an instance of the |Regular|
 typeclass. The type |PFPerson|, which is called the \emph{pattern functor}, 
 describes the structure of the |Person| type in
 terms of basic combinators such as the product and sum datatype.
@@ -164,34 +164,34 @@ are printed after the label. The name of the constructor is surrounded with an
 \label{sec:customization}
 
 Generating HTML based on the structure of the type is a feature that virtually
-every web framework provides.
-It is very useful to quickly set up some basic pages, however: most web
+every web framework provides;
+it is very useful to quickly set up some basic pages, however: most web
 applications require custom display code.
 As explained in the introduction, writing this code manually is problematic, because if the source
 type changes, you either have to manually update the changes in the view code,
-or lose the customizations.
+unless you want to your customizations.
 
-We now customize the way HTML is generated for the |Person|
+Suppose we now want to customize the way HTML is generated for the |Person|
 datatype: we do not show the |birthDate| and we only show the first part of
 someone's e-mail address.
-Instead of generating that HTML
+Instead of generating the final HTML
 directly from the |Person| datatype, we add an indirection: we first
 convert the |Person| datatype into a |PersonView| datatype, and generically
 generate the HTML for the |PersonView| value.
-This way, we can maintain a clean separation between the model code and the view code without having to write manual HTML.
+This way, we maintain a clean separation between the model code and the view code without having to write manual HTML.
 First, we define the |PersonView| datatype:
 
 > data PersonView = PersonView  {  _name   :: String
 >                               ,  _email  :: String 
 >                               }
 
-We can now write a conversion function from |Person| to |PersonView|:
+Once we have this datatype, we may write a conversion function mapping a |Person| value to a |PersonView| value:
 
 > personToPersonView :: Person -> PersonView
 > personToPersonView (Person name bDate em) = 
 >     PersonView name (obfuscate em)
 
-Using the same generic function, we can generate |HTML| for values of the |PersonView| datatype.
+Using the same generic function |ghtml|, we can generate |HTML| for values of the |PersonView| datatype.
 This is powerful, because we can keep using the |Person| datatype from our database, and only change it in the view part of the code.
 We have customized the generic code without writing manual HTML: we maintained a separation of concerns while having full flexibility over the view.
 
