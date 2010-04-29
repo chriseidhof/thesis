@@ -53,7 +53,7 @@ For example, if we look at the list of entities in the ER model for compilers, w
 To do this, we use the type-level function |TMap| from our |HList| library,
 which takes a type-level list (such as |CompilerModel|), and wraps each element
 in a container type |f|. For example, the result of |TMap EntityCache
-CompilerModel| will be |EntityCache Compiler :*: EntityCache Person :*: EntityCache
+CompilerModel| is |EntityCache Compiler :*: EntityCache Person :*: EntityCache
 Release :*: Nil|. The function |TMap| is defined using a type family:
 
 > type family    TMap  (f :: * -> *)  ls         ::  *

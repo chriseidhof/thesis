@@ -236,7 +236,7 @@ An |HList| is defined as either a |Nil| or a |Cons| value. The |HList| datatype
 has a type parameter |a| that is used to keep track of the elements in the list.
 If we produce an empty list with the |Nil| constructor, |a| is the type |Nil|. If we
 construct a list by combining an elemenent of type |a| and an existing list 
-described by the type |b|, the result will be a list of type |a :*: b|. Both the |Nil| datatype
+described by the type |b|, the result is a list of type |a :*: b|. Both the |Nil| datatype
 and the |:*:| datatype are types without constructors; they exist only at the
 type-level:
 

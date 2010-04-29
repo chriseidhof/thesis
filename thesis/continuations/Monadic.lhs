@@ -54,7 +54,7 @@ their own instances if something is missing.
 >   Display  :: X.Html                                -> Page ()
 >   Link     :: String                                -> Page ()
 
-The |Result| datatype contains the result of running a |Page|, which we will see
+The |Result| datatype contains the result of running a |Page|, which we show
 in the |runPage| function below. When
 the interaction is completely finished, it returns the |Done| constructor.
 Alternatively, if a problem occurred, the |Problem| constructor displays an
@@ -221,7 +221,7 @@ Finally, we present code to abstract working with forms. We make use of the
 formlets library \cite{formlets,formletshackage} to
 build forms. 
 We provide a class |DefaultForm| with instances for |String|, |Integer| and |(,)|. 
-In chapter \ref{chap:views} we will see how we can automatically derive forms
+In chapter \ref{chap:views} we show how we can automatically derive forms
 for any type.
 Although the library described above is not in any way dependent on formlets,
 they provide a good abstraction and integrate easily.

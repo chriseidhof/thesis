@@ -18,7 +18,7 @@
 
 \label{sec:encoding}
 
-In this section, we will encode an ER model in Haskell.
+In this section, we encode an ER model in Haskell.
 We capture the following constraints in the type system:
 
 \begin{itemize}
@@ -58,7 +58,7 @@ At this point, we have encoded entities and entity sets in Haskell. By using a
 Haskell datatype to encode entity sets, we have encoded the first constraint:
 each entity in an entity set has the same attributes.
 
-To encode relationships we will give a first version of the datatype |Rel|,
+To encode relationships we give a first version of the datatype |Rel|,
 which has four type parameters: one for each entity and two for the cardinality
 of the relationship. As we will see later on, it is essential to encode the
 entity types and cardinality on the type level if we want to get help from the
@@ -172,7 +172,7 @@ type-level list:
 
 Now we can define the type-class |ERModel| which is indexed by both the
 type-level list of entities and the type-level list of relationships. The
-entities and the relationships uniquely determine each other. We will explain
+entities and the relationships uniquely determine each other. We explain
 the |TList4| type in a later section.
 
 > class ERModel entities rels | entities -> rels, rels -> entities where

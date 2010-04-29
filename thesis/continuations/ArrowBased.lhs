@@ -91,6 +91,8 @@ value:
 >     &&&   link "Click Here"
 >     >>>   display (\x -> X.toHtml $ "Hello, " ++ fst x)
 
+\label{sec:arrownotation}
+
 Using arrow notation \cite{paterson2001new}, we can denote our example in a
 style that resembles like monadic do-notation. Arrow notation can make code
 code significantly more concise, especially when dealing with variables that are used multiple times.
