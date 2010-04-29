@@ -43,6 +43,44 @@ examples, then implement the library in section \ref{sec:arrowimpl},
 and finally discuss how to serialize the arrow-based interactions in \ref{sec:arrowserial}.
 The API is summerized in section \ref{sec:arrowinterface}.
 
+The difference between monads and arrows has been a topic of research since the
+introduction of arrows in Haskell \cite{hughes2000generalising, lindley2008idioms}.
+Arrows were originally proposed as an alternative to monads, and differ in two
+important ways:
+
+\begin{itemize}
+\item Arrows are \emph{explicit in their environment}. The environment that an
+arrow uses is always explicit as its input parameter. It can only refer to
+values in that input.
+\item We can represent our |Web| structure \emph{without using functions as
+continuations}. This means that we can fully inspect and transform
+the resulting data-structures.
+\end{itemize}
+
+The |Monad| type class contains the \emph{bind} combinator |>>=|, which has type |m a -> (a
+-> m b) -> m b|. Because the right operand of the bind has a function type, we
+can not inspect and transform it. In arrows, the equivalent of bind is |>>>|,
+which has type |a b c -> a c d -> a b d|. The operands are no function types,
+which allows for inspection of the structure. The combinator |>>>| is expressed
+in terms of combinators from the |Arrow| type class, which is given in figure
+\ref{fig:Arrow}.
+
+\begin{figure}
+\begin{spec}
+class Category a => Arrow a where
+  arr :: (b -> c) -> a b c
+  first :: a b c -> a (b, d) (c, d)
+  second :: a b c -> a (d, b) (d, c)
+  (***) :: a b c -> a b' c' -> a (b, b') (c, c')
+  (&&&) :: a b c -> a b c' -> a b (c, c')
+\end{spec}
+
+\caption{The Arrow typeclass}
+\label{fig:Arrow}
+
+\end{figure}
+
+
 Using the arrow-based library, we can solve the arc challenge in the following
 way. Note that we use the combinator |&&&| for threading a value: if we want to use the
 output of an arrow-function in a later computation, we explictly thread the
@@ -52,14 +90,6 @@ value:
 > arc =     input 
 >     &&&   link "Click Here"
 >     >>>   display (\x -> X.toHtml $ "Hello, " ++ fst x)
-
-\label{sec:arrownotation}
-
-\todo{e legt niet uit wat de essentie is van dee benadering, namelijk dat je
-geen bind hebt, en dus geen gebruik makat van de Haskell environment. In de
-arrows zorg je zelf voor een expliciete, maar verborgen omgeving, en dus is er
-een ontkoppleing van je closres in een algoritmisch gedeelte en een
-omgevingsgedeelte.}
 
 Using arrow notation \cite{paterson2001new}, we can denote our example in a
 style that resembles like monadic do-notation. Arrow notation can make code
@@ -73,7 +103,9 @@ and using arrow notation all the threading is implicit.
 >    display (\n -> X.toHtml $ "Hello, " ++ n)  -< name
 
 The difference with monadic do-notation is the |-<| symbol, which denotes the
-input of the arrow.
+input of the arrow. 
+The |proc| keyword can be used to give a name to the input of the arrow, but because the
+|arc'| arrow does not depend on any input it just matches a |()| value.
 Compared to writing arrows using standard combinators, arrow notation becomes
 especially useful when constructing larger programs.
 When desugared, the following program is quite large.
@@ -93,43 +125,12 @@ which is also supported by the arrow notation:
 >       else  display (const $ X.toHtml "Small.")                    -< ()
 
 Without arrow notation, this program would be hard to write, due to the threading
-and the control structure.
+and the control structure. For a full explanation on how arrow notation works,
+we refer to the original paper \cite{paterson2001new}.
 
 \subsection{The library implementation}
 \label{sec:arrowimpl}
 
-The difference between monads and arrows has been a topic of research since the
-introduction of arrows in Haskell \cite{hughes2000generalising, lindley2008idioms}.
-However, for our purposes, we focus on two important aspects of arrows:
-
-\begin{itemize}
-\item Arrows are \emph{explicit in their environment}. The environment that an
-arrow uses is always explicit as its input parameter.
-This means that users of an arrow-based interface have to explicitly define
-inputs and outputs of each arrow, leading to more code.
-\item We can represent our |Web| structure \emph{without using functions as
-continuations}. Because arrows are explicit about their environment, we can
-store the environment and a \emph{trace} that describes how we got the current
-state. From such an environment and a trace we can construct the continuation
-after a program restart. A similar approach is taken in WASH
-\cite{thiemann2002wash}.
-\end{itemize}
-
-
-\begin{figure}
-\begin{spec}
-class Category a => Arrow a where
-  arr :: (b -> c) -> a b c
-  first :: a b c -> a (b, d) (c, d)
-  second :: a b c -> a (d, b) (d, c)
-  (***) :: a b c -> a b' c' -> a (b, b') (c, c')
-  (&&&) :: a b c -> a b c' -> a b (c, c')
-\end{spec}
-
-\caption{The Arrow typeclass}
-\label{fig:Arrow}
-
-\end{figure}
 
 We now redefine the |Web| datatype in such a way that we can make it an
 instance of the |Arrow| typeclas. The |Arrow| typeclass is defined in figure

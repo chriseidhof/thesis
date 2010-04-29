@@ -35,7 +35,7 @@
 
 \text{\Large MSc Thesis}\\[0.5cm]
 {\large \today}\\[0.5cm]
-\text{INF/SCR-xx-xx}\\[0.5cm]
+\text{INF/SCR-09-56}\\[0.5cm]
 
 % Title
 
