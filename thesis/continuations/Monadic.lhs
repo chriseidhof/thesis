@@ -218,7 +218,7 @@ We have defined some smart constructors that lift a |Page| directly into the |We
 %endif
 
 Finally, we present code to abstract working with forms. We make use of the
-formlets library\footnote{\url{http://hackage.haskell.org/package/hackage}} to
+formlets library \cite{formlets,formletshackage} to
 build forms. 
 We provide a class |DefaultForm| with instances for |String|, |Integer| and |(,)|. 
 In chapter \ref{chap:views} we will see how we can automatically derive forms

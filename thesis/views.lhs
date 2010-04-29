@@ -83,7 +83,7 @@ output) breaks abstractions and is not the right solution to this problem.
 The solution we present in this chapter combines bidirectional programming with generic
 programming. A bidirectional program works in two ways: if a program converts from
 |A| to |B|, there is also a way to go back from a |B| to an |A|. The \emph{fclabels}
-library\footnote{\url{http://hackage.haskell.org/package/fclabels}} 
+library \cite{fclabels}
 provides combinators to construct \emph{lenses} in Haskell, which allow
 for bidirectional programming. Our solution uses lenses to convert a model
 datatype into a view datatype. The generic program then operators on the view
@@ -92,11 +92,11 @@ datatype, and uses lenses to update the original model.
 In section \ref{sec:ghtml} we describe how to generate HTML using generic
 programming.
 Section \ref{sec:gform} describes how to build type-safe forms based on the
-formlets\footnote{\url{http://hackage.haskell.org/package/formlets}} library
+formlets \cite{formlets, formletshackage} library
 \cite{formlets}, and in section \ref{sec:gjson} we show how to derive an
 API from our model. In the last sections we describe future work and
 conclude. The functions described in this section are released as part of the regular-web 
-package\footnote{\url{http://hackage.haskell.org/package/regular-web}}.
+package \cite{regular-web}.
 
 \section{Generic HTML generation}
 \label{sec:ghtml}
@@ -401,7 +401,7 @@ We show that by using our lenses library we can solve this problem.
 \subsection{Generic JSON generation}
 
 Our library provides the functions |toJSON| and |fromJSON|. The |toJSON| takes a
-value and converts it to a \emph{JSON}\footnote{\url{http://www.json.org/}} value, and the |fromJSON| takes a JSON value and tries to parse it.
+value and converts it to a \emph{JSON} \cite{json} value, and the |fromJSON| takes a JSON value and tries to parse it.
 
 \begin{spec}
 gfrom  ::  (Regular a, GJSON (PF a)) =>  JSValue -> Result a

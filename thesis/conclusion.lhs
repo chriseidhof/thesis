@@ -36,7 +36,7 @@ We are not aware of a technique to encode data models in Haskell at the
 conceptual level. However, many implementations exist to encode data models in
 Haskell at the logical level.
 
-The Happstack framework\footnote{\url{http://happstack.com}} contains a
+The Happstack framework\cite{happstack} contains a
 component for constructing in-memory databases. It is
 inspired by the Java Prevayler library \cite{wuestefeld2003you}, which works by
 storing the entire database in memory and journalling changes on disk.
@@ -77,7 +77,7 @@ continuation-based web programming in Smalltalk. Smalltalk is a dynamically type
 language. Although Smalltalk programs are typically
 concise, they lack the static guarantees that a type-checker provides.
 
-The Arc language\footnote{\url{http://arclanguage.org/}} is designed for web
+The Arc language \cite{arclang} is designed for web
 programming, and also makes heavy use of continuations. As we have seen in
 chapter \ref{chap:continuations}, Arc programs are very concise, although 
 arguably not as readable as our Haskell counterparts. Also, they are not

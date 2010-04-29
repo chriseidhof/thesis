@@ -459,8 +459,7 @@ libraries for the relational database and the in-memory database we can achieve
 exactly this: the document is read from the database, changes are stored in the
 in-memory database and the in-memory database is finally stored to the
 relational database.
-This technique is implement by
-CoreData\footnote{\url{http://developer.apple.com/macosx/coredata.html}}.
+This technique is implement by CoreData \cite{mark2009anatomy}.
 
 Instead of providing a way to combine the in-memory database and relational
 database, we can build a common interface for both databases.  We could then

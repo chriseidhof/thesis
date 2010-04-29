@@ -185,7 +185,7 @@ compared by their relative strengths.
 
 We plan to extend the arrow-based library to support the serialization of
 continuations and release it on hackage
-\footnote{\url{http://hackage.haskell.org}}. We want to extend the library to
+\cite{coutts2008haskell}. We want to extend the library to
 support more primitive actions that can also be user-defined.
 
 We hope that a new typed meta-programming language for Haskell arises that

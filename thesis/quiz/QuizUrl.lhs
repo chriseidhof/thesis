@@ -43,18 +43,9 @@ often done in the same way, we can give default definations using the functions
 >  fromURL  = fmap to . gfromURL
 
 The functions |gtoURL| and |gfromURL| are generic functions and work on almost any datatype. These particular functions are defined using the 
-regular\footnote{\url{http://hackage.haskell.org/package/regular}} library and can be found in the code accompanying this thesis.
+\emph{regular} \cite{regular} library and can be found in the code accompanying this thesis.
 
 %if False
-
-In order for the generic functions |gtoURL| and |gfromURL| to work, |QuizRoute|
-has to be an instance of the |Regular|
-class, as provided by the
-regular\footnote{\url{http://hackage.haskell.org/package/regular}} library.
-We can again do this using a Template Haskell call.
-Because the Template Haskell in the regular library is designed to work with
-an older version of Template Haskell that does not support type families,
-we also have to manually provide a type family instance:
 
 > $(deriveAll ''QuizRoute "PFQuizRoute")
 > type instance PF QuizRoute = PFQuizRoute
