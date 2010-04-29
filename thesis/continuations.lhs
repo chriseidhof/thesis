@@ -102,10 +102,10 @@ It is based on arrows \cite{hughes2000generalising}, which can be serialized mor
 However, this comes at the price: programming with arrows puts a larger burden on the user of
 the library.
 
-As our last example, in section \ref{sec:defunctionalization} we use an indexed monad to keep
-track of the environment so that we can perform automatic defunctionalization
-\cite{reynoldsdefunctionalization}. However, this approach also has its problems: 
-when a programmer using the library makes a mistake, the type errors are quite complex.
+% As our last example, in section \ref{sec:defunctionalization} we use an indexed monad to keep
+% track of the environment so that we can perform automatic defunctionalization
+% \cite{reynoldsdefunctionalization}. However, this approach also has its problems: 
+% when a programmer using the library makes a mistake, the type errors are quite complex.
 
 In the last sections, we provide future work and conclude. There is an appendix
 with the interfaces for both the monadic and arrow-based library on page 
@@ -128,16 +128,15 @@ with the interfaces for both the monadic and arrow-based library on page
 \label{sec:arrowserial}
 %include continuations/ArrowSerialize.lhs
 
-\newpage
-\section{Defunctionalization with indexed monads}
-\label{sec:defunctionalization}
-
-%include continuations/Defunctionalization.lhs
+%   \newpage
+%   \section{Defunctionalization with indexed monads}
+%   \label{sec:defunctionalization}
+%   
+%   %include continuations/Defunctionalization.lhs
 
 \section{Conclusion}
 
-We have investigated a monadic approach, an arrow-based approach and
-defunctionalization.
+We have investigated a monadic approach and an arrow-based approach.
 The monadic approach has the simplest interface and is the
 easiest to use.
 However, it lacks serialization of values.
@@ -147,21 +146,13 @@ library user. Arrow notation alleviates that problem, but does require the
 library user to learn new syntax. It is a bit more cumbersome to use than
 monadic do-notation. We still think that it is the best option at the moment.
 
-Defunctionalization is a promising technique, but Haskell is unfortunately not
-yet equipped with the right meta-programming tools to do defunctionalization
-without modifying the compiler. This is because defunctionalization needs to
-inspect variable bindings, recursion and type information.
-In a language like MetaML \cite{taha1997multi, sheard1998using, moggi-idealized}
-this would be easier. In a recent discussion\footnote{\url{http://comments.gmane.org/gmane.comp.lang.haskell.cafe/72693}} on
-the haskell-cafe mailing-list several meta-programming alternatives have been
-compared by their relative strengths.
 
 \subsection{Related work}
 
 Our monadic library was inspired by iTasks \cite{plasmeijeriTasks}, a web programming library in
 the Clean language. In Haskell, the WASH framework \cite{thiemann2002wash}
 provides a similar style of web programming, but unfortunately, the code suffers
-from severe bitrot. The links programming lanugage \cite{cooper2006links} hides
+from severe bitrot. The Links programming language \cite{cooper2006links} hides
 the notion of continuations from the user, and allows the user to construct web
 programs using regular functions.
 
@@ -174,6 +165,23 @@ However, as stated in the introduction, their programs are not statically
 checked by the compiler, and do not have the advantage of having type-inference.
 
 \subsection{Future work}
+
+Defunctionalization is a technique to convert higher-order functional programs
+into first-order programs, i.e. programs without higher-order functions
+\cite{reynoldsdefunctionalization, danvy2001defunctionalization}. We have
+extended our monadic library to perform automatic defunctionalization by
+changing the monad to an indexed monad. However, this approach quickly became
+too complex, both the implementation and the interface: we were unable to hide the
+complexity from the library users.
+Defunctionalization is a promising technique, but Haskell is unfortunately not
+yet equipped with the right meta-programming tools to do defunctionalization
+without modifying the compiler. This is because defunctionalization needs to
+inspect variable bindings, sharing and type information.
+In a language like MetaML \cite{taha1997multi, sheard1998using, moggi-idealized}
+or FreshML \cite{shinwell2003freshml, shinwell2002freshml}
+this would be easier. In a recent discussion\footnote{\url{http://comments.gmane.org/gmane.comp.lang.haskell.cafe/72693}} on
+the haskell-cafe mailing list several meta-programming alternatives have been
+compared by their relative strengths.
 
 We plan to extend the arrow-based library to support the serialization of
 continuations and release it on hackage

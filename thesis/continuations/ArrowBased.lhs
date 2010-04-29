@@ -32,11 +32,11 @@
 
 %endif
 
-As we have seen in the previous section, web interactions can be expressed as
-monads.
+As we have seen in the previous section, web interactions can be expressed as a
+monad.
 However, in the monadic approach the |Web| and
 |Result| datatypes contain function values, it is not possible to serialize these datatypes.
-If we change our library to an Arrow-based interface
+If we change our library to an arrow-based interface
 \cite{hughes2000generalising}, we are halfway to a solution.
 We first show some
 examples, then implement the library in section \ref{sec:arrowimpl},
@@ -62,8 +62,8 @@ een ontkoppleing van je closres in een algoritmisch gedeelte en een
 omgevingsgedeelte.}
 
 Using arrow notation \cite{paterson2001new}, we can denote our example in a
-style that resembles like monadic do-notation. Arrow notation can save a lot
-of code, especially when dealing with variables that are used multiple times.
+style that resembles like monadic do-notation. Arrow notation can make code
+code significantly more concise, especially when dealing with variables that are used multiple times.
 Without arrow notation, these variables have to be explicitly threaded each time,
 and using arrow notation all the threading is implicit.
 
@@ -73,10 +73,10 @@ and using arrow notation all the threading is implicit.
 >    display (\n -> X.toHtml $ "Hello, " ++ n)  -< name
 
 The difference with monadic do-notation is the |-<| symbol, which denotes the
-input of the function.
+input of the arrow.
 Compared to writing arrows using standard combinators, arrow notation becomes
 especially useful when constructing larger programs.
-When desugared, the following programming is quite large.
+When desugared, the following program is quite large.
 However, using arrow notation, it is almost as simple as its monadic
 counterpart. There is some extra burden placed on the user: she has to specify
 the input of each arrow explictly.
@@ -175,8 +175,8 @@ value |Right c| too, and is passed around unchanged.
 
 >   Choice  :: Web a b -> Web (Either a c) (Either b c)
 
-We have made |Web| an instance for the |Functor|, |Arrow|, |ArrowChoice| and
-|Category| type-classes, as seen in Figure \ref{fig:webinstances}.
+We have made |Web| an instance of the |Functor|, |Arrow|, |ArrowChoice| and
+|Category| type classes, as seen in Figure \ref{fig:webinstances}.
 
 \begin{figure}
 
@@ -216,16 +216,18 @@ We also provide smart constructors that lift a |Page| type into the |Web| type:
 
 
 Now we can define the |Result| datatype, which is very similar to the |Result|
-datatype from the previous section. A |Result| can either be completely done,
-which is indicated by the |Done| constructor, or it can yield some HTML and a
-continuation.
+datatype from the previous section. A |Result| value is the result of running a
+|Web| continuation, and such a continuation can be finished,
+which is represented by the |Done| constructor, or it can yield HTML and a
+new continuation, which is represented using the |Step| constructor.
 
 > data Result o where
 >   Done    :: o -> Result o
 >   Step    :: X.Html -> Continuation o -> Result o
 
 The |Continuation| is not just a |Web i o| value, but also stores the input |i|.
-We can wrap this in an existential type that hides the type of |i|. Because an
+We can wrap the two components in an existential type that hides the type of the
+input. Because an
 arrow |Web i o| is explicit about its input, storing just the |i| value is
 enough to capture the complete environment:
 
@@ -273,11 +275,11 @@ The function |fromSuccess| converts a |Failing a| into an |a|.
 
 > runForm :: X.Html -> (RequestBody -> Failing b) -> Web () b
 > runForm formHtml parse  = start
->  where start =    Req 
->              >>>  arr parse
->              >>>  choice isFailure
->                   retry 
->                   (arr fromSuccess)
+>  where start  =    Req 
+>               >>>  arr parse
+>               >>>  choice  isFailure
+>                            retry 
+>                            (arr fromSuccess)
 >        retry = display showFormWithError `Seq` start
 >        showFormWithError (Failure msgs) = 
 >          makeForm (X.toHtml msgs X.+++ X.br X.+++ formHtml)

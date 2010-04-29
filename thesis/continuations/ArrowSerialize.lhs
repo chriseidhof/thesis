@@ -1,5 +1,5 @@
 We now give a description to serialize arrows.
-Note that we have not yet implemented this, it is future work.
+Note that implementation of serialization is future work.
 We have identified two approaches that can be used to serialize |Web| values:
  
  \begin{itemize}
@@ -7,8 +7,8 @@ We have identified two approaches that can be used to serialize |Web| values:
 In order to serialize an |Arrow|, we can keep track of which steps which have
 already been taken. Consider the |handleRequest| function defined above,
 which changes the |Web| structure. 
-If we store how it changes the |Web| structure (for example, in the
-|Continuation| datatype), we can always reconstruct the same |Web| value
+If we store how the |handleRequest| changes the |Web| structure (for example, by
+adding a field to the |Continuation| datatype), we can always reconstruct the same |Web| value
 from our original |Web| value.
 We can store the changes by introducing a |Trace| datatype, and every rewrite
 step emits a |Trace| value. That way, we can reinterpret the |Web| and a |Trace|
